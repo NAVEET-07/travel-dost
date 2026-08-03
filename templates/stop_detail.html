@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ stop.stop_name }} — Travel Dost{% endblock %}
+
+{% block content %}
+<div class="bg-dark text-white py-4 border-bottom border-secondary mb-4">
+    <div class="container px-lg-5">
+        <h2 class="fw-bold m-0">{{ stop.stop_name }}</h2>
+        <p class="text-secondary m-0">Area: {{ stop.area }} | GPS Coords: ({{ stop.latitude }}, {{ stop.longitude }})</p>
+    </div>
+</div>
+
+<div class="container px-lg-5 mb-5">
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                <h5 class="fw-bold mb-3"><i class="fa-solid fa-route text-primary me-2"></i>Routes Serving This Stop</h5>
+                <div class="list-group list-group-flush extra-small">
+                    {% for rs in passing_routes %}
+                        <a href="{% url 'route-detail' rs.route.id %}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2 border-0 mb-1 rounded bg-light">
+                            <strong>{{ rs.route.route_name }}</strong>
+                            <span class="badge bg-secondary">Stop #{{ rs.stop_order }}</span>
+                        </a>
+                    {% empty %}
+                        <div class="text-muted py-2">No active routes registered for this stop.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                <h5 class="fw-bold mb-3"><i class="fa-solid fa-magnifying-glass-location text-success me-2"></i>Route Finder Shortcut</h5>
+                <p class="text-secondary small">Set <strong>{{ stop.stop_name }}</strong> as your boarding point or destination in the route finder:</p>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'route-finder' %}?source={{ stop.id }}" class="btn btn-primary rounded-pill flex-grow-1">Set as Source</a>
+                    <a href="{% url 'route-finder' %}?destination={{ stop.id }}" class="btn btn-outline-primary rounded-pill flex-grow-1">Set as Destination</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+
+{% block title %}Find Best Bus Route — Travel Dost{% endblock %}
+
+{% block content %}
+<div class="bg-dark text-white py-4 border-bottom border-secondary mb-4">
+    <div class="container px-lg-5">
+        <div class="d-flex align-items-center gap-3">
+            <div class="bg-primary text-white p-3 rounded-3">
+                <i class="fa-solid fa-route fa-2x"></i>
+            </div>
+            <div>
+                <h2 class="fw-bold m-0">Intelligent Route Finder</h2>
+                <p class="text-secondary m-0">Find direct buses, transfer connections, estimated fares, and live tracking shortcuts across Hubballi–Dharwad.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container px-lg-5 mb-5">
+    <div class="row g-4">
+        <!-- Search Controls Column -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 sticky-top" style="top: 90px; z-index: 10;">
+                <h5 class="fw-bold mb-3"><i class="fa-solid fa-sliders text-primary me-2"></i>Route Search</h5>
+                
+                <form id="routeSearchForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary small">BOARDING STOP (SOURCE)</label>
+                        <select class="form-select form-select-lg rounded-3" id="sourceSelect" required>
+                            <option value="">Select Boarding Stop...</option>
+                            {% for stop in stops %}
+                                <option value="{{ stop.id }}" {% if selected_source == stop.id %}selected{% endif %}>
+                                    {{ stop.stop_name }} ({{ stop.area }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-outline-secondary btn-sm w-100 rounded-pill" id="btnUseMyLocation">
+                            <i class="fa-solid fa-crosshairs text-danger me-1"></i> Use My Current Location
+                        </button>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary small">DESTINATION STOP</label>
+                        <select class="form-select form-select-lg rounded-3" id="destSelect" required>
+                            <option value="">Select Destination Stop...</option>
+                            {% for stop in stops %}
+                                <option value="{{ stop.id }}" {% if selected_dest == stop.id %}selected{% endif %}>
+                                    {{ stop.stop_name }} ({{ stop.area }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill mt-2">
+                        <i class="fa-solid fa-magnifying-glass me-2"></i> Find Best Route
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Route Results Column -->
+        <div class="col-lg-8">
+            <div id="resultsContainer">
+                <div class="card border-0 shadow-sm rounded-4 p-5 text-center bg-white" id="initialStateCard">
+                    <div class="text-primary mb-3">
+                        <i class="fa-solid fa-bus-simple fa-3x opacity-50"></i>
+                    </div>
+                    <h5 class="fw-bold">Select Source & Destination</h5>
+                    <p class="text-secondary max-w-md mx-auto small">
+                        Choose your boarding stop and destination stop from the left panel, or click <strong>Use My Location</strong> to auto-detect nearby stops.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document.body).ready(function() {
+    function searchRoutes() {
+        const source = $('#sourceSelect').val();
+        const dest = $('#destSelect').val();
+
+        if (!source || !dest) return;
+        if (source === dest) {
+            alert("Boarding and destination stops must be different.");
+            return;
+        }
+
+        $('#resultsContainer').html(`
+            <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
+                <div class="spinner-border text-primary mx-auto mb-3" role="status"></div>
+                <h5 class="fw-bold">Calculating Best Routes...</h5>
+                <p class="text-secondary small">Evaluating direct lines, transfer points, fares, and live buses...</p>
+            </div>
+        `);
+
+        $.get(`/api/search-route/?source=${source}&destination=${dest}`, function(data) {
+            if (data.error) {
+                $('#resultsContainer').html(`
+                    <div class="alert alert-warning shadow-sm rounded-3">
+                        <i class="fa-solid fa-triangle-exclamation me-2"></i> ${data.error}
+                    </div>
+                `);
+                return;
+            }
+
+            if (!data.routes || data.routes.length === 0) {
+                $('#resultsContainer').html(`
+                    <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
+                        <i class="fa-solid fa-circle-question text-muted fa-3x mb-3"></i>
+                        <h5 class="fw-bold">No Direct or Connecting Bus Routes Found</h5>
+                        <p class="text-secondary small">Try selecting different nearby stops in Hubballi–Dharwad.</p>
+                    </div>
+                `);
+                return;
+            }
+
+            let html = `
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="fw-bold m-0"><i class="fa-solid fa-list-check text-success me-2"></i> Found ${data.total_routes_found} Route Option(s)</h5>
+                    <span class="badge bg-secondary">${data.source.name} ➔ ${data.destination.name}</span>
+                </div>
+            `;
+
+            data.routes.forEach((rt, idx) => {
+                const badgeColor = rt.badge_color || 'primary';
+                let busesHtml = '';
+                
+                if (rt.legs) {
+                    rt.legs.forEach(leg => {
+                        if (leg.buses && leg.buses.length > 0) {
+                            leg.buses.forEach(b => {
+                                const statusBadge = b.tracking_status === 'LIVE' 
+                                    ? '<span class="badge bg-success"><i class="fa-solid fa-circle me-1 animate-pulse"></i> LIVE</span>'
+                                    : '<span class="badge bg-secondary">OFFLINE</span>';
+                                busesHtml += `<a href="/live-tracking/${b.id}/" class="btn btn-sm btn-outline-primary me-1 mb-1">Bus ${b.bus_number} (${b.bus_type}) ${statusBadge}</a>`;
+                            });
+                        }
+                    });
+                }
+
+                let legsSteps = '';
+                rt.legs.forEach(leg => {
+                    const stopNames = leg.stops.map(s => s.name).join(' ➔ ');
+                    legsSteps += `
+                        <div class="timeline-step">
+                            <div class="timeline-bullet"></div>
+                            <h6 class="fw-bold m-0">Leg ${leg.leg_number}: Take Bus on ${leg.route_name}</h6>
+                            <p class="text-secondary small m-0 mb-1">Board at <strong>${leg.from_stop}</strong> and ride to <strong>${leg.to_stop}</strong> (${leg.stops.length - 1} stops)</p>
+                            <div class="extra-small text-muted mb-2"><i class="fa-solid fa-arrows-left-right me-1"></i> Stops: ${stopNames}</div>
+                        </div>
+                    `;
+                });
+
+                html += `
+                    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 ${idx === 0 ? 'border-start border-4 border-success' : ''}">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                            <span class="badge bg-${badgeColor} px-3 py-2 rounded-pill fw-bold fs-6">
+                                ${rt.tag}
+                            </span>
+                            <div class="d-flex gap-2">
+                                <span class="badge bg-light text-dark border p-2"><i class="fa-solid fa-indian-rupee-sign text-success me-1"></i> ₹${rt.estimated_fare}</span>
+                                <span class="badge bg-light text-dark border p-2"><i class="fa-solid fa-clock text-info me-1"></i> ~${rt.estimated_duration_mins} mins</span>
+                                <span class="badge bg-light text-dark border p-2"><i class="fa-solid fa-route me-1"></i> ${rt.estimated_distance_km} KM</span>
+                            </div>
+                        </div>
+
+                        <h4 class="fw-bold text-dark mb-1">${rt.route_name}</h4>
+                        <p class="text-secondary small mb-3">
+                            <i class="fa-solid fa-right-left me-1"></i> Transfers: <strong>${rt.transfers}</strong> | Total Stops: <strong>${rt.stop_count}</strong>
+                        </p>
+
+                        <div class="bg-light rounded-3 p-3 mb-3">
+                            ${legsSteps}
+                        </div>
+
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                            <div>
+                                <small class="fw-bold text-secondary d-block mb-1">Available Buses:</small>
+                                ${busesHtml || '<span class="text-muted small">No buses active currently</span>'}
+                            </div>
+                            <div class="d-flex gap-2">
+                                ${rt.legs[0].buses && rt.legs[0].buses.length > 0 ? `
+                                    <a href="/live-tracking/${rt.legs[0].buses[0].id}/" class="btn btn-success btn-sm rounded-pill px-3">
+                                        <i class="fa-solid fa-location-dot me-1"></i> Track Bus Live
+                                    </a>
+                                ` : `
+                                    <a href="/live-tracking/" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                                        <i class="fa-solid fa-map me-1"></i> View Live Map
+                                    </a>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            $('#resultsContainer').html(html);
+        });
+    }
+
+    $('#routeSearchForm').on('submit', function(e) {
+        e.preventDefault();
+        searchRoutes();
+    });
+
+    if ($('#sourceSelect').val() && $('#destSelect').val()) {
+        searchRoutes();
+    }
+
+    $('#btnUseMyLocation').on('click', function() {
+        if ("geolocation" in navigator) {
+            $(this).html('<i class="fa-solid fa-spinner fa-spin me-1"></i> Locating...');
+            navigator.geolocation.getCurrentPosition(function(pos) {
+                $.get(`/api/nearby-stops/?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}&limit=1`, function(data) {
+                    if (data.nearby_stops && data.nearby_stops.length > 0) {
+                        $('#sourceSelect').val(data.nearby_stops[0].id);
+                        $('#btnUseMyLocation').html(`<i class="fa-solid fa-check text-success me-1"></i> ${data.nearby_stops[0].stop_name}`);
+                    }
+                });
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

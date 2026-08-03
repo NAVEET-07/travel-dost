@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}Nearby Bus Stops Locator — Travel Dost{% endblock %}
+
+{% block content %}
+<div class="bg-dark text-white py-4 border-bottom border-secondary mb-4">
+    <div class="container px-lg-5">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-danger text-white p-3 rounded-3">
+                    <i class="fa-solid fa-street-view fa-2x"></i>
+                </div>
+                <div>
+                    <h2 class="fw-bold m-0">Nearby Bus Stops Locator</h2>
+                    <p class="text-secondary m-0">Detect your current GPS location and discover nearest bus stops in Hubballi–Dharwad.</p>
+                </div>
+            </div>
+            <button class="btn btn-danger btn-lg rounded-pill px-4" id="btnDetectNearby">
+                <i class="fa-solid fa-location-arrow me-2"></i> Detect My Location
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="container px-lg-5 mb-5">
+    <div class="row g-4">
+        <!-- Map Column -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div id="nearbyMap" style="height: 550px;"></div>
+            </div>
+        </div>
+
+        <!-- List Column -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-white">
+                <h5 class="fw-bold mb-3"><i class="fa-solid fa-list-ol text-primary me-2"></i>Nearest Bus Stops</h5>
+                <div id="nearbyListContainer">
+                    <div class="text-center text-muted py-5">
+                        <i class="fa-solid fa-compass fa-3x mb-3 text-secondary opacity-50"></i>
+                        <h5>Click "Detect My Location"</h5>
+                        <p class="small">Grant GPS browser permissions to find bus stops closest to your current position.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/map_app.js"></script>
+<script>
+$(document.body).ready(function() {
+    initTravelDostMap('nearbyMap', 15.3647, 75.1240, 13);
+
+    function findNearby(lat, lng) {
+        $('#nearbyListContainer').html(`
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary mb-3" role="status"></div>
+                <p>Calculating distances to Hubballi-Dharwad stops...</p>
+            </div>
+        `);
+
+        $.get(`/api/nearby-stops/?lat=${lat}&lng=${lng}&limit=6`, function(data) {
+            if (!data.nearby_stops || data.nearby_stops.length === 0) {
+                $('#nearbyListContainer').html('<div class="alert alert-warning">No nearby stops found.</div>');
+                return;
+            }
+
+            // Plot on Leaflet map
+            updatePassengerMarker(lat, lng);
+            plotBusStops(data.nearby_stops);
+
+            let html = '<div class="list-group list-group-flush">';
+            data.nearby_stops.forEach((stop, idx) => {
+                const distText = stop.distance_km < 1.0 
+                    ? `<strong>${stop.distance_meters}</strong> meters` 
+                    : `<strong>${stop.distance_km}</strong> km`;
+
+                html += `
+                    <div class="list-group-item py-3 border-bottom d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="badge bg-primary rounded-circle p-2 fs-6" style="width: 32px; height: 32px;">${idx + 1}</span>
+                            <div>
+                                <h6 class="fw-bold m-0">${stop.stop_name}</h6>
+                                <small class="text-secondary">${stop.area} • Distance: ${distText}</small>
+                            </div>
+                        </div>
+                        <a href="/find-route/?source=${stop.id}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                            Select This Stop
+                        </a>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            $('#nearbyListContainer').html(html);
+        });
+    }
+
+    $('#btnDetectNearby').on('click', function() {
+        if ("geolocation" in navigator) {
+            $(this).html('<i class="fa-solid fa-spinner fa-spin me-2"></i> Detecting GPS...');
+            navigator.geolocation.getCurrentPosition(function(pos) {
+                findNearby(pos.coords.latitude, pos.coords.longitude);
+                $('#btnDetectNearby').html('<i class="fa-solid fa-location-arrow me-2"></i> Location Detected');
+            }, function(err) {
+                alert("Could not access GPS location. Defaulting to KLEIT Hubballi reference.");
+                findNearby(15.3647, 75.1240);
+                $('#btnDetectNearby').html('<i class="fa-solid fa-location-arrow me-2"></i> Detect My Location');
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}Live Bus GPS Tracking Map — Travel Dost{% endblock %}
+
+{% block content %}
+<div class="bg-dark text-white py-3 border-bottom border-secondary mb-3">
+    <div class="container-fluid px-lg-5">
+        <div class="row align-items-center g-3">
+            <div class="col-md-4">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="bg-danger text-white p-2 rounded animate-pulse">
+                        <i class="fa-solid fa-location-crosshairs fa-lg"></i>
+                    </span>
+                    <div>
+                        <h4 class="fw-bold m-0">Live Bus GPS Tracking</h4>
+                        <small class="text-secondary">Hubballi–Dharwad Live Real-Time Transport Map</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bus Select Dropdown & Status Bar -->
+            <div class="col-md-8">
+                <div class="d-flex flex-wrap align-items-center justify-content-md-end gap-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="fw-semibold text-secondary small">SELECT BUS:</label>
+                        <select class="form-select form-select-sm rounded-pill bg-dark text-white border-secondary" id="busSelect" style="min-width: 220px;">
+                            <option value="all">-- All Active Buses --</option>
+                            {% for b in buses %}
+                                <option value="{{ b.id }}" {% if selected_bus and selected_bus.id == b.id %}selected{% endif %}>
+                                    Bus {{ b.bus_number }} - {{ b.bus_name }} ({{ b.get_bus_type_display }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div id="liveStatusBadge" class="badge bg-secondary p-2 rounded-pill">
+                        <i class="fa-solid fa-wifi me-1"></i> WebSocket Disconnected
+                    </div>
+
+                    <button class="btn btn-outline-light btn-sm rounded-pill px-3" id="btnPassengerLocation">
+                        <i class="fa-solid fa-street-view text-danger me-1"></i> Locate Me
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid px-lg-5 mb-5">
+    <div class="row g-4">
+        <!-- Leaflet Map Container -->
+        <div class="col-lg-9">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden position-relative">
+                <div id="map" style="height: 650px;"></div>
+
+                <!-- Overlay Speed & Telemetry Card -->
+                <div class="position-absolute bottom-0 start-0 m-3 p-3 bg-dark text-white rounded-3 shadow glass-navbar border border-secondary" style="z-index: 1000; max-width: 320px;" id="telemetryCard">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <strong class="text-warning" id="telBusNum">Select a Bus to Track</strong>
+                        <span class="badge bg-success" id="telStatus">LIVE</span>
+                    </div>
+                    <div class="row g-2 text-center extra-small text-secondary">
+                        <div class="col-4">
+                            <div class="border border-secondary rounded p-1 bg-black">
+                                <span class="d-block text-white fw-bold fs-6" id="telSpeed">0.0</span>
+                                <span>KM/H</span>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border border-secondary rounded p-1 bg-black">
+                                <span class="d-block text-white fw-bold fs-6" id="telHeading">0°</span>
+                                <span>HEADING</span>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border border-secondary rounded p-1 bg-black">
+                                <span class="d-block text-white fw-bold fs-6" id="telUpdated">Just now</span>
+                                <span>UPDATED</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Bus Details & Stop Sequence -->
+        <div class="col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-white">
+                <h5 class="fw-bold mb-3"><i class="fa-solid fa-circle-info text-primary me-2"></i>Bus & Route Info</h5>
+
+                <div id="sidebarBusInfo">
+                    <div class="text-center text-muted py-4">
+                        <i class="fa-solid fa-bus-simple fa-2x mb-2 opacity-50"></i>
+                        <p class="small">Choose a bus from the dropdown or click a bus marker on the map to inspect live data.</p>
+                    </div>
+                </div>
+
+                <hr class="my-3">
+
+                <h6 class="fw-bold mb-3"><i class="fa-solid fa-bus-simple text-success me-2"></i>Active Buses Overview</h6>
+                <div class="list-group list-group-flush extra-small overflow-y-auto" style="max-height: 250px;">
+                    {% for b in buses %}
+                        <a href="{% url 'live-tracking-bus' b.id %}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2 border-0 mb-1 rounded bg-light">
+                            <div>
+                                <strong>Bus {{ b.bus_number }}</strong>
+                                <span class="text-muted d-block">{{ b.bus_name }}</span>
+                            </div>
+                            {% if b.tracking_status == 'LIVE' %}
+                                <span class="badge bg-success"><i class="fa-solid fa-circle me-1 animate-pulse"></i> LIVE</span>
+                            {% else %}
+                                <span class="badge bg-secondary">OFFLINE</span>
+                            {% endif %}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/map_app.js"></script>
+<script src="/static/js/websocket_tracking.js"></script>
+<script>
+$(document.body).ready(function() {
+    // Initialize Leaflet Map centered on Hubballi-Dharwad (15.3647, 75.1240)
+    initTravelDostMap('map', 15.3647, 75.1240, 12);
+
+    // Plot all bus stops on map
+    const allStops = [
+        {% for s in all_stops %}
+            { id: {{ s.id }}, name: "{{ s.stop_name|escapejs }}", area: "{{ s.area|escapejs }}", lat: {{ s.latitude }}, lng: {{ s.longitude }} },
+        {% endfor %}
+    ];
+    plotBusStops(allStops);
+
+    const initialBusId = $('#busSelect').val();
+    startBusTrackingSocket(initialBusId);
+
+    $('#busSelect').on('change', function() {
+        const busId = $(this).val();
+        startBusTrackingSocket(busId);
+    });
+
+    $('#btnPassengerLocation').on('click', function() {
+        locatePassenger();
+    });
+});
+</script>
+{% endblock %}

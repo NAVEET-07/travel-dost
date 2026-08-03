@@ -1,0 +1,4 @@
+bus_number,bus_name,bus_type,route_name,tracking_status
+101,NWKRTC City Bus 101 (KA-25-F-101),ORDINARY,Route 101: Hubballi CBT ➔ Dharwad CBT,LIVE
+202,NWKRTC Express Bus 202 (KA-25-F-202),EXPRESS,Route 202: KLEIT ➔ Raj Nagar,LAST_SEEN
+303,Chigari BRTS Bus 303 (KA-25-F-303),BRTS,Route 303: Chigari BRTS Express,OFFLINE

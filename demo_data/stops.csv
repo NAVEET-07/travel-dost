@@ -1,0 +1,13 @@
+stop_id,stop_name,area,latitude,longitude,description
+1,CBT Hubballi,Hubballi City Center,15.3480,75.1400,Central Bus Terminal Hubballi
+2,Railway Station Hubballi,Station Road,15.3430,75.1480,Hubballi Junction Railway Station
+3,Hosur Bus Stop,Hosur Hubballi,15.3500,75.1350,Hosur Circle Hubballi
+4,Vidya Nagar Bus Stop,Vidya Nagar,15.3590,75.1280,Vidya Nagar Hubballi
+5,KLEIT Bus Stop,Vidya Nagar / Gokul Road,15.3647,75.1240,KLE Technological Institute
+6,Unkal Lake Bus Stop,Unkal,15.3780,75.1150,Unkal Lake Park Hubballi
+7,Navanagar Bus Stop,Navanagar Highway,15.4010,75.0890,Navanagar Highway
+8,Rayapur Bus Stop,Rayapur Industrial Area,15.4120,75.0750,Rayapur Highway Circle
+9,SDM Medical College Stop,Sattur Dharwad,15.4250,75.0450,SDM Medical & Engineering Campus
+10,Dharwad CBT,Dharwad Center,15.4580,75.0080,Central Bus Terminal Dharwad
+11,Raj Nagar Bus Stop,Raj Nagar Hubballi,15.3680,75.1520,Raj Nagar Residential Area
+12,Karnatak University Stop,KUD Campus Dharwad,15.4420,75.0020,Karnatak University Dharwad Main Gate

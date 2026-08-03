@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Bus Routes Directory — Travel Dost{% endblock %}
+
+{% block content %}
+<div class="bg-dark text-white py-4 border-bottom border-secondary mb-4">
+    <div class="container px-lg-5">
+        <div class="d-flex align-items-center gap-3">
+            <div class="bg-success text-white p-3 rounded-3">
+                <i class="fa-solid fa-map fa-2x"></i>
+            </div>
+            <div>
+                <h2 class="fw-bold m-0">Hubballi–Dharwad Transit Routes</h2>
+                <p class="text-secondary m-0">Explore complete bus route lines and stop sequences.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container px-lg-5 mb-5">
+    <div class="row g-4">
+        {% for r in routes %}
+            <div class="col-md-6">
+                <div class="card feature-card h-100 p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <h5 class="fw-bold m-0 text-dark">{{ r.route_name }}</h5>
+                        <span class="badge bg-secondary">{{ r.stops_cnt }} Stops</span>
+                    </div>
+                    <p class="text-secondary small mb-3">{{ r.start_point }} ➔ {{ r.end_point }}</p>
+                    <p class="extra-small text-muted mb-3">{{ r.description|default:"" }}</p>
+                    
+                    <a href="{% url 'route-detail' r.id %}" class="btn btn-outline-primary btn-sm rounded-pill mt-auto">
+                        <i class="fa-solid fa-bars-staggered me-1"></i> View Stop Sequence
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+
+{% block title %}Travel Dost — Smart Bus Tracking & Travel Assistance (Hubballi-Dharwad){% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section py-5 py-lg-6">
+    <div class="container px-lg-5">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-7">
+                <div class="badge bg-primary text-white mb-3 px-3 py-2 rounded-pill fs-6">
+                    <i class="fa-solid fa-bolt me-1"></i> Real-Time Public Transit Assistant
+                </div>
+                <h1 class="display-4 fw-extrabold text-white mb-3 lh-sm">
+                    Travel Smarter with <span class="gradient-text">Travel Dost</span>
+                </h1>
+                <p class="lead text-light opacity-90 mb-4 fw-normal">
+                    Find the best bus route, track your bus live on the map, and reach your destination across <strong>Hubballi–Dharwad</strong> with confidence.
+                </p>
+
+                <!-- Search Widget Card -->
+                <div class="search-card p-4 p-md-4 text-dark mb-4">
+                    <form action="{% url 'route-finder' %}" method="GET" id="heroSearchForm">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-secondary small">
+                                    <i class="fa-solid fa-circle-dot text-primary me-1"></i> FROM (SOURCE STOP)
+                                </label>
+                                <select name="source" class="form-select form-select-lg rounded-3" id="heroSourceSelect" required>
+                                    <option value="">Select Boarding Stop...</option>
+                                    {% for stop in stops %}
+                                        <option value="{{ stop.id }}">{{ stop.stop_name }} ({{ stop.area }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-secondary small">
+                                    <i class="fa-solid fa-location-dot text-danger me-1"></i> TO (DESTINATION STOP)
+                                </label>
+                                <select name="destination" class="form-select form-select-lg rounded-3" id="heroDestSelect" required>
+                                    <option value="">Select Destination Stop...</option>
+                                    {% for stop in stops %}
+                                        <option value="{{ stop.id }}">{{ stop.stop_name }} ({{ stop.area }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+                            <button type="button" class="btn btn-outline-secondary btn-lg rounded-pill px-3 fs-6" id="btnUseMyLocationHome">
+                                <i class="fa-solid fa-crosshairs text-danger me-1"></i> Use My Current Location
+                            </button>
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill px-4 ms-auto w-100 w-sm-auto">
+                                <i class="fa-solid fa-magnifying-glass-location me-2"></i> Find Best Route
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Hero Feature Cards Illustration -->
+            <div class="col-lg-5">
+                <div class="card border-0 bg-dark text-white p-4 shadow-lg rounded-4 glass-navbar border-secondary">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="badge bg-success text-white px-3 py-2 rounded-pill">
+                            <i class="fa-solid fa-circle me-1 animate-pulse"></i> {{ live_buses_count }} Bus(es) Live Now
+                        </span>
+                        <small class="text-secondary">NWKRTC & BRTS Transit</small>
+                    </div>
+
+                    <div class="list-group list-group-flush bg-transparent">
+                        <a href="{% url 'live-tracking' %}" class="list-group-item bg-transparent text-white border-secondary py-3 d-flex align-items-center justify-content-between hover-bg-dark">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="bg-primary text-white p-2 rounded-3">
+                                    <i class="fa-solid fa-map-location-dot fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="m-0 fw-bold">Live Bus Location Map</h6>
+                                    <small class="text-secondary">Watch buses move live on Leaflet Map</small>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-secondary"></i>
+                        </a>
+
+                        <a href="{% url 'nearby-stops' %}" class="list-group-item bg-transparent text-white border-secondary py-3 d-flex align-items-center justify-content-between hover-bg-dark">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="bg-danger text-white p-2 rounded-3">
+                                    <i class="fa-solid fa-street-view fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="m-0 fw-bold">Nearby Bus Stops Locator</h6>
+                                    <small class="text-secondary">Find nearest stops from your GPS</small>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-secondary"></i>
+                        </a>
+
+                        <a href="{% url 'driver-portal' %}" class="list-group-item bg-transparent text-white border-0 py-3 d-flex align-items-center justify-content-between hover-bg-dark">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="bg-warning text-dark p-2 rounded-3">
+                                    <i class="fa-solid fa-mobile-signal fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="m-0 fw-bold">Driver / GPS Device Portal</h6>
+                                    <small class="text-secondary">Mobile phone acts as Bus GPS device</small>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-secondary"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- System Statistics Counter -->
+<section class="py-5 bg-white border-bottom">
+    <div class="container px-lg-5">
+        <div class="row g-4 text-center">
+            <div class="col-6 col-md-3">
+                <div class="p-3">
+                    <h2 class="display-5 fw-bold text-primary m-0">{{ buses_count }}</h2>
+                    <p class="text-secondary small fw-semibold uppercase m-0 mt-1">TOTAL BUSES</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3 border-start">
+                    <h2 class="display-5 fw-bold text-success m-0">{{ routes_count }}</h2>
+                    <p class="text-secondary small fw-semibold uppercase m-0 mt-1">ACTIVE ROUTES</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3 border-start-md">
+                    <h2 class="display-5 fw-bold text-warning m-0">{{ stops_count }}</h2>
+                    <p class="text-secondary small fw-semibold uppercase m-0 mt-1">BUS STOPS</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3 border-start">
+                    <h2 class="display-5 fw-bold text-danger m-0">{{ live_buses_count }}</h2>
+                    <p class="text-secondary small fw-semibold uppercase m-0 mt-1">LIVE TRACKING</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Feature Grid -->
+<section class="py-5">
+    <div class="container px-lg-5">
+        <div class="text-center max-w-2xl mx-auto mb-5">
+            <span class="badge bg-secondary text-white px-3 py-2 rounded-pill">Comprehensive Smart Transit</span>
+            <h2 class="fw-bold display-6 mt-2">Why Travel Dost?</h2>
+            <p class="text-secondary">Designed specifically for commuters in Hubballi–Dharwad to eliminate wait times and confusion.</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card feature-card h-100 p-4">
+                    <div class="icon-box bg-primary-subtle text-primary mb-3">
+                        <i class="fa-solid fa-satellite-dish"></i>
+                    </div>
+                    <h5 class="fw-bold">Real-Time Bus Tracking</h5>
+                    <p class="text-secondary small">
+                        Watch the live location of your bus moving continuously on an interactive Leaflet/OpenStreetMap map powered by WebSockets.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card feature-card h-100 p-4">
+                    <div class="icon-box bg-success-subtle text-success mb-3">
+                        <i class="fa-solid fa-route"></i>
+                    </div>
+                    <h5 class="fw-bold">Smart Route Recommendation</h5>
+                    <p class="text-secondary small">
+                        Our intelligent algorithm evaluates direct and connecting bus routes, minimizing transfers, travel time, and fare costs.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card feature-card h-100 p-4">
+                    <div class="icon-box bg-warning-subtle text-warning mb-3">
+                        <i class="fa-solid fa-indian-rupee-sign"></i>
+                    </div>
+                    <h5 class="fw-bold">Fare & Stop Details</h5>
+                    <p class="text-secondary small">
+                        Get estimated bus fares between any source and destination stop along with complete stop sequence breakdowns.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Current location button on homepage
+    $('#btnUseMyLocationHome').on('click', function() {
+        if ("geolocation" in navigator) {
+            $(this).html('<i class="fa-solid fa-spinner fa-spin me-1"></i> Detecting Location...');
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                // Fetch nearest stop via API
+                $.get(`/api/nearby-stops/?lat=${lat}&lng=${lng}&limit=1`, function(data) {
+                    if (data.nearby_stops && data.nearby_stops.length > 0) {
+                        const nearest = data.nearby_stops[0];
+                        $('#heroSourceSelect').val(nearest.id);
+                        $('#btnUseMyLocationHome').html(`<i class="fa-solid fa-check text-success me-1"></i> ${nearest.stop_name}`);
+                    }
+                });
+            }, function(err) {
+                alert("Location permission denied or unavailable. Please select your stop manually.");
+                $('#btnUseMyLocationHome').html('<i class="fa-solid fa-crosshairs me-1"></i> Use My Current Location');
+            });
+        }
+    });
+</script>
+{% endblock %}

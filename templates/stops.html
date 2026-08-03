@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Bus Stops Directory — Travel Dost{% endblock %}
+
+{% block content %}
+<div class="bg-dark text-white py-4 border-bottom border-secondary mb-4">
+    <div class="container px-lg-5">
+        <div class="d-flex align-items-center gap-3">
+            <div class="bg-info text-white p-3 rounded-3">
+                <i class="fa-solid fa-stop-city fa-2x"></i>
+            </div>
+            <div>
+                <h2 class="fw-bold m-0">Hubballi–Dharwad Bus Stop Directory</h2>
+                <p class="text-secondary m-0">Find bus stop coordinates, locations, and passing routes.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container px-lg-5 mb-5">
+    <div class="row g-4">
+        {% for s in stops %}
+            <div class="col-md-4">
+                <div class="card feature-card h-100 p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <h5 class="fw-bold m-0 text-dark">{{ s.stop_name }}</h5>
+                        <span class="badge bg-light text-dark border">{{ s.area }}</span>
+                    </div>
+                    <p class="text-secondary small mb-3"><i class="fa-solid fa-location-dot text-danger me-1"></i> ({{ s.latitude }}, {{ s.longitude }})</p>
+                    <a href="{% url 'stop-detail' s.id %}" class="btn btn-outline-primary btn-sm rounded-pill mt-auto">
+                        <i class="fa-solid fa-eye me-1"></i> View Stop Details
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

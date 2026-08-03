@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Travel Dost — Smart Bus Tracking & Travel Assistance{% endblock %}</title>
+    <meta name="description" content="Real-time bus GPS tracking, route finder, and transit assistance for Hubballi-Dharwad region of Karnataka, India (NWKRTC).">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Google Fonts (Outfit & Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet.js Map CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Custom Travel Dost CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="d-flex flex-column min-vh-100 bg-light">
+
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top glass-navbar shadow-sm">
+        <div class="container-fluid px-lg-5">
+            <a class="navbar-brand d-flex align-items-center gap-2 fw-bold fs-4" href="{% url 'home' %}">
+                <span class="brand-badge bg-primary text-white px-2 py-1 rounded-3">
+                    <i class="fa-solid fa-bus"></i>
+                </span>
+                <span class="gradient-text">TRAVEL DOST</span>
+                <span class="badge bg-warning text-dark fs-6 ms-1">Hubballi-Dharwad</span>
+            </a>
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4 gap-lg-1">
+                    {% if user.is_authenticated and user.is_driver %}
+                        <!-- DRIVER NAVIGATION -->
+                        <li class="nav-item">
+                            <a class="nav-link active fw-semibold text-warning" href="{% url 'driver-dashboard' %}">
+                                <i class="fa-solid fa-gauge me-1"></i> Driver Dashboard
+                            </a>
+                        </li>
+                    {% elif user.is_authenticated and user.is_admin %}
+                        <!-- ADMIN NAVIGATION -->
+                        <li class="nav-item">
+                            <a class="nav-link active fw-semibold text-primary" href="{% url 'admin-dashboard' %}">
+                                <i class="fa-solid fa-user-shield me-1"></i> Admin Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'buses' %}">
+                                <i class="fa-solid fa-bus-simple me-1"></i> Buses
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'routes' %}">
+                                <i class="fa-solid fa-map me-1"></i> Routes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'stops' %}">
+                                <i class="fa-solid fa-stop-city me-1"></i> Bus Stops
+                            </a>
+                        </li>
+                    {% else %}
+                        <!-- USER / PASSENGER NAVIGATION -->
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active fw-semibold{% endif %}" href="{% url 'home' %}">
+                                <i class="fa-solid fa-house me-1"></i> Home
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'route-finder' %}active fw-semibold{% endif %}" href="{% url 'route-finder' %}">
+                                <i class="fa-solid fa-route me-1"></i> Find Route
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'tracking' in request.path %}active fw-semibold text-warning{% endif %}" href="{% url 'tracking' %}">
+                                <i class="fa-solid fa-location-crosshairs text-danger animate-pulse me-1"></i> Live Bus Tracking
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'nearby-stops' %}active fw-semibold{% endif %}" href="{% url 'nearby-stops' %}">
+                                <i class="fa-solid fa-map-pin me-1"></i> Nearby Stops
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'buses' %}active fw-semibold{% endif %}" href="{% url 'buses' %}">
+                                <i class="fa-solid fa-bus-simple me-1"></i> Buses
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'routes' %}active fw-semibold{% endif %}" href="{% url 'routes' %}">
+                                <i class="fa-solid fa-map me-1"></i> Routes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'stops' %}active fw-semibold{% endif %}" href="{% url 'stops' %}">
+                                <i class="fa-solid fa-stop-city me-1"></i> Bus Stops
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+
+                <div class="d-flex align-items-center gap-2">
+                    {% if user.is_authenticated %}
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-secondary p-2 me-1">
+                                <i class="fa-solid fa-user me-1"></i> {{ user.username }}
+                                ({{ user.role }})
+                            </span>
+                            <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                                <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
+                            </a>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-primary btn-sm rounded-pill px-3">Log In</a>
+                        <a href="{% url 'register' %}" class="btn btn-outline-light btn-sm rounded-pill px-3">Register</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Alert Messaging -->
+    <div class="container mt-3" id="alertContainer">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <!-- Main Page Content -->
+    <main class="flex-grow-1">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white pt-5 pb-3 mt-5 border-top border-secondary">
+        <div class="container px-lg-5">
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="bg-primary text-white p-2 rounded">
+                            <i class="fa-solid fa-bus fa-lg"></i>
+                        </span>
+                        <h4 class="m-0 fw-bold gradient-text">TRAVEL DOST</h4>
+                    </div>
+                    <p class="text-secondary small">
+                        Smart Public Transportation & Real-Time Bus Tracking Assistance for the Hubballi–Dharwad twin city region of Karnataka, India (NWKRTC).
+                    </p>
+                </div>
+                <div class="col-lg-2 col-md-6">
+                    <h6 class="text-white fw-bold mb-3">Quick Navigation</h6>
+                    <ul class="list-unstyled text-secondary small space-y-2">
+                        <li><a href="{% url 'home' %}" class="text-secondary text-decoration-none hover-white">Home</a></li>
+                        <li><a href="{% url 'route-finder' %}" class="text-secondary text-decoration-none hover-white">Find Route</a></li>
+                        <li><a href="{% url 'tracking' %}" class="text-secondary text-decoration-none hover-white">Live Bus Map</a></li>
+                        <li><a href="{% url 'nearby-stops' %}" class="text-secondary text-decoration-none hover-white">Nearby Stops</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-white fw-bold mb-3">Public Transit Features</h6>
+                    <ul class="list-unstyled text-secondary small space-y-2">
+                        <li><i class="fa-solid fa-check text-success me-2"></i> Real-Time Bus GPS Tracking</li>
+                        <li><i class="fa-solid fa-check text-success me-2"></i> Intelligent Route Finder</li>
+                        <li><i class="fa-solid fa-check text-success me-2"></i> Connecting Routes & Fare Estimate</li>
+                        <li><i class="fa-solid fa-check text-success me-2"></i> Driver Mobile GPS Streaming</li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-white fw-bold mb-3">Account & Access</h6>
+                    <ul class="list-unstyled text-secondary small space-y-2">
+                        {% if user.is_authenticated %}
+                            <li><a href="{% url 'logout' %}" class="text-danger text-decoration-none hover-white"><i class="fa-solid fa-right-from-bracket me-1"></i> Logout ({{ user.username }})</a></li>
+                        {% else %}
+                            <li><a href="{% url 'login' %}" class="text-secondary text-decoration-none hover-white"><i class="fa-solid fa-right-to-bracket me-1"></i> Sign In</a></li>
+                            <li><a href="{% url 'register' %}" class="text-secondary text-decoration-none hover-white"><i class="fa-solid fa-user-plus me-1"></i> Register Account</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            <hr class="border-secondary my-4">
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center small text-secondary">
+                <p class="m-0">&copy; 2026 <strong>Travel Dost</strong> — Hubballi-Dharwad Smart Transit System</p>
+                <a href="{% url 'about' %}" class="text-secondary text-decoration-none">About Project & Architecture</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

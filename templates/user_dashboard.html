@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+
+{% block title %}User Dashboard — Travel Dost{% endblock %}
+
+{% block content %}
+<div class="bg-dark text-white py-4 border-bottom border-secondary mb-4">
+    <div class="container-fluid px-lg-5">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-primary text-white p-3 rounded-3">
+                    <i class="fa-solid fa-user-gear fa-2x"></i>
+                </div>
+                <div>
+                    <h2 class="fw-bold m-0">Passenger Dashboard</h2>
+                    <p class="text-secondary m-0">Search routes, check fares, view stops, and track live buses in real time.</p>
+                </div>
+            </div>
+            <a href="{% url 'live-tracking' %}" class="btn btn-warning rounded-pill px-4 fw-bold">
+                <i class="fa-solid fa-location-crosshairs me-2"></i> Live Bus Tracking Map
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid px-lg-5 mb-5">
+    <!-- User Feature Navigation Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center h-100 bg-white hover-shadow transition">
+                <div class="bg-primary-subtle text-primary p-3 rounded-circle d-inline-block mb-3">
+                    <i class="fa-solid fa-route fa-2x"></i>
+                </div>
+                <h5 class="fw-bold">Search Buses</h5>
+                <p class="text-secondary small mb-3">Find direct and connecting buses between any source and destination stop.</p>
+                <a href="{% url 'route-finder' %}" class="btn btn-outline-primary btn-sm rounded-pill w-100">Find Route</a>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center h-100 bg-white hover-shadow transition">
+                <div class="bg-warning-subtle text-warning p-3 rounded-circle d-inline-block mb-3">
+                    <i class="fa-solid fa-map-location-dot fa-2x"></i>
+                </div>
+                <h5 class="fw-bold">View Bus Routes</h5>
+                <p class="text-secondary small mb-3">Explore official transit routes, intermediate stops, and operational schedules.</p>
+                <a href="{% url 'routes' %}" class="btn btn-outline-warning btn-sm rounded-pill w-100">View Routes</a>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center h-100 bg-white hover-shadow transition">
+                <div class="bg-info-subtle text-info p-3 rounded-circle d-inline-block mb-3">
+                    <i class="fa-solid fa-stop-city fa-2x"></i>
+                </div>
+                <h5 class="fw-bold">View Bus Stops</h5>
+                <p class="text-secondary small mb-3">Browse all bus stops across Hubballi-Dharwad or locate nearby stops with GPS.</p>
+                <a href="{% url 'stops' %}" class="btn btn-outline-info btn-sm rounded-pill w-100">View Bus Stops</a>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center h-100 bg-white hover-shadow transition">
+                <div class="bg-success-subtle text-success p-3 rounded-circle d-inline-block mb-3">
+                    <i class="fa-solid fa-indian-rupee-sign fa-2x"></i>
+                </div>
+                <h5 class="fw-bold">View Fares</h5>
+                <p class="text-secondary small mb-3">Check accurate fare charts for NWKRTC Ordinary, Express, and Chigari BRTS services.</p>
+                <a href="{% url 'buses' %}" class="btn btn-outline-success btn-sm rounded-pill w-100">View Fares & Buses</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Buses & Fares Summary -->
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="fw-bold m-0"><i class="fa-solid fa-bus text-primary me-2"></i>Active Bus Fleet & Status</h5>
+                    <a href="{% url 'buses' %}" class="btn btn-sm btn-outline-primary rounded-pill">View All Fleet</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle extra-small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Bus No</th>
+                                <th>Bus Name</th>
+                                <th>Type</th>
+                                <th>Route</th>
+                                <th>Tracking Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for b in buses %}
+                                <tr>
+                                    <td><strong>Bus {{ b.bus_number }}</strong></td>
+                                    <td>{{ b.bus_name }}</td>
+                                    <td><span class="badge bg-light text-dark border">{{ b.get_bus_type_display }}</span></td>
+                                    <td>{{ b.route.route_name|default:"Unassigned" }}</td>
+                                    <td>
+                                        {% if b.tracking_status == 'LIVE' %}
+                                            <span class="badge bg-success"><i class="fa-solid fa-circle me-1 animate-pulse"></i> LIVE</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">OFFLINE</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'live-tracking-bus' b.id %}" class="btn btn-xs btn-outline-primary rounded-pill px-2">
+                                            <i class="fa-solid fa-location-arrow me-1"></i> Track Map
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">No active buses found.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                <h5 class="fw-bold mb-3"><i class="fa-solid fa-tag text-success me-2"></i>Estimated Fares Quick List</h5>
+                <div class="list-group list-group-flush extra-small">
+                    {% for f in fares %}
+                        <div class="list-group-item py-2 border-0 mb-2 rounded bg-light d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="d-block fw-bold text-dark">{{ f.source_stop.stop_name }} ➔ {{ f.destination_stop.stop_name }}</span>
+                                <small class="text-secondary">{{ f.route.route_name }} ({{ f.fare_type }})</small>
+                            </div>
+                            <span class="badge bg-success fs-6">₹{{ f.fare_amount }}</span>
+                        </div>
+                    {% empty %}
+                        <div class="text-muted py-3 text-center">No fare chart records available.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

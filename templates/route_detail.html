@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ route.route_name }} Details — Travel Dost{% endblock %}
+
+{% block content %}
+<div class="bg-dark text-white py-4 border-bottom border-secondary mb-4">
+    <div class="container px-lg-5">
+        <h2 class="fw-bold m-0">{{ route.route_name }}</h2>
+        <p class="text-secondary m-0">{{ route.start_point }} ➔ {{ route.end_point }}</p>
+    </div>
+</div>
+
+<div class="container px-lg-5 mb-5">
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                <h5 class="fw-bold mb-4"><i class="fa-solid fa-list-ol text-primary me-2"></i>Ordered Stop Sequence</h5>
+                <div class="timeline-step-list">
+                    {% for rs in route_stops %}
+                        <div class="timeline-step">
+                            <div class="timeline-bullet"></div>
+                            <h6 class="fw-bold m-0">Stop #{{ rs.stop_order }}: {{ rs.bus_stop.stop_name }}</h6>
+                            <p class="text-secondary small m-0">{{ rs.bus_stop.area }} • Distance: {{ rs.distance_from_start_km }} KM</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                <h5 class="fw-bold mb-3"><i class="fa-solid fa-bus text-success me-2"></i>Assigned Fleet</h5>
+                <div class="list-group list-group-flush extra-small">
+                    {% for b in assigned_buses %}
+                        <a href="{% url 'live-tracking-bus' b.id %}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2 border-0 mb-1 rounded bg-light">
+                            <strong>Bus {{ b.bus_number }}</strong>
+                            <span class="badge bg-primary">Track Live</span>
+                        </a>
+                    {% empty %}
+                        <div class="text-muted py-2">No buses assigned currently.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,187 @@
+/* Travel Dost Custom Styling */
+
+:root {
+    --primary-color: #2563eb;
+    --primary-hover: #1d4ed8;
+    --secondary-color: #0f172a;
+    --accent-color: #f59e0b;
+    --success-color: #10b981;
+    --danger-color: #ef4444;
+    --glass-bg: rgba(15, 23, 42, 0.85);
+    --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    --border-radius: 16px;
+    --font-heading: 'Outfit', sans-serif;
+    --font-body: 'Inter', sans-serif;
+}
+
+body {
+    font-family: var(--font-body);
+    color: #334155;
+}
+
+h1, h2, h3, h4, h5, h6, .navbar-brand {
+    font-family: var(--font-heading);
+}
+
+/* Glass Navbar */
+.glass-navbar {
+    background: var(--glass-bg) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Gradient Text */
+.gradient-text {
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #93c5fd 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Hero Section */
+.hero-section {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1e1b4b 100%);
+    color: #ffffff;
+    border-radius: 0 0 32px 32px;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* Search Card */
+.search-card {
+    background: #ffffff;
+    border-radius: var(--border-radius);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+/* Leaflet Map Styling */
+#map {
+    height: 600px;
+    width: 100%;
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    z-index: 1;
+}
+
+/* Custom Marker Styles */
+.bus-marker-icon {
+    background: #2563eb;
+    color: white;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.3), 0 4px 10px rgba(0,0,0,0.3);
+    font-size: 16px;
+    transition: transform 0.3s ease;
+}
+
+.passenger-marker-icon {
+    background: #ef4444;
+    color: white;
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.3), 0 4px 10px rgba(0,0,0,0.3);
+    font-size: 14px;
+}
+
+.stop-marker-icon {
+    background: #10b981;
+    color: white;
+    border-radius: 8px;
+    padding: 4px 8px;
+    font-weight: bold;
+    font-size: 11px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+/* Pulse Animation for Live Status */
+.animate-pulse {
+    animation: pulse-animation 1.5s infinite;
+}
+
+@keyframes pulse-animation {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
+}
+
+/* Feature Cards */
+.feature-card {
+    border: none;
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #ffffff;
+}
+
+.feature-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+}
+
+.icon-box {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+/* Step timeline */
+.timeline-step {
+    position: relative;
+    padding-left: 30px;
+    margin-bottom: 20px;
+}
+
+.timeline-step::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 24px;
+    bottom: -16px;
+    width: 2px;
+    background: #cbd5e1;
+}
+
+.timeline-step:last-child::before {
+    display: none;
+}
+
+.timeline-bullet {
+    position: absolute;
+    left: 0;
+    top: 4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    border: 3px solid #ffffff;
+    box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+.extra-small {
+    font-size: 0.78rem;
+}

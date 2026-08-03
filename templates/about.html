@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}About Travel Dost — B.E. Major Project Architecture{% endblock %}
+
+{% block content %}
+<div class="bg-dark text-white py-5 border-bottom border-secondary mb-4">
+    <div class="container px-lg-5">
+        <span class="badge bg-primary px-3 py-2 rounded-pill fs-6 mb-2">B.E. Computer Science Engineering Major Project</span>
+        <h1 class="display-5 fw-extrabold m-0">Travel Dost System Architecture</h1>
+        <p class="text-secondary lead m-0">Smart Bus Tracking & Travel Assistance System for Hubballi–Dharwad Region (NWKRTC).</p>
+    </div>
+</div>
+
+<div class="container px-lg-5 mb-5">
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+                <h4 class="fw-bold mb-3">Project Objective & Overview</h4>
+                <p class="text-secondary">
+                    Public transportation in the Hubballi–Dharwad twin city region relies heavily on NWKRTC city buses and the Chigari BRTS corridor. Passengers frequently face uncertainty regarding bus arrival timings, location, and optimal connecting routes.
+                </p>
+                <p class="text-secondary">
+                    <strong>Travel Dost</strong> solves this problem by turning any smartphone into an onboard GPS tracking transmitter, broadcasting real-time bus coordinates via WebSockets to passenger Leaflet maps without requiring manual page refreshes.
+                </p>
+
+                <h5 class="fw-bold mt-4 mb-3">System Architecture</h5>
+                <div class="bg-dark text-light p-4 rounded-3 font-monospace small">
+                    <pre class="m-0 text-info">
+Mobile Phone (Acts as Bus GPS Device)
+        │
+        │ GPS Lat + Lng (watchPosition / WebSockets)
+        ▼
+Django Web Backend (REST API + Channels)
+        │
+        │ Broadcast real-time location via WebSockets
+        ▼
+Passenger Client Application (HTML5 / Bootstrap 5 / JS)
+        │
+        │ Leaflet.js + OpenStreetMap Engine
+        ▼
+Live Moving Bus Marker on Passenger Map
+                    </pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                <h5 class="fw-bold mb-3"><i class="fa-solid fa-code text-primary me-2"></i>Technology Stack</h5>
+                <ul class="list-group list-group-flush extra-small">
+                    <li class="list-group-item bg-transparent px-0"><strong>Backend:</strong> Python, Django, DRF, Channels</li>
+                    <li class="list-group-item bg-transparent px-0"><strong>Real-Time:</strong> WebSockets, Channel Layer</li>
+                    <li class="list-group-item bg-transparent px-0"><strong>Frontend:</strong> HTML5, CSS3, JS, jQuery, Bootstrap 5</li>
+                    <li class="list-group-item bg-transparent px-0"><strong>Mapping:</strong> Leaflet.js, OpenStreetMap</li>
+                    <li class="list-group-item bg-transparent px-0"><strong>Database:</strong> SQLite / PostgreSQL ready</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

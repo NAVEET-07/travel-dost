@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Register Account — Travel Dost{% endblock %}
+
+{% block content %}
+<div class="container py-5 my-3">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card border-0 shadow-lg rounded-4 p-4 bg-white">
+                <div class="text-center mb-4">
+                    <h4 class="fw-bold">Create Travel Dost Account</h4>
+                    <p class="text-secondary small">Register as a Passenger or Bus Driver / GPS Device Operator</p>
+                </div>
+
+                <form id="registerForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Username</label>
+                        <input type="text" class="form-control rounded-3" id="regUsername" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Email Address</label>
+                        <input type="email" class="form-control rounded-3" id="regEmail" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Role</label>
+                        <select class="form-select rounded-3" id="regRole">
+                            <option value="PASSENGER">Passenger</option>
+                            <option value="DRIVER">Bus Driver / GPS Device Operator</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small">Password</label>
+                        <input type="password" class="form-control rounded-3" id="regPassword" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 fw-bold mb-3">Register Account</button>
+                    <div class="text-center small">
+                        <span class="text-secondary">Already registered?</span> <a href="{% url 'login' %}" class="fw-bold">Sign In</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$('#registerForm').on('submit', function(e) {
+    e.preventDefault();
+    $.ajax({
+        url: '/api/auth/register/',
+        type: 'POST',
+        data: JSON.stringify({
+            username: $('#regUsername').val(),
+            email: $('#regEmail').val(),
+            role: $('#regRole').val(),
+            password: $('#regPassword').val()
+        }),
+        contentType: 'application/json',
+        success: function(res) {
+            alert("Account registered successfully! Please login.");
+            window.location.href = '/login/';
+        },
+        error: function(err) {
+            alert(JSON.stringify(err.responseJSON));
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Login — Travel Dost{% endblock %}
+
+{% block content %}
+<div class="container py-5 my-4">
+    <div class="row justify-content-center">
+        <div class="col-md-5 col-lg-4">
+            <div class="card border-0 shadow-lg rounded-4 p-4 bg-white border-top border-4 border-primary">
+                <div class="text-center mb-4">
+                    <span class="bg-primary text-white p-3 rounded-circle d-inline-block mb-2">
+                        <i class="fa-solid fa-user-shield fa-2x"></i>
+                    </span>
+                    <h4 class="fw-bold">Admin Portal Login</h4>
+                    <p class="text-secondary small">System Control & Management Access</p>
+                </div>
+
+                <form id="adminLoginForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Admin Username</label>
+                        <input type="text" class="form-control rounded-3" id="adminUsername" placeholder="e.g. admin" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small">Password</label>
+                        <input type="password" class="form-control rounded-3" id="adminPassword" placeholder="••••••••" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 fw-bold mb-3">
+                        <i class="fa-solid fa-lock me-1"></i> Log In to Admin Portal
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$('#adminLoginForm').on('submit', function(e) {
+    e.preventDefault();
+    $.ajax({
+        url: '/api/auth/login/',
+        type: 'POST',
+        data: JSON.stringify({
+            username: $('#adminUsername').val(),
+            password: $('#adminPassword').val(),
+            role: 'ADMIN'
+        }),
+        contentType: 'application/json',
+        success: function(res) {
+            window.location.href = res.redirect_url || '/admin/dashboard/';
+        },
+        error: function(err) {
+            alert(err.responseJSON ? err.responseJSON.error : "Invalid admin credentials.");
+        }
+    });
+});
+</script>
+{% endblock %}

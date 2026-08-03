@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}Bus {{ bus.bus_number }} Details — Travel Dost{% endblock %}
+
+{% block content %}
+<div class="bg-dark text-white py-4 border-bottom border-secondary mb-4">
+    <div class="container px-lg-5">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div>
+                <span class="badge bg-primary px-3 py-2 rounded-pill fs-6 mb-2">Bus {{ bus.bus_number }}</span>
+                <h2 class="fw-bold m-0">{{ bus.bus_name }}</h2>
+                <p class="text-secondary m-0">Type: {{ bus.get_bus_type_display }} | Route: {{ bus.route.route_name|default:"Unassigned" }}</p>
+            </div>
+            <a href="{% url 'live-tracking-bus' bus.id %}" class="btn btn-success btn-lg rounded-pill px-4">
+                <i class="fa-solid fa-location-crosshairs me-2"></i> Track Bus {{ bus.bus_number }} Live
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="container px-lg-5 mb-5">
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+                <h5 class="fw-bold mb-3"><i class="fa-solid fa-circle-info text-primary me-2"></i>Telemetry & Status</h5>
+                <div class="row g-3 text-secondary small">
+                    <div class="col-6">
+                        <strong class="d-block text-dark">Tracking Status</strong>
+                        {% if bus.tracking_status == 'LIVE' %}
+                            <span class="badge bg-success"><i class="fa-solid fa-circle me-1 animate-pulse"></i> LIVE</span>
+                        {% else %}
+                            <span class="badge bg-secondary">OFFLINE</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-6">
+                        <strong class="d-block text-dark">Last Updated</strong>
+                        <span>{{ bus.last_updated|timesince }} ago</span>
+                    </div>
+                    <div class="col-6">
+                        <strong class="d-block text-dark">Current Latitude</strong>
+                        <span>{{ current_loc.latitude|default:"N/A" }}</span>
+                    </div>
+                    <div class="col-6">
+                        <strong class="d-block text-dark">Current Longitude</strong>
+                        <span>{{ current_loc.longitude|default:"N/A" }}</span>
+                    </div>
+                    <div class="col-6">
+                        <strong class="d-block text-dark">Current Speed</strong>
+                        <span>{{ current_loc.speed|default:"0.0" }} km/h</span>
+                    </div>
+                    <div class="col-6">
+                        <strong class="d-block text-dark">Heading</strong>
+                        <span>{{ current_loc.heading|default:"0.0" }}°</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                <h5 class="fw-bold mb-3"><i class="fa-solid fa-clock-rotate-left text-warning me-2"></i>Recent Location Logs</h5>
+                <div class="list-group list-group-flush extra-small">
+                    {% for loc in location_history %}
+                        <div class="list-group-item py-2 border-0 mb-1 rounded bg-light d-flex align-items-center justify-content-between">
+                            <div>
+                                <strong>({{ loc.latitude|floatformat:4 }}, {{ loc.longitude|floatformat:4 }})</strong>
+                                <span class="text-muted ms-2">Speed: {{ loc.speed }} km/h</span>
+                            </div>
+                            <span class="text-muted">{{ loc.timestamp|date:"H:i:s" }}</span>
+                        </div>
+                    {% empty %}
+                        <div class="text-muted py-3 text-center">No location history recorded yet.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

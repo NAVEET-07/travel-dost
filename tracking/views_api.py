@@ -268,6 +268,30 @@ class BusLocationAPIView(APIView):
             heading=float(heading)
         )
 
+        # Broadcast update to WebSockets via Channel Layer
+        try:
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            channel_layer = get_channel_layer()
+            if channel_layer:
+                payload = {
+                    'type': 'bus_location_broadcast',
+                    'bus_id': bus.id,
+                    'bus_number': bus.bus_number,
+                    'bus_name': bus.bus_name,
+                    'bus_type': bus.get_bus_type_display(),
+                    'latitude': float(lat),
+                    'longitude': float(lng),
+                    'speed': float(speed),
+                    'heading': float(heading),
+                    'status': status_val,
+                    'timestamp': location.timestamp.isoformat()
+                }
+                async_to_sync(channel_layer.group_send)(f'bus_{bus.id}', payload)
+                async_to_sync(channel_layer.group_send)('bus_all', payload)
+        except Exception:
+            pass
+
         return Response(BusLocationSerializer(location).data, status=status.HTTP_201_CREATED)
 
 

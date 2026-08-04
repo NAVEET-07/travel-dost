@@ -88,23 +88,23 @@ function updatePassengerMarker(lat, lng) {
 
 // Update or add moving Bus Marker
 function updateBusMarkerOnMap(busData) {
-    if (!travelDostMap) return;
+    if (!travelDostMap || !busData) return;
 
     const busId = busData.bus_id;
-    const lat = busData.latitude;
-    const lng = busData.longitude;
+    const lat = parseFloat(busData.latitude);
+    const lng = parseFloat(busData.longitude);
     const status = busData.status || 'LIVE';
 
-    if (!lat || !lng) return;
+    if (isNaN(lat) || isNaN(lng)) return;
 
     const popupContent = `
         <div class="p-2">
             <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
-                <strong class="text-primary fs-6">Bus ${busData.bus_number}</strong>
+                <strong class="text-primary fs-6">Bus ${busData.bus_number || busId}</strong>
                 <span class="badge ${status === 'LIVE' ? 'bg-success' : 'bg-secondary'}">${status}</span>
             </div>
             <p class="m-0 small"><strong>Name:</strong> ${busData.bus_name || 'NWKRTC Bus'}</p>
-            <p class="m-0 small"><strong>Speed:</strong> ${busData.speed || 0} km/h</p>
+            <p class="m-0 small"><strong>Speed:</strong> ${busData.speed !== undefined && busData.speed !== null ? Number(busData.speed).toFixed(1) : 0} km/h</p>
             <small class="text-muted d-block mt-1">Last Updated: ${busData.timestamp ? new Date(busData.timestamp).toLocaleTimeString() : 'Just now'}</small>
         </div>
     `;

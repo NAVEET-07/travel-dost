@@ -135,6 +135,29 @@ $(document.body).ready(function() {
     ];
     plotBusStops(allStops);
 
+    // Render initial active bus markers on map load
+    const initialBuses = [
+        {% for b in buses %}
+            {% with loc=b.get_current_location %}
+                {% if loc %}
+                    {
+                        bus_id: {{ b.id }},
+                        bus_number: "{{ b.bus_number|escapejs }}",
+                        bus_name: "{{ b.bus_name|escapejs }}",
+                        bus_type: "{{ b.get_bus_type_display|escapejs }}",
+                        status: "{{ b.tracking_status|escapejs }}",
+                        latitude: {{ loc.latitude }},
+                        longitude: {{ loc.longitude }},
+                        speed: {{ loc.speed }},
+                        heading: {{ loc.heading }},
+                        timestamp: "{{ loc.timestamp.isoformat }}"
+                    }{% if not forloop.last %},{% endif %}
+                {% endif %}
+            {% endwith %}
+        {% endfor %}
+    ];
+    initialBuses.forEach(b => updateBusMarkerOnMap(b));
+
     const initialBusId = $('#busSelect').val();
     startBusTrackingSocket(initialBusId);
 

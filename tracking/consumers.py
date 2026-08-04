@@ -23,13 +23,20 @@ class BusTrackingConsumer(AsyncWebsocketConsumer):
 
         await self.accept()
 
-        # Send initial status & current position if bus_id exists
+        # Send initial status & current position if bus_id exists, or for all active buses
         if self.bus_id:
             bus_data = await self.get_latest_bus_data(self.bus_id)
             if bus_data:
                 await self.send(text_data=json.dumps({
                     'type': 'initial_state',
                     'bus_data': bus_data
+                }))
+        else:
+            buses_data = await self.get_all_latest_buses_data()
+            if buses_data:
+                await self.send(text_data=json.dumps({
+                    'type': 'initial_state',
+                    'buses_data': buses_data
                 }))
 
     async def disconnect(self, close_code):
@@ -159,3 +166,26 @@ class BusTrackingConsumer(AsyncWebsocketConsumer):
             }
         except Bus.DoesNotExist:
             return None
+
+    @database_sync_to_async
+    def get_all_latest_buses_data(self):
+        from tracking.models import Bus
+        buses = Bus.objects.filter(is_active=True).select_related('route')
+        buses_list = []
+        for bus in buses:
+            loc = bus.get_current_location()
+            if loc:
+                buses_list.append({
+                    'bus_id': bus.id,
+                    'bus_number': bus.bus_number,
+                    'bus_name': bus.bus_name,
+                    'bus_type': bus.get_bus_type_display(),
+                    'route_name': bus.route.route_name if bus.route else "Unassigned",
+                    'status': bus.tracking_status,
+                    'latitude': loc.latitude,
+                    'longitude': loc.longitude,
+                    'speed': loc.speed,
+                    'heading': loc.heading,
+                    'timestamp': loc.timestamp.isoformat()
+                })
+        return buses_list

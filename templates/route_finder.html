@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Find Best Bus Route — Travel Dost{% endblock %}
+{% block title %}Find Best Bus Route (Point A to Point B) — Travel Dost{% endblock %}
 
 {% block content %}
 <div class="bg-dark text-white py-4 border-bottom border-secondary mb-4">
@@ -10,8 +10,8 @@
                 <i class="fa-solid fa-route fa-2x"></i>
             </div>
             <div>
-                <h2 class="fw-bold m-0">Intelligent Route Finder</h2>
-                <p class="text-secondary m-0">Find direct buses, transfer connections, estimated fares, and live tracking shortcuts across Hubballi–Dharwad.</p>
+                <h2 class="fw-bold m-0">Point A ➔ Point B Bus Route Finder</h2>
+                <p class="text-secondary m-0">Input any starting point (A) and destination (B) across Hubballi–Dharwad to find matching bus routes, stop sequences, fares & live tracking.</p>
             </div>
         </div>
     </div>
@@ -22,13 +22,15 @@
         <!-- Search Controls Column -->
         <div class="col-lg-4">
             <div class="card border-0 shadow-sm rounded-4 p-4 sticky-top" style="top: 90px; z-index: 10;">
-                <h5 class="fw-bold mb-3"><i class="fa-solid fa-sliders text-primary me-2"></i>Route Search</h5>
+                <h5 class="fw-bold mb-3"><i class="fa-solid fa-sliders text-primary me-2"></i>Point A ➔ Point B Search</h5>
                 
                 <form id="routeSearchForm">
+                    <!-- Boarding Stop (Point A) -->
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-secondary small">BOARDING STOP (SOURCE)</label>
-                        <select class="form-select form-select-lg rounded-3" id="sourceSelect" required>
-                            <option value="">Select Boarding Stop...</option>
+                        <label class="form-label fw-semibold text-secondary small">POINT A: BOARDING STOP / SOURCE</label>
+                        <input type="text" class="form-control form-control-lg rounded-3 mb-2" id="sourceTextInput" list="stopsDataList" placeholder="Type stop name e.g. Betdur, CBT, Hosur..." value="{% if selected_source %}{% for s in stops %}{% if s.id == selected_source %}{{ s.stop_name }}{% endif %}{% endfor %}{% endif %}">
+                        <select class="form-select form-select-sm rounded-3 text-muted" id="sourceSelect">
+                            <option value="">-- Or Select Boarding Stop A --</option>
                             {% for stop in stops %}
                                 <option value="{{ stop.id }}" {% if selected_source == stop.id %}selected{% endif %}>
                                     {{ stop.stop_name }} ({{ stop.area }})
@@ -39,14 +41,16 @@
 
                     <div class="mb-3">
                         <button type="button" class="btn btn-outline-secondary btn-sm w-100 rounded-pill" id="btnUseMyLocation">
-                            <i class="fa-solid fa-crosshairs text-danger me-1"></i> Use My Current Location
+                            <i class="fa-solid fa-crosshairs text-danger me-1"></i> Use My Location for Point A
                         </button>
                     </div>
 
+                    <!-- Destination Stop (Point B) -->
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-secondary small">DESTINATION STOP</label>
-                        <select class="form-select form-select-lg rounded-3" id="destSelect" required>
-                            <option value="">Select Destination Stop...</option>
+                        <label class="form-label fw-semibold text-secondary small">POINT B: DESTINATION STOP</label>
+                        <input type="text" class="form-control form-control-lg rounded-3 mb-2" id="destTextInput" list="stopsDataList" placeholder="Type stop name e.g. CBT-D, Unkal, Sulla..." value="{% if selected_dest %}{% for s in stops %}{% if s.id == selected_dest %}{{ s.stop_name }}{% endif %}{% endfor %}{% endif %}">
+                        <select class="form-select form-select-sm rounded-3 text-muted" id="destSelect">
+                            <option value="">-- Or Select Destination Stop B --</option>
                             {% for stop in stops %}
                                 <option value="{{ stop.id }}" {% if selected_dest == stop.id %}selected{% endif %}>
                                     {{ stop.stop_name }} ({{ stop.area }})
@@ -55,8 +59,15 @@
                         </select>
                     </div>
 
-                    <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill mt-2">
-                        <i class="fa-solid fa-magnifying-glass me-2"></i> Find Best Route
+                    <!-- Datalist for autocomplete -->
+                    <datalist id="stopsDataList">
+                        {% for stop in stops %}
+                            <option value="{{ stop.stop_name }}">{{ stop.area }}</option>
+                        {% endfor %}
+                    </datalist>
+
+                    <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill mt-2 shadow">
+                        <i class="fa-solid fa-magnifying-glass me-2"></i> Search Bus Routes
                     </button>
                 </form>
             </div>
@@ -69,9 +80,9 @@
                     <div class="text-primary mb-3">
                         <i class="fa-solid fa-bus-simple fa-3x opacity-50"></i>
                     </div>
-                    <h5 class="fw-bold">Select Source & Destination</h5>
+                    <h5 class="fw-bold">Enter Point A & Point B</h5>
                     <p class="text-secondary max-w-md mx-auto small">
-                        Choose your boarding stop and destination stop from the left panel, or click <strong>Use My Location</strong> to auto-detect nearby stops.
+                        Input or select your boarding location (Point A) and destination (Point B) to view direct routes, stop sequence, fare, and leg breakdown (A➔C vs C➔F).
                     </p>
                 </div>
             </div>
@@ -83,25 +94,63 @@
 {% block extra_js %}
 <script>
 $(document.body).ready(function() {
-    function searchRoutes() {
-        const source = $('#sourceSelect').val();
-        const dest = $('#destSelect').val();
+    // Synchronize text input and select dropdown
+    $('#sourceTextInput').on('input change', function() {
+        const val = $(this).val().toLowerCase().strip();
+        if (!val) return;
+        $('#sourceSelect option').each(function() {
+            if ($(this).text().toLowerCase().includes(val)) {
+                $('#sourceSelect').val($(this).val());
+                return false;
+            }
+        });
+    });
 
-        if (!source || !dest) return;
-        if (source === dest) {
-            alert("Boarding and destination stops must be different.");
+    $('#destTextInput').on('input change', function() {
+        const val = $(this).val().toLowerCase().strip();
+        if (!val) return;
+        $('#destSelect option').each(function() {
+            if ($(this).text().toLowerCase().includes(val)) {
+                $('#destSelect').val($(this).val());
+                return false;
+            }
+        });
+    });
+
+    $('#sourceSelect').on('change', function() {
+        if ($(this).val()) {
+            const text = $("#sourceSelect option:selected").text().split('(')[0].trim();
+            $('#sourceTextInput').val(text);
+        }
+    });
+
+    $('#destSelect').on('change', function() {
+        if ($(this).val()) {
+            const text = $("#destSelect option:selected").text().split('(')[0].trim();
+            $('#destTextInput').val(text);
+        }
+    });
+
+    String.prototype.strip = function() { return self.trim ? self.trim() : this.replace(/^\s+|\s+$/g, ''); };
+
+    function searchRoutes() {
+        const sourceVal = $('#sourceSelect').val() || $('#sourceTextInput').val().trim();
+        const destVal = $('#destSelect').val() || $('#destTextInput').val().trim();
+
+        if (!sourceVal || !destVal) {
+            alert("Please provide both Point A (Boarding) and Point B (Destination) stops.");
             return;
         }
 
         $('#resultsContainer').html(`
             <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
                 <div class="spinner-border text-primary mx-auto mb-3" role="status"></div>
-                <h5 class="fw-bold">Calculating Best Routes...</h5>
-                <p class="text-secondary small">Evaluating direct lines, transfer points, fares, and live buses...</p>
+                <h5 class="fw-bold">Calculating Best Bus Routes...</h5>
+                <p class="text-secondary small">Evaluating direct lines, transfer nodes, fares, and live buses from Point A to Point B...</p>
             </div>
         `);
 
-        $.get(`/api/search-route/?source=${source}&destination=${dest}`, function(data) {
+        $.get(`/api/search-route/?source=${encodeURIComponent(sourceVal)}&destination=${encodeURIComponent(destVal)}`, function(data) {
             if (data.error) {
                 $('#resultsContainer').html(`
                     <div class="alert alert-warning shadow-sm rounded-3">
@@ -116,7 +165,7 @@ $(document.body).ready(function() {
                     <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
                         <i class="fa-solid fa-circle-question text-muted fa-3x mb-3"></i>
                         <h5 class="fw-bold">No Direct or Connecting Bus Routes Found</h5>
-                        <p class="text-secondary small">Try selecting different nearby stops in Hubballi–Dharwad.</p>
+                        <p class="text-secondary small">No route connects "${data.source ? data.source.name : sourceVal}" to "${data.destination ? data.destination.name : destVal}". Try searching nearby main terminals like CBT or Hosur.</p>
                     </div>
                 `);
                 return;
@@ -124,79 +173,128 @@ $(document.body).ready(function() {
 
             let html = `
                 <div class="d-flex align-items-center justify-content-between mb-3">
-                    <h5 class="fw-bold m-0"><i class="fa-solid fa-list-check text-success me-2"></i> Found ${data.total_routes_found} Route Option(s)</h5>
-                    <span class="badge bg-secondary">${data.source.name} ➔ ${data.destination.name}</span>
+                    <h5 class="fw-bold m-0"><i class="fa-solid fa-list-check text-success me-2"></i> Found ${data.total_routes_found} Bus Route(s)</h5>
+                    <span class="badge bg-dark fs-6">${data.source.name} ➔ ${data.destination.name}</span>
                 </div>
             `;
 
             data.routes.forEach((rt, idx) => {
-                const badgeColor = rt.badge_color || 'primary';
+                const isOptimal = idx === 0;
+                const headerTitle = isOptimal ? 'Recommended Optimal Route' : (rt.tag || `Alternative Route ${idx + 1}`);
+
                 let busesHtml = '';
-                
-                if (rt.legs) {
-                    rt.legs.forEach(leg => {
-                        if (leg.buses && leg.buses.length > 0) {
-                            leg.buses.forEach(b => {
-                                const statusBadge = b.tracking_status === 'LIVE' 
-                                    ? '<span class="badge bg-success"><i class="fa-solid fa-circle me-1 animate-pulse"></i> LIVE</span>'
-                                    : '<span class="badge bg-secondary">OFFLINE</span>';
-                                busesHtml += `<a href="/live-tracking/${b.id}/" class="btn btn-sm btn-outline-primary me-1 mb-1">Bus ${b.bus_number} (${b.bus_type}) ${statusBadge}</a>`;
-                            });
-                        }
+                if (rt.buses && rt.buses.length > 0) {
+                    rt.buses.forEach(b => {
+                        const statusBadge = b.tracking_status === 'LIVE' 
+                            ? '<span class="badge bg-success"><i class="fa-solid fa-circle me-1 animate-pulse"></i> LIVE</span>'
+                            : '<span class="badge bg-secondary">OFFLINE</span>';
+                        busesHtml += `<a href="/live-tracking/${b.id}/" class="btn btn-sm btn-outline-primary me-1 mb-1">Bus ${b.bus_number} ${statusBadge}</a>`;
                     });
                 }
 
-                let legsSteps = '';
-                rt.legs.forEach(leg => {
-                    const stopNames = leg.stops.map(s => s.name).join(' ➔ ');
-                    legsSteps += `
-                        <div class="timeline-step">
-                            <div class="timeline-bullet"></div>
-                            <h6 class="fw-bold m-0">Leg ${leg.leg_number}: Take Bus on ${leg.route_name}</h6>
-                            <p class="text-secondary small m-0 mb-1">Board at <strong>${leg.from_stop}</strong> and ride to <strong>${leg.to_stop}</strong> (${leg.stops.length - 1} stops)</p>
-                            <div class="extra-small text-muted mb-2"><i class="fa-solid fa-arrows-left-right me-1"></i> Stops: ${stopNames}</div>
+                // Segment 1 details
+                const seg1 = rt.segment_1 || {};
+                const seg1Name = seg1.route_name || rt.route_name || 'Direct Route';
+                const seg1Board = seg1.board_at || data.source.name;
+                const seg1Stops = seg1.stops_str || (seg1.stops ? seg1.stops.map(s=>s.name).join(' → ') : `${seg1Board} → ${data.destination.name}`);
+                const seg1Alight = seg1.alight_at || (rt.segment_2 ? rt.transfer_point : data.destination.name);
+                const seg1Fare = (seg1.fare !== undefined ? seg1.fare : rt.estimated_fare).toFixed(2);
+
+                // Segment 2 details (ONLY if transfers > 0)
+                const seg2 = (rt.transfers > 0) ? rt.segment_2 : null;
+                let seg2Html = '';
+                if (seg2) {
+                    const seg2Name = seg2.route_name || 'Connecting Route';
+                    const seg2Board = seg2.board_at || rt.transfer_point;
+                    const seg2Stops = seg2.stops_str || (seg2.stops ? seg2.stops.map(s=>s.name).join(' → ') : `${seg2Board} → ${data.destination.name}`);
+                    const seg2Dest = seg2.destination || data.destination.name;
+                    const seg2Fare = (seg2.fare !== undefined ? seg2.fare : 0).toFixed(2);
+
+                    seg2Html = `
+                        <div class="p-3 bg-white rounded-3 border mb-3">
+                            <h6 class="fw-bold text-primary mb-2"><i class="fa-solid fa-bus-simple me-1"></i> Segment 2: ${seg2Name}</h6>
+                            <div class="small mb-1"><strong>Board at:</strong> ${seg2Board}</div>
+                            <div class="small text-secondary mb-1"><strong>Stops:</strong> ${seg2Stops}</div>
+                            <div class="small mb-1"><strong>Destination:</strong> ${seg2Dest}</div>
+                            <div class="small text-success fw-bold"><strong>Fare:</strong> ₹${seg2Fare}</div>
                         </div>
                     `;
-                });
+                }
+
+                // Ticket Summary breakdown
+                let ticketSummaryStr = '';
+                if (seg2) {
+                    ticketSummaryStr = `${seg1Name}: ₹${seg1Fare} + ${seg2.route_name}: ₹${(seg2.fare||0).toFixed(2)} | Total Fare: ₹${rt.estimated_fare.toFixed(2)}`;
+                } else {
+                    ticketSummaryStr = `${seg1Name}: ₹${seg1Fare} | Total Fare: ₹${rt.estimated_fare.toFixed(2)}`;
+                }
 
                 html += `
-                    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 ${idx === 0 ? 'border-start border-4 border-success' : ''}">
+                    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 ${isOptimal ? 'border-start border-5 border-success bg-light' : 'bg-white'}">
                         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                            <span class="badge bg-${badgeColor} px-3 py-2 rounded-pill fw-bold fs-6">
-                                ${rt.tag}
+                            <span class="badge ${isOptimal ? 'bg-success' : 'bg-primary'} px-3 py-2 rounded-pill fw-bold fs-6">
+                                ${headerTitle}
                             </span>
-                            <div class="d-flex gap-2">
-                                <span class="badge bg-light text-dark border p-2"><i class="fa-solid fa-indian-rupee-sign text-success me-1"></i> ₹${rt.estimated_fare}</span>
-                                <span class="badge bg-light text-dark border p-2"><i class="fa-solid fa-clock text-info me-1"></i> ~${rt.estimated_duration_mins} mins</span>
-                                <span class="badge bg-light text-dark border p-2"><i class="fa-solid fa-route me-1"></i> ${rt.estimated_distance_km} KM</span>
+                            <span class="badge bg-dark px-3 py-2 rounded-pill fs-6">
+                                Total Fare: ₹${rt.estimated_fare.toFixed(2)}
+                            </span>
+                        </div>
+
+                        <div class="row g-2 mb-3 text-center extra-small">
+                            <div class="col-3">
+                                <div class="bg-white p-2 rounded border">
+                                    <span class="text-muted d-block">TOTAL FARE</span>
+                                    <strong class="text-success fs-6">₹${rt.estimated_fare.toFixed(2)}</strong>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="bg-white p-2 rounded border">
+                                    <span class="text-muted d-block">TRAVEL TIME</span>
+                                    <strong class="text-info fs-6">~${rt.estimated_duration_mins} mins</strong>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="bg-white p-2 rounded border">
+                                    <span class="text-muted d-block">DISTANCE</span>
+                                    <strong class="text-dark fs-6">${rt.estimated_distance_km} KM</strong>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="bg-white p-2 rounded border">
+                                    <span class="text-muted d-block">TRANSFERS</span>
+                                    <strong class="text-primary fs-6">${rt.transfers}</strong>
+                                </div>
                             </div>
                         </div>
 
-                        <h4 class="fw-bold text-dark mb-1">${rt.route_name}</h4>
-                        <p class="text-secondary small mb-3">
-                            <i class="fa-solid fa-right-left me-1"></i> Transfers: <strong>${rt.transfers}</strong> | Total Stops: <strong>${rt.stop_count}</strong>
-                        </p>
-
-                        <div class="bg-light rounded-3 p-3 mb-3">
-                            ${legsSteps}
+                        <!-- Segment 1 -->
+                        <div class="p-3 bg-white rounded-3 border mb-3">
+                            <h6 class="fw-bold text-primary mb-2"><i class="fa-solid fa-bus-simple me-1"></i> Segment 1: ${seg1Name}</h6>
+                            <div class="small mb-1"><strong>Board at:</strong> ${seg1Board}</div>
+                            <div class="small text-secondary mb-1"><strong>Stops:</strong> ${seg1Stops}</div>
+                            <div class="small mb-1"><strong>Alight at:</strong> ${seg1Alight}</div>
+                            <div class="small text-success fw-bold"><strong>Fare:</strong> ₹${seg1Fare}</div>
                         </div>
 
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-                            <div>
-                                <small class="fw-bold text-secondary d-block mb-1">Available Buses:</small>
-                                ${busesHtml || '<span class="text-muted small">No buses active currently</span>'}
+                        <!-- Segment 2 (ONLY if transfers > 0) -->
+                        ${seg2Html}
+
+                        <!-- Transfer Point (ONLY if applicable) -->
+                        ${(rt.transfers > 0 && rt.transfer_point) ? `
+                            <div class="p-3 rounded bg-warning bg-opacity-10 border border-warning mb-3 small">
+                                <i class="fa-solid fa-right-left text-warning me-1"></i> <strong>🔄 Transfer Point:</strong> Change bus at <strong>${rt.transfer_point}</strong>
                             </div>
-                            <div class="d-flex gap-2">
-                                ${rt.legs[0].buses && rt.legs[0].buses.length > 0 ? `
-                                    <a href="/live-tracking/${rt.legs[0].buses[0].id}/" class="btn btn-success btn-sm rounded-pill px-3">
-                                        <i class="fa-solid fa-location-dot me-1"></i> Track Bus Live
-                                    </a>
-                                ` : `
-                                    <a href="/live-tracking/" class="btn btn-outline-primary btn-sm rounded-pill px-3">
-                                        <i class="fa-solid fa-map me-1"></i> View Live Map
-                                    </a>
-                                `}
-                            </div>
+                        ` : ''}
+
+                        <!-- Ticket Summary -->
+                        <div class="p-3 rounded bg-dark text-white mb-3 small">
+                            <i class="fa-solid fa-ticket text-warning me-1"></i> <strong>🎫 Ticket Summary:</strong> ${ticketSummaryStr}
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-2 pt-2 border-top">
+                            <a href="/live-tracking/${rt.buses && rt.buses.length > 0 ? rt.buses[0].id : ''}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                                <i class="fa-solid fa-map-location-dot me-1"></i> Live Bus Tracking
+                            </a>
                         </div>
                     </div>
                 `;
@@ -221,8 +319,10 @@ $(document.body).ready(function() {
             navigator.geolocation.getCurrentPosition(function(pos) {
                 $.get(`/api/nearby-stops/?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}&limit=1`, function(data) {
                     if (data.nearby_stops && data.nearby_stops.length > 0) {
-                        $('#sourceSelect').val(data.nearby_stops[0].id);
-                        $('#btnUseMyLocation').html(`<i class="fa-solid fa-check text-success me-1"></i> ${data.nearby_stops[0].stop_name}`);
+                        const topStop = data.nearby_stops[0];
+                        $('#sourceSelect').val(topStop.id);
+                        $('#sourceTextInput').val(topStop.stop_name);
+                        $('#btnUseMyLocation').html(`<i class="fa-solid fa-check text-success me-1"></i> ${topStop.stop_name}`);
                     }
                 });
             });

@@ -2,18 +2,107 @@
 
 {% block title %}Live Bus GPS Tracking Map — Travel Dost{% endblock %}
 
+{% block extra_css %}
+<style>
+/* Custom Bus Pin & Stop Styling */
+.bus-marker-wrapper {
+    position: relative;
+    width: 44px;
+    height: 44px;
+}
+.bus-marker-pin {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    border: 3px solid white;
+}
+.bus-number-badge {
+    position: absolute;
+    bottom: -6px;
+    right: -6px;
+    background: #000;
+    color: #fff;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 10px;
+    border: 1px solid #3b82f6;
+}
+.pulse-active {
+    animation: busPulse 2s infinite;
+}
+@keyframes busPulse {
+    0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); }
+    70% { box-shadow: 0 0 0 16px rgba(37, 99, 235, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+}
+.stop-badge-pill {
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    background: #ffffff;
+    color: #1e293b;
+    border: 2px solid #3b82f6;
+}
+.stop-marker-boarding {
+    background: #10b981 !important;
+    color: #ffffff !important;
+    border-color: #047857 !important;
+    font-size: 12px !important;
+    font-weight: bold !important;
+    z-index: 1000 !important;
+}
+.stop-marker-destination {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    border-color: #991b1b !important;
+    font-size: 12px !important;
+    font-weight: bold !important;
+    z-index: 1000 !important;
+}
+.stop-marker-next {
+    background: #f59e0b !important;
+    color: #000000 !important;
+    border-color: #d97706 !important;
+    font-size: 12px !important;
+    font-weight: bold !important;
+    z-index: 999 !important;
+}
+.stop-marker-passed {
+    background: #e2e8f0 !important;
+    color: #64748b !important;
+    border-color: #94a3b8 !important;
+    opacity: 0.8;
+}
+.next-stop-card {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border-left: 5px solid #10b981;
+}
+</style>
+
+{% endblock %}
+
 {% block content %}
 <div class="bg-dark text-white py-3 border-bottom border-secondary mb-3">
     <div class="container-fluid px-lg-5">
         <div class="row align-items-center g-3">
             <div class="col-md-4">
                 <div class="d-flex align-items-center gap-2">
-                    <span class="bg-danger text-white p-2 rounded animate-pulse">
+                    <span class="bg-primary text-white p-2 rounded animate-pulse">
                         <i class="fa-solid fa-location-crosshairs fa-lg"></i>
                     </span>
                     <div>
-                        <h4 class="fw-bold m-0">Live Bus GPS Tracking</h4>
-                        <small class="text-secondary">Hubballi–Dharwad Live Real-Time Transport Map</small>
+                        <h4 class="fw-bold m-0">Live Bus Tracking</h4>
+                        <small class="text-secondary">Hubballi–Dharwad Live Route & Next Stop View</small>
                     </div>
                 </div>
             </div>
@@ -23,18 +112,18 @@
                 <div class="d-flex flex-wrap align-items-center justify-content-md-end gap-3">
                     <div class="d-flex align-items-center gap-2">
                         <label class="fw-semibold text-secondary small">SELECT BUS:</label>
-                        <select class="form-select form-select-sm rounded-pill bg-dark text-white border-secondary" id="busSelect" style="min-width: 220px;">
-                            <option value="all">-- All Active Buses --</option>
+                        <select class="form-select form-select-sm rounded-pill bg-dark text-white border-secondary" id="busSelect" style="min-width: 260px;">
+                            <option value="all">-- Select Bus to Track --</option>
                             {% for b in buses %}
                                 <option value="{{ b.id }}" {% if selected_bus and selected_bus.id == b.id %}selected{% endif %}>
-                                    Bus {{ b.bus_number }} - {{ b.bus_name }} ({{ b.get_bus_type_display }})
+                                    Bus {{ b.bus_number }} ({{ b.route.route_name|default:b.bus_name }})
                                 </option>
                             {% endfor %}
                         </select>
                     </div>
 
                     <div id="liveStatusBadge" class="badge bg-secondary p-2 rounded-pill">
-                        <i class="fa-solid fa-wifi me-1"></i> WebSocket Disconnected
+                        <i class="fa-solid fa-wifi me-1"></i> Live Connection Ready
                     </div>
 
                     <button class="btn btn-outline-light btn-sm rounded-pill px-3" id="btnPassengerLocation">
@@ -54,28 +143,38 @@
                 <div id="map" style="height: 650px;"></div>
 
                 <!-- Overlay Speed & Telemetry Card -->
-                <div class="position-absolute bottom-0 start-0 m-3 p-3 bg-dark text-white rounded-3 shadow glass-navbar border border-secondary" style="z-index: 1000; max-width: 320px;" id="telemetryCard">
+                <div class="position-absolute bottom-0 start-0 m-3 p-3 text-white rounded-4 shadow-lg border border-secondary next-stop-card" style="z-index: 1000; min-width: 320px; max-width: 380px;" id="telemetryCard">
                     <div class="d-flex align-items-center justify-content-between mb-2">
-                        <strong class="text-warning" id="telBusNum">Select a Bus to Track</strong>
+                        <strong class="text-warning fs-6" id="telBusNum">Select Bus</strong>
                         <span class="badge bg-success" id="telStatus">LIVE</span>
                     </div>
+
+                    <!-- Next Stop Section (Requirement 4) -->
+                    <div class="p-2 rounded bg-black bg-opacity-50 mb-2 border border-secondary">
+                        <small class="text-muted d-block text-uppercase extra-small font-monospace">NEXT STOP (UPCOMING)</small>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <strong class="text-emerald fs-6" id="telNextStop"><i class="fa-solid fa-forward me-1 text-success"></i> Select Bus to View</strong>
+                            <span class="badge bg-primary rounded-pill" id="telNextEta">-- mins</span>
+                        </div>
+                    </div>
+
                     <div class="row g-2 text-center extra-small text-secondary">
                         <div class="col-4">
                             <div class="border border-secondary rounded p-1 bg-black">
-                                <span class="d-block text-white fw-bold fs-6" id="telSpeed">0.0</span>
+                                <span class="d-block text-white fw-bold fs-6" id="telSpeed">30.0</span>
                                 <span>KM/H</span>
                             </div>
                         </div>
                         <div class="col-4">
                             <div class="border border-secondary rounded p-1 bg-black">
-                                <span class="d-block text-white fw-bold fs-6" id="telHeading">0°</span>
+                                <span class="d-block text-white fw-bold fs-6" id="telHeading">90°</span>
                                 <span>HEADING</span>
                             </div>
                         </div>
                         <div class="col-4">
                             <div class="border border-secondary rounded p-1 bg-black">
-                                <span class="d-block text-white fw-bold fs-6" id="telUpdated">Just now</span>
-                                <span>UPDATED</span>
+                                <span class="d-block text-white fw-bold fs-6" id="telUpdated">Live</span>
+                                <span>STATUS</span>
                             </div>
                         </div>
                     </div>
@@ -83,7 +182,7 @@
             </div>
         </div>
 
-        <!-- Sidebar Bus Details & Stop Sequence -->
+        <!-- Sidebar Bus Details & Stop Sequence (Leg A-C vs C-F) -->
         <div class="col-lg-3">
             <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-white">
                 <h5 class="fw-bold mb-3"><i class="fa-solid fa-circle-info text-primary me-2"></i>Bus & Route Info</h5>
@@ -91,25 +190,21 @@
                 <div id="sidebarBusInfo">
                     <div class="text-center text-muted py-4">
                         <i class="fa-solid fa-bus-simple fa-2x mb-2 opacity-50"></i>
-                        <p class="small">Choose a bus from the dropdown or click a bus marker on the map to inspect live data.</p>
+                        <p class="small">Choose a bus to view appropriate route stops, next stop, and leg breakdown.</p>
                     </div>
                 </div>
 
                 <hr class="my-3">
 
-                <h6 class="fw-bold mb-3"><i class="fa-solid fa-bus-simple text-success me-2"></i>Active Buses Overview</h6>
+                <h6 class="fw-bold mb-3"><i class="fa-solid fa-bus-simple text-success me-2"></i>Active Buses Directory</h6>
                 <div class="list-group list-group-flush extra-small overflow-y-auto" style="max-height: 250px;">
                     {% for b in buses %}
                         <a href="{% url 'live-tracking-bus' b.id %}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2 border-0 mb-1 rounded bg-light">
                             <div>
                                 <strong>Bus {{ b.bus_number }}</strong>
-                                <span class="text-muted d-block">{{ b.bus_name }}</span>
+                                <span class="text-muted d-block">{{ b.route.route_name|default:b.bus_name }}</span>
                             </div>
-                            {% if b.tracking_status == 'LIVE' %}
-                                <span class="badge bg-success"><i class="fa-solid fa-circle me-1 animate-pulse"></i> LIVE</span>
-                            {% else %}
-                                <span class="badge bg-secondary">OFFLINE</span>
-                            {% endif %}
+                            <span class="badge bg-success"><i class="fa-solid fa-circle me-1 animate-pulse"></i> LIVE</span>
                         </a>
                     {% endfor %}
                 </div>
@@ -124,45 +219,121 @@
 <script src="/static/js/websocket_tracking.js"></script>
 <script>
 $(document.body).ready(function() {
-    // Initialize Leaflet Map centered on Hubballi-Dharwad (15.3647, 75.1240)
     initTravelDostMap('map', 15.3647, 75.1240, 12);
 
-    // Plot all bus stops on map
-    const allStops = [
-        {% for s in all_stops %}
-            { id: {{ s.id }}, name: "{{ s.stop_name|escapejs }}", area: "{{ s.area|escapejs }}", lat: {{ s.latitude }}, lng: {{ s.longitude }} },
-        {% endfor %}
-    ];
-    plotBusStops(allStops);
+    function loadBusRouteDetails(busId) {
+        if (!busId || busId === 'all') return;
 
-    // Render initial active bus markers on map load
-    const initialBuses = [
-        {% for b in buses %}
-            {% with loc=b.get_current_location %}
-                {% if loc %}
-                    {
-                        bus_id: {{ b.id }},
-                        bus_number: "{{ b.bus_number|escapejs }}",
-                        bus_name: "{{ b.bus_name|escapejs }}",
-                        bus_type: "{{ b.get_bus_type_display|escapejs }}",
-                        status: "{{ b.tracking_status|escapejs }}",
-                        latitude: {{ loc.latitude }},
-                        longitude: {{ loc.longitude }},
-                        speed: {{ loc.speed }},
-                        heading: {{ loc.heading }},
-                        timestamp: "{{ loc.timestamp.isoformat }}"
-                    }{% if not forloop.last %},{% endif %}
-                {% endif %}
-            {% endwith %}
-        {% endfor %}
-    ];
-    initialBuses.forEach(b => updateBusMarkerOnMap(b));
+        $.get(`/api/buses/${busId}/tracking-status/`, function(data) {
+            if (data.error) return;
+
+            $('#telBusNum').text(`Bus ${data.bus_number} (${data.bus_type})`);
+            $('#telStatus').text(data.tracking_status).attr('class', data.tracking_status === 'LIVE' ? 'badge bg-success' : 'badge bg-secondary');
+
+            if (data.latest_location) {
+                $('#telSpeed').text(data.latest_location.speed.toFixed(1));
+                $('#telHeading').text(`${data.latest_location.heading}°`);
+            }
+
+            // Update Next Stop Info (Requirement 4)
+            if (data.next_stop) {
+                $('#telNextStop').html(`<i class="fa-solid fa-forward me-1 text-success"></i> ${data.next_stop.name}`);
+                $('#telNextEta').text(`~${data.next_stop.eta_mins || 2} mins (${data.next_stop.distance_km_to_next || 0.5} km)`);
+            }
+
+            // Update Bus Marker on map (Requirement 3)
+            if (data.latest_location) {
+                updateBusMarkerOnMap({
+                    bus_id: data.bus_id,
+                    bus_number: data.bus_number,
+                    bus_name: data.bus_name,
+                    bus_type: data.bus_type,
+                    status: data.tracking_status,
+                    latitude: data.latest_location.latitude,
+                    longitude: data.latest_location.longitude,
+                    speed: data.latest_location.speed,
+                    heading: data.latest_location.heading,
+                    timestamp: data.latest_location.timestamp,
+                    next_stop: data.next_stop,
+                    route_name: data.route_name
+                });
+            }
+
+            if (data.route_stops && data.route_stops.length > 0) {
+                plotRouteStopsOnly(data.route_stops);
+
+                // Render Sidebar Info
+                let sidebarHtml = `
+                    <div class="mb-3">
+                        <strong class="d-block fs-6 text-primary">${data.route_name}</strong>
+                        <span class="badge bg-light text-dark border mt-1">Total Stops: ${data.route_stops.length}</span>
+                    </div>
+
+                    <div class="p-2 rounded bg-dark text-white border border-secondary mb-3">
+                        <small class="text-secondary d-block fw-bold font-monospace extra-small">UPCOMING NEXT STOP:</small>
+                        <strong class="text-emerald fs-6"><i class="fa-solid fa-circle-arrow-right me-1 text-warning"></i> ${data.next_stop ? data.next_stop.name : 'Terminal'}</strong>
+                    </div>
+
+                    <h6 class="fw-bold extra-small text-uppercase text-secondary mb-2">Route Stop Sequence:</h6>
+                    <div class="list-group extra-small overflow-y-auto" style="max-height: 280px;">
+                `;
+
+                data.route_stops.forEach((st, i) => {
+                    const isCurrent = data.current_stop && st.id === data.current_stop.id;
+                    const isNext = data.next_stop && st.id === data.next_stop.id;
+                    const isPassed = currentIdx >= 0 && i < currentIdx;
+
+                    let bgClass = 'bg-white';
+                    let badge = '';
+
+                    if (isCurrent) {
+                        bgClass = 'bg-success bg-opacity-10 border-start border-4 border-success';
+                        badge = '<span class="badge bg-success ms-auto">Boarding Stop</span>';
+                    } else if (isNext) {
+                        bgClass = 'bg-warning bg-opacity-10 border-start border-4 border-warning';
+                        badge = '<span class="badge bg-warning text-dark ms-auto">NEXT STOP</span>';
+                    } else if (isPassed) {
+                        bgClass = 'bg-light text-muted opacity-75';
+                        badge = '<span class="badge bg-secondary ms-auto">Passed</span>';
+                    } else {
+                        badge = '<span class="badge bg-primary ms-auto">Upcoming</span>';
+                    }
+
+                    sidebarHtml += `
+                        <div class="list-group-item d-flex align-items-center justify-content-between p-2 mb-1 rounded ${bgClass}">
+                            <div>
+                                <small class="text-muted d-block font-monospace">#${i + 1}</small>
+                                <strong>${st.name}</strong>
+                            </div>
+                            ${badge}
+                        </div>
+                    `;
+                });
+
+                sidebarHtml += `</div>`;
+                $('#sidebarBusInfo').html(sidebarHtml);
+            }
+
+        });
+    }
 
     const initialBusId = $('#busSelect').val();
-    startBusTrackingSocket(initialBusId);
+    if (initialBusId && initialBusId !== 'all') {
+        loadBusRouteDetails(initialBusId);
+        startBusTrackingSocket(initialBusId);
+    } else {
+        // Fallback: load first bus
+        const firstBusVal = $('#busSelect option:eq(1)').val();
+        if (firstBusVal) {
+            $('#busSelect').val(firstBusVal);
+            loadBusRouteDetails(firstBusVal);
+            startBusTrackingSocket(firstBusVal);
+        }
+    }
 
     $('#busSelect').on('change', function() {
         const busId = $(this).val();
+        loadBusRouteDetails(busId);
         startBusTrackingSocket(busId);
     });
 

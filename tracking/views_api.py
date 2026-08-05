@@ -13,9 +13,11 @@ from tracking.serializers import (
 )
 from tracking.services.distance import haversine_distance
 from tracking.services.route_finder import find_best_routes
+from tracking.services.road_geometry import get_or_generate_road_geometry
 
 
 class IsAdminRoleOrStaff(BasePermission):
+
     def has_permission(self, request, view):
         return request.user and request.user.is_authenticated and request.user.is_admin()
 
@@ -300,13 +302,68 @@ class BusTrackingStatusAPIView(APIView):
 
     def get(self, request, pk):
         try:
-            bus = Bus.objects.get(pk=pk)
+            bus = Bus.objects.select_related('route').get(pk=pk)
             loc = bus.get_current_location()
+
+            route_stops_data = []
+            current_stop_data = None
+            next_stop_data = None
+            leg_a_to_c = []
+            leg_c_to_f = []
+
+            if bus.route:
+                rs_list = list(bus.route.route_stops.select_related('bus_stop').order_by('stop_order'))
+                route_stops_data = [
+                    {
+                        "id": rs.bus_stop.id,
+                        "name": rs.bus_stop.stop_name,
+                        "area": rs.bus_stop.area,
+                        "lat": rs.bus_stop.latitude,
+                        "lng": rs.bus_stop.longitude,
+                        "stop_order": rs.stop_order,
+                        "distance_km": rs.distance_from_start_km
+                    }
+                    for rs in rs_list
+                ]
+
+                if route_stops_data:
+                    current_idx = 0
+                    if loc and loc.latitude and loc.longitude:
+                        # Find closest stop to bus's current GPS location
+                        min_dist = float('inf')
+                        for idx, st in enumerate(route_stops_data):
+                            dist = haversine_distance(loc.latitude, loc.longitude, st['lat'], st['lng'])
+                            if dist < min_dist:
+                                min_dist = dist
+                                current_idx = idx
+
+                    current_stop_data = route_stops_data[current_idx]
+
+                    if current_idx < len(route_stops_data) - 1:
+                        next_stop_data = route_stops_data[current_idx + 1]
+                        if loc and loc.latitude and loc.longitude:
+                            dist_to_next = haversine_distance(
+                                loc.latitude, loc.longitude,
+                                next_stop_data['lat'], next_stop_data['lng']
+                            )
+                            next_stop_data['distance_km_to_next'] = round(dist_to_next, 2)
+                            next_stop_data['eta_mins'] = max(1, int(dist_to_next * 3.0))
+                    else:
+                        next_stop_data = route_stops_data[-1]
+                        next_stop_data['distance_km_to_next'] = 0.0
+                        next_stop_data['eta_mins'] = 0
+
+                    leg_a_to_c = route_stops_data[:current_idx + 1]
+                    leg_c_to_f = route_stops_data[current_idx:]
+
+            road_geometry = get_or_generate_road_geometry(bus.route) if bus.route else []
+
             return Response({
                 "bus_id": bus.id,
                 "bus_number": bus.bus_number,
                 "bus_name": bus.bus_name,
                 "bus_type": bus.get_bus_type_display(),
+                "route_id": bus.route.id if bus.route else None,
                 "route_name": bus.route.route_name if bus.route else "Unassigned",
                 "tracking_status": bus.tracking_status,
                 "last_updated": bus.last_updated,
@@ -315,8 +372,42 @@ class BusTrackingStatusAPIView(APIView):
                     "longitude": loc.longitude if loc else None,
                     "speed": loc.speed if loc else 0.0,
                     "heading": loc.heading if loc else 0.0,
-                    "timestamp": loc.timestamp if loc else None
-                } if loc else None
+                    "timestamp": loc.timestamp.isoformat() if loc else None
+                } if loc else None,
+                "route_stops": route_stops_data,
+                "current_stop": current_stop_data,
+                "next_stop": next_stop_data,
+                "leg_a_to_c": leg_a_to_c,
+                "leg_c_to_f": leg_c_to_f,
+                "road_geometry": road_geometry
             })
         except Bus.DoesNotExist:
             return Response({"error": "Bus not found."}, status=404)
+
+
+class RouteGeometryAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, pk):
+        try:
+            route = Route.objects.get(pk=pk)
+            geometry = get_or_generate_road_geometry(route)
+            stops = [
+                {
+                    "id": rs.bus_stop.id,
+                    "name": rs.bus_stop.stop_name,
+                    "lat": rs.bus_stop.latitude,
+                    "lng": rs.bus_stop.longitude,
+                    "order": rs.stop_order
+                }
+                for rs in route.get_ordered_stops()
+            ]
+            return Response({
+                "route_id": route.id,
+                "route_name": route.route_name,
+                "stops": stops,
+                "road_geometry": geometry
+            })
+        except Route.DoesNotExist:
+            return Response({"error": "Route not found."}, status=404)
+

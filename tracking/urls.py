@@ -51,7 +51,9 @@ urlpatterns = [
     path('api/nearby-stops/', views_api.NearbyStopsAPIView.as_view(), name='api-nearby-stops'),
     path('api/buses/<int:pk>/location/', views_api.BusLocationAPIView.as_view(), name='api-bus-location'),
     path('api/buses/<int:pk>/tracking-status/', views_api.BusTrackingStatusAPIView.as_view(), name='api-bus-tracking-status'),
+    path('api/routes/<int:pk>/geometry/', views_api.RouteGeometryAPIView.as_view(), name='api-route-geometry'),
     path('api/routes/<int:pk>/add-stop/', views_api.AddRouteStopAPIView.as_view(), name='api-add-route-stop'),
+
     path('api/route-stops/<int:pk>/delete/', views_api.DeleteRouteStopAPIView.as_view(), name='api-delete-route-stop'),
     path('api/', include(router.urls)),
 ]

@@ -49,6 +49,7 @@ class Route(models.Model):
     start_point = models.CharField(max_length=150)
     end_point = models.CharField(max_length=150)
     description = models.TextField(blank=True, null=True)
+    shape_geometry = models.JSONField(default=list, blank=True, help_text="Road-aligned polyline waypoints [[lat, lng], ...]")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

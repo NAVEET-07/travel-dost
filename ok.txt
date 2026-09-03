@@ -1,0 +1,181 @@
+# Root Cause Investigation & Execution Trace Report
+
+This technical document presents an exact, line-by-line execution trace and root cause analysis for the route search mismatch issue (e.g. searching for **Airport → Shiridi Nagar** and receiving a journey that alights at **Shanti Nagar** or **Hope School**).
+
+---
+
+## 1. Trace of Failing Example: Airport ➔ Shiridi Nagar
+
+### Raw Request & Resolution:
+- **Raw API Request**: `GET /api/search-route/?source=Airport&destination=Shiridi%20Nagar`
+- **Source Parameter**: `"Airport"`
+- **Destination Parameter**: `"Shiridi Nagar"`
+- **Source Stop Resolution**:
+  - Resolved Stop: **Airport** (`BusStop.id = 383`)
+  - Resolution Mechanism: **Exact Name / Clean Match** (`resolve_bus_stop()` in [`tracking/services/route_finder.py`](file:///c:/Users/NAVEET/Documents/TRAVLE%20DOTS/tracking/services/route_finder.py#L380-L400))
+- **Destination Stop Resolution**:
+  - Resolved Stop: **Shiridi nagar** (`BusStop.id = 14`)
+  - Resolution Mechanism: **Exact Name / Clean Match** (`resolve_bus_stop()` in [`tracking/services/route_finder.py`](file:///c:/Users/NAVEET/Documents/TRAVLE%20DOTS/tracking/services/route_finder.py#L380-L400))
+
+---
+
+### The Mismatch Discovery:
+- **User Requested Destination**: `Shiridi nagar` (`id = 14`)
+- **API Returned Leg Final Alighting Stop**: `Shanti Nagar` (`id = 59`) / `Hope School` (`id = 787`)
+
+---
+
+### Step-by-Step Code Execution Trace of the Mismatch:
+
+#### Step 1.1: Graph Initialization & Loose Canonical Grouping
+- **Function**: `TransportGraph._build()`
+- **File**: [`tracking/services/route_finder.py`](file:///c:/Users/NAVEET/Documents/TRAVLE%20DOTS/tracking/services/route_finder.py#L242-L253)
+- **Lines**: 242–253
+- **Code Execution**:
+```python
+242: for s1 in stops_list:
+243:     self.canonical_group[s1.id].add(s1.id)
+244:     c1 = norm_map[s1.id]
+245:     for s2 in get_neighbor_stops(s1):
+...
+249:         is_name_match = c1 and c2 and (c1 == c2 or (len(c1) > 4 and len(c2) > 4 and (c1.startswith(c2) or c2.startswith(c1))))
+250:         is_close_proxy = haversine_distance(s1.latitude, s1.longitude, s2.latitude, s2.longitude) <= 0.15
+251:         if is_name_match or is_close_proxy:
+252:             self.canonical_group[s1.id].add(s2.id)
+```
+- **What Happened**: Because `Shanti Nagar` (`id = 59`), `Hope School` (`id = 787`), and `santosh nagar cross` (`id = 20`) are within 0.15 km (150 meters) of `Shiridi nagar` (`id = 14`), line 251 evaluates `is_close_proxy` as **True**.
+- **Result**: `canonical_group[14]` becomes `{14, 59, 131, 166, 325, 744, 770, 787, 20}`. Totally distinct stops with different names were merged into the canonical ID set for `id = 14`.
+
+#### Step 1.2: Candidate Destination Expansion
+- **Function**: `find_best_routes()`
+- **File**: [`tracking/services/route_finder.py`](file:///c:/Users/NAVEET/Documents/TRAVLE%20DOTS/tracking/services/route_finder.py#L605-L610)
+- **Lines**: 605–610
+- **Code Execution**:
+```python
+dst_canonical_ids = graph.get_equivalent_stop_ids(dest_stop.id)  # Returns {14, 59, 787, ...}
+```
+- **What Happened**: The search algorithm expands candidate destination stops from `{14}` to `{14, 59, 787, ...}`.
+
+#### Step 1.3: Leg Building Using Expanded Destination
+- **Function**: `build_leg()`
+- **File**: [`tracking/services/route_finder.py`](file:///c:/Users/NAVEET/Documents/TRAVLE%20DOTS/tracking/services/route_finder.py#L665)
+- **Line**: 665
+- **Code Execution**:
+```python
+665: get_down_stop_obj = graph.stop_map[get_down_stop_id]
+```
+- **What Happened**: When candidate destination `id = 59` is evaluated, `build_leg()` looks up `stop_map[59]`, which returns the actual database stop name: `"Shanti Nagar"`.
+
+#### Step 1.4: Pre-Return Validation Pipeline Acceptance
+- **Function**: `validate_and_finalize_journey()`
+- **File**: [`tracking/services/route_finder.py`](file:///c:/Users/NAVEET/Documents/TRAVLE%20DOTS/tracking/services/route_finder.py#L470-L480)
+- **Lines**: 470, 478–480
+- **Code Execution**:
+```python
+470: dest_canon = graph.get_equivalent_stop_ids(dest_stop.id)  # {14, 59, 787, ...}
+...
+478: final_drop_id = legs[-1]["stops"][-1]["id"]              # 59
+479: if final_drop_id not in dest_canon and final_drop_id != dest_stop.id:
+480:     return False
+```
+- **What Happened**: Line 479 checks `59 in dest_canon`, which evaluates to **True**. The validation pipeline accepts `Shanti Nagar` (`id = 59`) as a valid destination for `Shiridi nagar` (`id = 14`).
+
+---
+
+## 2. Route Search Trace
+
+### Stage 1 (Direct Routes):
+- **Candidate Searches**: Checked direct route index for `(383, 14)`, `(383, 59)`, `(383, 787)`.
+- **Validation Result**: 0 direct routes exist in the database between Airport and Shiridi nagar.
+- **Stage 1 Outcome**: 0 valid direct journeys found. Moved to Stage 2.
+
+### Stage 2 (1-Transfer Routes):
+- **Transfer Hub Matching**: `stop_from_src_direct[383]` $\cap$ `stop_to_dest_direct[59]` / `stop_to_dest_direct[14]`.
+- **Candidate Route 1**: `Route 126` (Airport $\to$ Corporation-H) + `Route 16_3` (Corporation-H $\to$ Shanti Nagar).
+  - Transfer Stop: `Corporation-H` (`id = 12`)
+  - Walking Distance: 0 meters (same platform transfer)
+  - Leg 1: Board at `Airport`, Alight at `Corporation-H`
+  - Leg 2: Board at `Corporation-H`, Alight at `Shanti Nagar`
+  - Validation Result: **ACCEPTED** (because `Shanti Nagar` is in `dest_canon` of `Shiridi nagar`).
+- **Candidate Route 2**: `Route 126` + `Route 118_2` (Corporation-H $\to$ Hope School).
+  - Validation Result: **ACCEPTED** (because `Hope School` is in `dest_canon` of `Shiridi nagar`).
+
+### Stage 3 (2-Transfer Routes):
+- **Outcome**: **SKIPPED** because Stage 2 found valid 1-transfer journeys.
+
+---
+
+## 3. Ranking Trace
+
+Before sorting, the valid journeys found were:
+
+| Journey | Route IDs | Boarding Stop | Final Drop Stop | Transfers | Total Dist | Walk Dist | Score |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Option 1** | Route 126 + Route 16_3 | Airport | Shanti Nagar | 1 | 9.42 km | 0 m | `41009420` |
+| **Option 2** | Route 126 + Route 16_2 | Airport | Shanti Nagar | 1 | 11.20 km | 0 m | `41011200` |
+| **Option 3** | Route 126 + Route 118_2 | Airport | Hope School | 1 | 14.15 km | 0 m | `41014150` |
+
+- **Ranking Function**: `compute_journey_ranking_key()` in [`tracking/services/route_finder.py`](file:///c:/Users/NAVEET/Documents/TRAVLE%20DOTS/tracking/services/route_finder.py#L345-L369)
+- **Why Option 1 Ranked First**: Option 1 has 1 transfer, 0 walking distance, and the shortest total transit distance (9.42 km).
+
+---
+
+## 4. Final Response Comparison
+
+| Metric | Requested | Resolved | Boarding / Alighting Stop in Returned Journey | Match Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **Source Stop** | Airport | Airport (`id = 383`) | **Airport** (`id = 383`) | **EXACT MATCH** |
+| **Destination Stop**| Shiridi Nagar | Shiridi nagar (`id = 14`) | **Shanti Nagar** (`id = 59`) | **MISMATCH** |
+
+### Explanation:
+The destination stop in the response is **Shanti Nagar** instead of **Shiridi nagar** because `TransportGraph._build` merged ID 59 (`Shanti Nagar`) into `canonical_group[14]` due to spatial proximity (distance $\le 0.15\text{ km}$), and `validate_and_finalize_journey()` accepted any ID in `canonical_group[14]` as a valid alighting stop.
+
+---
+
+## 5. Proven Root Cause
+
+### Primary Root Cause: **Canonical Stop Proximity Grouping Bug**
+- **Location**: [`tracking/services/route_finder.py`](file:///c:/Users/NAVEET/Documents/TRAVLE%20DOTS/tracking/services/route_finder.py#L250-L252)
+- **Exact Code Line**:
+  ```python
+  250: is_close_proxy = haversine_distance(s1.latitude, s1.longitude, s2.latitude, s2.longitude) <= 0.15
+  251: if is_name_match or is_close_proxy:
+  252:     self.canonical_group[s1.id].add(s2.id)
+  ```
+- **Why it Fails**:
+  The condition `is_close_proxy` merges any two distinct bus stops into the same `canonical_group` if they are physically within 150 meters of each other, **even when their names are completely different** (e.g. `Shiridi nagar` vs `Shanti Nagar`).
+
+### Secondary Root Cause: **Validation Pipeline Endpoint Over-Permissiveness**
+- **Location**: [`tracking/services/route_finder.py`](file:///c:/Users/NAVEET/Documents/TRAVLE%20DOTS/tracking/services/route_finder.py#L478-L480)
+- **Exact Code Line**:
+  ```python
+  479: if final_drop_id not in dest_canon and final_drop_id != dest_stop.id:
+  480:     return False
+  ```
+- **Why it Fails**:
+  `validate_and_finalize_journey()` permits the final drop stop to be *any* stop ID present in `dest_canon`. When `dest_canon` contains physically nearby stops with different names, the algorithm returns a journey ending at a different stop than the requested `dest_stop.id`.
+
+---
+
+## 6. Fix Plan (No Changes Implemented)
+
+### Files Needing Modification:
+- [`tracking/services/route_finder.py`](file:///c:/Users/NAVEET/Documents/TRAVLE%20DOTS/tracking/services/route_finder.py)
+
+### Functions Needing Modification:
+1. `TransportGraph._build()` (Lines 242–253):
+   - **Fix**: Remove `is_close_proxy` from `canonical_group` construction, or require BOTH `is_name_match AND is_close_proxy`. `canonical_group` must ONLY group stops that represent the same physical station complex under the same or nearly identical name (e.g. `CBT` vs `CBT Hubballi`).
+2. `validate_and_finalize_journey()` (Lines 473–480):
+   - **Fix**: Require that `final_drop_id == dest_stop.id` (or strictly name-equivalent canonical stops). If a transfer journey drops the passenger at a nearby stop `s2` within walking distance of `dest_stop`, it must explicitly render a final walking transfer leg `s2 ➔ dest_stop` rather than claiming `s2` is `dest_stop`.
+
+### Safest Implementation Approach:
+- Separate **Canonical Name Grouping** (`canonical_name_group`: stops sharing identical/normalized names) from **Spatial Transfer Proximity** (`walking_transfer_neighbors`: stops within walking distance $\le 500\text{m}$).
+- Ensure that the boarding stop and final drop stop of a journey ALWAYS match `source_stop.id` and `dest_stop.id` (or their exact name aliases).
+
+### Possible Side Effects:
+- Zero side effects on direct routes.
+- 1-transfer routes that require a final short walk ($\le 200\text{m}$) from the drop stop to the destination will cleanly show the final walking leg instead of mislabeling the drop stop.
+
+### Unit Tests to Add:
+- `test_exact_destination_stop_matching`: Asserts that when `destination="Shiridi Nagar"` is requested, the returned final drop stop name is strictly `"Shiridi nagar"` and NOT `"Shanti Nagar"`.
+- `test_canonical_group_different_names`: Asserts that stops within 150m with different names (e.g., `Shiridi nagar` vs `Shanti Nagar`) are NOT placed into the same `canonical_group`.

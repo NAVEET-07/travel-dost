@@ -88,6 +88,11 @@ class Bus(models.Model):
         ('OFFLINE', 'Offline / Not Tracking'),
         ('LAST_SEEN', 'Last Seen (Inactive)'),
     )
+    TRIP_STATUS_CHOICES = (
+        ('NOT_STARTED', 'Not Started'),
+        ('IN_TRANSIT', 'In Transit'),
+        ('COMPLETED', 'Completed'),
+    )
     bus_number = models.CharField(max_length=50, unique=True, help_text="e.g. KA-25-F-101")
     bus_name = models.CharField(max_length=100, default="NWKRTC Bus")
     bus_type = models.CharField(max_length=20, choices=BUS_TYPE_CHOICES, default='ORDINARY')
@@ -96,6 +101,7 @@ class Bus(models.Model):
     is_active = models.BooleanField(default=True)
     tracking_enabled = models.BooleanField(default=True)
     tracking_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='OFFLINE')
+    trip_status = models.CharField(max_length=20, choices=TRIP_STATUS_CHOICES, default='NOT_STARTED')
     last_updated = models.DateTimeField(auto_now=True)
 
     class Meta:

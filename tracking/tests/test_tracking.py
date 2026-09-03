@@ -54,10 +54,26 @@ class TravelDostTestCase(TestCase):
         response = self.client.get('/api/stops/')
         self.assertEqual(response.status_code, 200)
 
-        # Test route search API
-        response = self.client.get(f'/api/search-route/?source={self.stop_kleit.id}&destination={self.stop_dharwad.id}')
+        # Test stops autocomplete API
+        response = self.client.get('/api/stops/autocomplete/')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['total_routes_found'], 1)
+        self.assertIn('stops', response.data)
+        self.assertIn('KLEIT', response.data['stops'])
+
+        # Test route search API
+        response = self.client.get(f'/api/routes/search/?source={self.stop_kleit.id}&destination={self.stop_dharwad.id}')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['status'], 'success')
+        self.assertEqual(response.data['total_options'], 1)
+        self.assertEqual(len(response.data['top_routes']), 1)
+        top_route = response.data['top_routes'][0]
+        self.assertEqual(top_route['transfers'], 0)
+        self.assertEqual(top_route['transfer_label'], 'Direct')
+        self.assertTrue(len(top_route['legs']) > 0)
+        leg = top_route['legs'][0]
+        self.assertIn('bus_no', leg)
+        self.assertIn('path_names', leg)
+        self.assertIn('path_coords', leg)
 
         # Test nearby stops API
         response = self.client.get('/api/nearby-stops/?lat=15.3647&lng=75.1240')

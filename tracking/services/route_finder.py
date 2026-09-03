@@ -36,6 +36,23 @@ def calculate_similarity(s1, s2):
         return 0.85
     return SequenceMatcher(None, norm1, norm2).ratio()
 
+def is_cbt_stop(stop):
+    """
+    Checks if a stop is City Bus Terminal (CBT).
+    Cleanly handles Hubballi CBT ("Cbt", "Cbt Hubballi - Hd", "Cbt Hubballi - Dh")
+    and Dharwad CBT ("Cbt-D").
+    """
+    if not stop:
+        return False
+    if hasattr(stop, 'stop_name'):
+        name = str(stop.stop_name).lower().strip()
+    elif isinstance(stop, dict):
+        name = str(stop.get('name') or stop.get('stop_name') or '').lower().strip()
+    else:
+        name = str(stop).lower().strip()
+
+    return 'cbt' in name or 'city bus terminal' in name or 'hubballi cbt' in name or 'dharwad cbt' in name
+
 def resolve_bus_stop(param):
     """
     Robust & Intelligent Bus Stop Resolver.
@@ -156,104 +173,115 @@ def find_best_routes(source_param, destination_param):
         if not route.is_active:
             continue
 
-        try:
-            d_rs = RouteStop.objects.get(route=route, bus_stop=destination_stop)
-            if d_rs.stop_order > s_rs.stop_order:
-                # Direct route found!
-                intermediate_rs = RouteStop.objects.filter(
-                    route=route,
-                    stop_order__gte=s_rs.stop_order,
-                    stop_order__lte=d_rs.stop_order
-                ).select_related('bus_stop').order_by('stop_order')
+        d_rs_list = RouteStop.objects.filter(
+            route=route,
+            bus_stop=destination_stop,
+            stop_order__gt=s_rs.stop_order
+        ).order_by('stop_order')
 
-                stops_list = [rs.bus_stop for rs in intermediate_rs]
-                stops_names_str = " → ".join([st.stop_name for st in stops_list])
-                stop_count = len(stops_list) - 1
+        if d_rs_list.exists():
+            d_rs = d_rs_list.first()
+            # Direct route found!
+            intermediate_rs = RouteStop.objects.filter(
+                route=route,
+                stop_order__gte=s_rs.stop_order,
+                stop_order__lte=d_rs.stop_order
+            ).select_related('bus_stop').order_by('stop_order')
 
-                distance_km = round(d_rs.distance_from_start_km - s_rs.distance_from_start_km, 2)
-                if distance_km <= 0:
-                    distance_km = haversine_distance(
-                        source_stop.latitude, source_stop.longitude,
-                        destination_stop.latitude, destination_stop.longitude
-                    )
+            stops_list = [rs.bus_stop for rs in intermediate_rs]
+            stops_names_str = " → ".join([st.stop_name for st in stops_list])
+            stop_count = len(stops_list) - 1
 
-                fare_obj = Fare.objects.filter(
-                    route=route, source_stop=source_stop, destination_stop=destination_stop
-                ).first()
-                if fare_obj:
-                    fare_amount = float(fare_obj.fare_amount)
-                else:
-                    fare_amount = round(10.00 + (distance_km * 2.0), 2)
+            distance_km = round(d_rs.distance_from_start_km - s_rs.distance_from_start_km, 2)
+            if distance_km <= 0:
+                distance_km = haversine_distance(
+                    source_stop.latitude, source_stop.longitude,
+                    destination_stop.latitude, destination_stop.longitude
+                )
 
-                active_buses = Bus.objects.filter(route=route, is_active=True)
-                live_buses = active_buses.filter(tracking_status='LIVE')
+            fare_obj = Fare.objects.filter(
+                route=route, source_stop=source_stop, destination_stop=destination_stop
+            ).first()
+            if fare_obj:
+                fare_amount = float(fare_obj.fare_amount)
+            else:
+                fare_amount = round(10.00 + (distance_km * 2.0), 2)
 
-                buses_data = []
-                for b in active_buses:
-                    curr_loc = b.get_current_location()
-                    buses_data.append({
-                        "id": b.id,
-                        "bus_number": b.bus_number,
-                        "bus_name": b.bus_name,
-                        "bus_type": b.get_bus_type_display(),
-                        "tracking_status": b.tracking_status,
-                        "current_location": {
-                            "latitude": curr_loc.latitude if curr_loc else None,
-                            "longitude": curr_loc.longitude if curr_loc else None,
-                            "timestamp": curr_loc.timestamp.isoformat() if curr_loc else None,
-                        } if curr_loc else None
-                    })
+            active_buses = Bus.objects.filter(route=route, is_active=True)
+            live_buses = active_buses.filter(tracking_status='LIVE')
 
-                # Score calculation (prefer direct routes)
-                score = (0 * 100) + (stop_count * 2) + distance_km
-
-                all_route_rs = RouteStop.objects.filter(route=route).select_related('bus_stop').order_by('stop_order')
-                all_stops_data = [{"id": rs.bus_stop.id, "name": rs.bus_stop.stop_name, "area": rs.bus_stop.area, "lat": rs.bus_stop.latitude, "lng": rs.bus_stop.longitude, "stop_order": rs.stop_order} for rs in all_route_rs]
-
-                results.append({
-                    "type": "DIRECT",
-                    "transfers": 0,
-                    "score": score,
-                    "route_id": route.id,
-                    "route_name": route.route_name,
-                    "estimated_distance_km": distance_km,
-                    "estimated_duration_mins": max(5, int(distance_km * 3.5)),
-                    "estimated_fare": fare_amount,
-                    "stop_count": stop_count,
-                    "live_bus_count": live_buses.count(),
-                    "total_buses_count": active_buses.count(),
-                    "buses": buses_data,
-                    "all_route_stops": all_stops_data,
-                    "transfer_point": None,
-                    "segment_1": {
-                        "route_name": route.route_name,
-                        "board_at": source_stop.stop_name,
-                        "stops": [{"id": st.id, "name": st.stop_name, "area": st.area} for st in stops_list],
-                        "stops_str": stops_names_str,
-                        "alight_at": destination_stop.stop_name,
-                        "fare": fare_amount
-                    },
-                    "segment_2": None,
-                    "ticket_summary": {
-                        "breakdown": [
-                            {"route_name": route.route_name, "fare": fare_amount}
-                        ],
-                        "total_fare": fare_amount
-                    },
-                    "legs": [
-                        {
-                            "leg_number": 1,
-                            "route_id": route.id,
-                            "route_name": route.route_name,
-                            "from_stop": source_stop.stop_name,
-                            "to_stop": destination_stop.stop_name,
-                            "stops": [{"id": st.id, "name": st.stop_name, "area": st.area, "lat": st.latitude, "lng": st.longitude} for st in stops_list],
-                            "buses": buses_data,
-                        }
-                    ]
+            buses_data = []
+            for b in active_buses:
+                curr_loc = b.get_current_location()
+                buses_data.append({
+                    "id": b.id,
+                    "bus_number": b.bus_number,
+                    "bus_name": b.bus_name,
+                    "bus_type": b.get_bus_type_display(),
+                    "tracking_status": b.tracking_status,
+                    "current_location": {
+                        "latitude": curr_loc.latitude if curr_loc else None,
+                        "longitude": curr_loc.longitude if curr_loc else None,
+                        "timestamp": curr_loc.timestamp.isoformat() if curr_loc else None,
+                    } if curr_loc else None
                 })
-        except RouteStop.DoesNotExist:
-            continue
+
+            # CBT Priority Rank (0: Origin/Dest is CBT, 1: Intermediate CBT, 2: No CBT)
+            cbt_rank = 2
+            if is_cbt_stop(source_stop) or is_cbt_stop(destination_stop):
+                cbt_rank = 0
+            elif any(is_cbt_stop(st) for st in stops_list):
+                cbt_rank = 1
+
+            # Score calculation (prefer direct routes)
+            score = (0 * 100) + (cbt_rank * 10) + (stop_count * 2) + distance_km
+
+            all_route_rs = RouteStop.objects.filter(route=route).select_related('bus_stop').order_by('stop_order')
+            all_stops_data = [{"id": rs.bus_stop.id, "name": rs.bus_stop.stop_name, "area": rs.bus_stop.area, "lat": rs.bus_stop.latitude, "lng": rs.bus_stop.longitude, "stop_order": rs.stop_order} for rs in all_route_rs]
+
+            results.append({
+                "type": "DIRECT",
+                "transfers": 0,
+                "cbt_priority_rank": cbt_rank,
+                "score": score,
+                "route_id": route.id,
+                "route_name": route.route_name,
+                "estimated_distance_km": distance_km,
+                "estimated_duration_mins": max(5, int(distance_km * 3.5)),
+                "estimated_fare": fare_amount,
+                "stop_count": stop_count,
+                "live_bus_count": live_buses.count(),
+                "total_buses_count": active_buses.count(),
+                "buses": buses_data,
+                "all_route_stops": all_stops_data,
+                "transfer_point": None,
+                "segment_1": {
+                    "route_name": route.route_name,
+                    "board_at": source_stop.stop_name,
+                    "stops": [{"id": st.id, "name": st.stop_name, "area": st.area} for st in stops_list],
+                    "stops_str": stops_names_str,
+                    "alight_at": destination_stop.stop_name,
+                    "fare": fare_amount
+                },
+                "segment_2": None,
+                "ticket_summary": {
+                    "breakdown": [
+                        {"route_name": route.route_name, "fare": fare_amount}
+                    ],
+                    "total_fare": fare_amount
+                },
+                "legs": [
+                    {
+                        "leg_number": 1,
+                        "route_id": route.id,
+                        "route_name": route.route_name,
+                        "from_stop": source_stop.stop_name,
+                        "to_stop": destination_stop.stop_name,
+                        "stops": [{"id": st.id, "name": st.stop_name, "area": st.area, "lat": st.latitude, "lng": st.longitude} for st in stops_list],
+                        "buses": buses_data,
+                    }
+                ]
+            })
 
     # -------------------------------------------------------------
     # 2. CONNECTING ROUTE SEARCH (1 Transfer)
@@ -263,7 +291,9 @@ def find_best_routes(source_param, destination_param):
         dest_routes = Route.objects.filter(route_stops__bus_stop=destination_stop, is_active=True).distinct()
 
         for r_src in source_routes:
-            src_rs = RouteStop.objects.get(route=r_src, bus_stop=source_stop)
+            src_rs = RouteStop.objects.filter(route=r_src, bus_stop=source_stop).first()
+            if not src_rs:
+                continue
             downstream_src_stops = RouteStop.objects.filter(
                 route=r_src, stop_order__gt=src_rs.stop_order
             ).select_related('bus_stop')
@@ -272,7 +302,9 @@ def find_best_routes(source_param, destination_param):
                 if r_src.id == r_dst.id:
                     continue
 
-                dst_rs = RouteStop.objects.get(route=r_dst, bus_stop=destination_stop)
+                dst_rs = RouteStop.objects.filter(route=r_dst, bus_stop=destination_stop).last()
+                if not dst_rs:
+                    continue
                 upstream_dst_stops = RouteStop.objects.filter(
                     route=r_dst, stop_order__lt=dst_rs.stop_order
                 ).select_related('bus_stop')
@@ -321,11 +353,19 @@ def find_best_routes(source_param, destination_param):
                             for b in Bus.objects.filter(route=r_dst, is_active=True)
                         ]
 
-                        score = (1 * 100) + (total_stops * 2) + total_dist
+                        # CBT Priority Rank (0: Origin/Dest is CBT, 1: Intermediate/Transfer CBT, 2: No CBT)
+                        cbt_rank = 2
+                        if is_cbt_stop(source_stop) or is_cbt_stop(destination_stop):
+                            cbt_rank = 0
+                        elif is_cbt_stop(transfer_stop) or any(is_cbt_stop(st) for st in leg1_stops + leg2_stops):
+                            cbt_rank = 1
+
+                        score = (1 * 100) + (cbt_rank * 10) + (total_stops * 2) + total_dist
 
                         results.append({
                             "type": "CONNECTING",
                             "transfers": 1,
+                            "cbt_priority_rank": cbt_rank,
                             "transfer_stop": {"id": transfer_stop.id, "name": transfer_stop.stop_name, "area": transfer_stop.area},
                             "transfer_point": transfer_stop.stop_name,
                             "score": score,
@@ -404,12 +444,20 @@ def find_best_routes(source_param, destination_param):
                 leg2_fare = round(15.00 + (dist * 2.0), 2)
                 total_fare = round(leg1_fare + leg2_fare, 2)
 
+                # CBT Priority Rank (0: Origin/Dest is CBT, 1: Intermediate/Transfer CBT, 2: No CBT)
+                cbt_rank = 2
+                if is_cbt_stop(source_stop) or is_cbt_stop(destination_stop):
+                    cbt_rank = 0
+                elif is_cbt_stop(hub_stop) or any(is_cbt_stop(st) for st in stops_src + stops_dst):
+                    cbt_rank = 1
+
                 results.append({
                     "type": "HUB CONNECTING ROUTE",
                     "transfers": 1,
+                    "cbt_priority_rank": cbt_rank,
                     "transfer_stop": {"id": hub_stop.id, "name": hub_stop.stop_name, "area": hub_stop.area},
                     "transfer_point": hub_stop.stop_name,
-                    "score": 300 + dist,
+                    "score": 300 + (cbt_rank * 10) + dist,
                     "route_name": f"{r_src.route_name} (via {hub_stop.stop_name}) ➔ {r_dst.route_name}",
                     "estimated_distance_km": max(1.5, dist),
                     "estimated_duration_mins": max(12, int(dist * 4.0)),
@@ -462,8 +510,16 @@ def find_best_routes(source_param, destination_param):
                     ]
                 })
 
-    # Sort results by score (lower score = best route recommendation)
-    results.sort(key=lambda x: x['score'])
+    # Sort results by composite priority rank tuple: (transfers, cbt_priority_rank, total_stops, estimated_distance_km)
+    results.sort(key=lambda x: (
+        x.get('transfers', 0),
+        x.get('cbt_priority_rank', 2),
+        x.get('stop_count', 999),
+        x.get('estimated_distance_km', 999.0)
+    ))
+
+    # Return top 5 distinct optimal results
+    results = results[:5]
 
     for idx, res in enumerate(results):
         if idx == 0:

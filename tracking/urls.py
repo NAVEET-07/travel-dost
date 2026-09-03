@@ -47,12 +47,33 @@ urlpatterns = [
     path('api/auth/register/', views_api.RegisterAPIView.as_view(), name='api-register'),
     path('api/auth/login/', views_api.LoginAPIView.as_view(), name='api-login'),
     path('api/auth/logout/', views_api.LogoutAPIView.as_view(), name='api-logout'),
+    path('api/stops/autocomplete/', views_api.StopsAutocompleteAPIView.as_view(), name='api-stops-autocomplete'),
+    path('api/stops/autocomplete', views_api.StopsAutocompleteAPIView.as_view()),
+    path('api/stops/names/', views_api.StopsAutocompleteAPIView.as_view(), name='api-stops-names'),
+    path('api/stops/names', views_api.StopsAutocompleteAPIView.as_view()),
+    path('api/routes/search/', views_api.RouteSearchAPIView.as_view(), name='api-routes-search'),
+    path('api/routes/search', views_api.RouteSearchAPIView.as_view()),
     path('api/search-route/', views_api.RouteSearchAPIView.as_view(), name='api-search-route'),
+    path('api/search-route', views_api.RouteSearchAPIView.as_view()),
     path('api/nearby-stops/', views_api.NearbyStopsAPIView.as_view(), name='api-nearby-stops'),
     path('api/buses/<int:pk>/location/', views_api.BusLocationAPIView.as_view(), name='api-bus-location'),
     path('api/buses/<int:pk>/tracking-status/', views_api.BusTrackingStatusAPIView.as_view(), name='api-bus-tracking-status'),
     path('api/routes/<int:pk>/geometry/', views_api.RouteGeometryAPIView.as_view(), name='api-route-geometry'),
+    path('api/routes/road-geometry/', views_api.RouteGeometryAPIView.as_view(), name='api-road-geometry'),
+    path('api/routes/road-geometry', views_api.RouteGeometryAPIView.as_view()),
     path('api/routes/<int:pk>/add-stop/', views_api.AddRouteStopAPIView.as_view(), name='api-add-route-stop'),
+
+    # Driver Trip Lifecycle Endpoints
+    path('api/driver/trip/start/', views_api.DriverTripStartAPIView.as_view(), name='api-driver-trip-start'),
+    path('api/driver/trip/start', views_api.DriverTripStartAPIView.as_view()),
+    path('api/driver/trip/update-location/', views_api.DriverTripUpdateLocationAPIView.as_view(), name='api-driver-trip-update-location'),
+    path('api/driver/trip/update-location', views_api.DriverTripUpdateLocationAPIView.as_view()),
+    path('api/driver/trip/end/', views_api.DriverTripEndAPIView.as_view(), name='api-driver-trip-end'),
+    path('api/driver/trip/end', views_api.DriverTripEndAPIView.as_view()),
+
+    # Passenger Live Bus Status Endpoint
+    path('api/bus/<str:bus_no>/live-status/', views_api.PassengerBusLiveStatusAPIView.as_view(), name='api-bus-live-status'),
+    path('api/bus/<str:bus_no>/live-status', views_api.PassengerBusLiveStatusAPIView.as_view()),
 
     path('api/route-stops/<int:pk>/delete/', views_api.DeleteRouteStopAPIView.as_view(), name='api-delete-route-stop'),
     path('api/', include(router.urls)),

@@ -2,6 +2,214 @@
 
 {% block title %}Find Best Bus Route (Point A to Point B) — Travel Dost{% endblock %}
 
+{% block extra_css %}
+<style>
+/* Modern Font & Base Styles */
+body {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Card Styling & Micro-interactions */
+.route-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    cursor: pointer;
+}
+
+.route-card:hover {
+    transform: translateY(-2px);
+    border-color: #2563eb;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
+}
+
+.route-card.active {
+    border: 2px solid #2563eb !important;
+    background-color: #eff6ff !important;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.18);
+}
+
+/* Prominent Badges */
+.badge-direct {
+    background-color: #dcfce7 !important;
+    color: #15803d !important;
+    border: 1px solid #bbf7d0 !important;
+    font-weight: 700 !important;
+    padding: 6px 14px !important;
+    border-radius: 20px !important;
+    font-size: 0.85rem !important;
+}
+
+.badge-transfer {
+    background-color: #ffedd5 !important;
+    color: #c2410c !important;
+    border: 1px solid #fed7aa !important;
+    font-weight: 700 !important;
+    padding: 6px 14px !important;
+    border-radius: 20px !important;
+    font-size: 0.85rem !important;
+}
+
+.badge-cbt {
+    background-color: #fef3c7 !important;
+    color: #92400e !important;
+    border: 1px solid #fde68a !important;
+    font-weight: 600 !important;
+    padding: 5px 12px !important;
+    border-radius: 16px !important;
+    font-size: 0.75rem !important;
+}
+
+.badge-live {
+    background-color: #dcfce7 !important;
+    color: #15803d !important;
+    border: 1px solid #86efac !important;
+    font-weight: 700 !important;
+    padding: 4px 10px !important;
+    border-radius: 12px !important;
+    font-size: 0.75rem !important;
+    animation: live-blink 2s infinite ease-in-out;
+}
+
+@keyframes live-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.badge-offline {
+    background-color: #f1f5f9 !important;
+    color: #64748b !important;
+    border: 1px solid #cbd5e1 !important;
+    font-weight: 600 !important;
+    padding: 4px 10px !important;
+    border-radius: 12px !important;
+    font-size: 0.75rem !important;
+}
+
+.btn-track {
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 3px 12px;
+}
+
+/* Step-by-Step Vertical Journey Timeline */
+.journey-timeline {
+    position: relative;
+    padding-left: 4px;
+}
+
+.timeline-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    position: relative;
+}
+
+.timeline-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 10px;
+    z-index: 2;
+}
+
+.timeline-dot.origin {
+    background-color: #10b981;
+    color: white;
+    box-shadow: 0 0 0 3px #d1fae5;
+}
+
+.timeline-dot.transfer {
+    background-color: #f97316;
+    color: white;
+    box-shadow: 0 0 0 3px #ffedd5;
+}
+
+.timeline-dot.destination {
+    background-color: #ef4444;
+    color: white;
+    box-shadow: 0 0 0 3px #fee2e2;
+}
+
+.timeline-content {
+    flex-grow: 1;
+}
+
+.timeline-line {
+    border-left: 2px dotted #cbd5e1;
+    margin-left: 10px;
+    padding-left: 22px;
+    padding-top: 4px;
+    padding-bottom: 12px;
+}
+
+.intermediate-dropdown summary {
+    outline: none;
+    user-select: none;
+    list-style: none;
+}
+
+.intermediate-dropdown summary::-webkit-details-marker {
+    display: none;
+}
+
+.stop-list-box {
+    max-height: 120px;
+    overflow-y: auto;
+    line-height: 1.5;
+}
+
+/* Animated Radar Pulse Marker */
+.live-bus-marker-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+}
+
+.radar-pulse-ring {
+    position: absolute;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: rgba(37, 99, 235, 0.4);
+    animation: radar-pulse 1.8s infinite ease-out;
+    z-index: 1;
+}
+
+@keyframes radar-pulse {
+    0% { transform: scale(0.5); opacity: 0.95; }
+    100% { transform: scale(1.8); opacity: 0; }
+}
+
+.live-bus-badge {
+    position: relative;
+    z-index: 2;
+    background: #2563eb;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    border: 2px solid white;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="bg-dark text-white py-4 border-bottom border-secondary mb-4">
     <div class="container px-lg-5">
@@ -28,7 +236,12 @@
                     <!-- Boarding Stop (Point A) -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold text-secondary small">POINT A: BOARDING STOP / SOURCE</label>
-                        <input type="text" class="form-control form-control-lg rounded-3 mb-2" id="sourceTextInput" list="stopsDataList" placeholder="Type stop name e.g. Betdur, CBT, Hosur..." value="{% if selected_source %}{% for s in stops %}{% if s.id == selected_source %}{{ s.stop_name }}{% endif %}{% endfor %}{% endif %}">
+                        <input type="text" class="form-control form-control-lg rounded-3 mb-2" id="sourceTextInput" list="sourceInputList" placeholder="Type stop name e.g. Betdur, CBT, Hosur..." value="{% if selected_source %}{% for s in stops %}{% if s.id == selected_source %}{{ s.stop_name }}{% endif %}{% endfor %}{% endif %}">
+                        <datalist id="sourceInputList">
+                            {% for stop in stops %}
+                                <option value="{{ stop.stop_name }}">{{ stop.area }}</option>
+                            {% endfor %}
+                        </datalist>
                         <select class="form-select form-select-sm rounded-3 text-muted" id="sourceSelect">
                             <option value="">-- Or Select Boarding Stop A --</option>
                             {% for stop in stops %}
@@ -48,7 +261,12 @@
                     <!-- Destination Stop (Point B) -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold text-secondary small">POINT B: DESTINATION STOP</label>
-                        <input type="text" class="form-control form-control-lg rounded-3 mb-2" id="destTextInput" list="stopsDataList" placeholder="Type stop name e.g. CBT-D, Unkal, Sulla..." value="{% if selected_dest %}{% for s in stops %}{% if s.id == selected_dest %}{{ s.stop_name }}{% endif %}{% endfor %}{% endif %}">
+                        <input type="text" class="form-control form-control-lg rounded-3 mb-2" id="destTextInput" list="destInputList" placeholder="Type stop name e.g. CBT-D, Unkal, Sulla..." value="{% if selected_dest %}{% for s in stops %}{% if s.id == selected_dest %}{{ s.stop_name }}{% endif %}{% endfor %}{% endif %}">
+                        <datalist id="destInputList">
+                            {% for stop in stops %}
+                                <option value="{{ stop.stop_name }}">{{ stop.area }}</option>
+                            {% endfor %}
+                        </datalist>
                         <select class="form-select form-select-sm rounded-3 text-muted" id="destSelect">
                             <option value="">-- Or Select Destination Stop B --</option>
                             {% for stop in stops %}
@@ -59,30 +277,40 @@
                         </select>
                     </div>
 
-                    <!-- Datalist for autocomplete -->
+                    <!-- Fallback datalist for stops -->
                     <datalist id="stopsDataList">
                         {% for stop in stops %}
                             <option value="{{ stop.stop_name }}">{{ stop.area }}</option>
                         {% endfor %}
                     </datalist>
 
-                    <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill mt-2 shadow">
-                        <i class="fa-solid fa-magnifying-glass me-2"></i> Search Bus Routes
+                    <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill mt-2 shadow" id="btnSearchRoutes">
+                        <i class="fa-solid fa-magnifying-glass me-2"></i> Find Routes
                     </button>
                 </form>
             </div>
         </div>
 
-        <!-- Route Results Column -->
+        <!-- Route Results & Map Column -->
         <div class="col-lg-8">
+            <!-- Leaflet Map Container -->
+            <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white" id="mapCard">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h6 class="fw-bold m-0 text-dark"><i class="fa-solid fa-map-location-dot text-primary me-2"></i>Interactive Road-Snapped Map</h6>
+                    <span class="badge bg-light text-secondary border extra-small"><i class="fa-solid fa-route text-success me-1"></i>OSRM Road Geometry</span>
+                </div>
+                <div id="map" style="height: 420px; width: 100%; border-radius: 12px; z-index: 1;"></div>
+            </div>
+
+            <!-- Route Results Container -->
             <div id="resultsContainer">
                 <div class="card border-0 shadow-sm rounded-4 p-5 text-center bg-white" id="initialStateCard">
                     <div class="text-primary mb-3">
                         <i class="fa-solid fa-bus-simple fa-3x opacity-50"></i>
                     </div>
                     <h5 class="fw-bold">Enter Point A & Point B</h5>
-                    <p class="text-secondary max-w-md mx-auto small">
-                        Input or select your boarding location (Point A) and destination (Point B) to view direct routes, stop sequence, fare, and leg breakdown (A➔C vs C➔F).
+                    <p class="text-secondary max-w-md mx-auto small mb-0">
+                        Input or select your boarding location (Point A) and destination (Point B) to view CBT-prioritized direct routes, step-by-step itinerary timeline, fare, and real-time animated bus tracking.
                     </p>
                 </div>
             </div>
@@ -93,241 +321,587 @@
 
 {% block extra_js %}
 <script>
-$(document.body).ready(function() {
-    // Synchronize text input and select dropdown
-    $('#sourceTextInput').on('input change', function() {
-        const val = $(this).val().toLowerCase().strip();
-        if (!val) return;
-        $('#sourceSelect option').each(function() {
-            if ($(this).text().toLowerCase().includes(val)) {
-                $('#sourceSelect').val($(this).val());
-                return false;
-            }
-        });
-    });
+let routeMap = null;
+let currentPolylineGroup = null;
+let liveTrackingInterval = null;
+let liveBusMarker = null;
 
-    $('#destTextInput').on('input change', function() {
-        const val = $(this).val().toLowerCase().strip();
-        if (!val) return;
-        $('#destSelect option').each(function() {
-            if ($(this).text().toLowerCase().includes(val)) {
-                $('#destSelect').val($(this).val());
-                return false;
-            }
-        });
-    });
+function initRouteMap() {
+    const mapElement = document.getElementById('map');
+    if (!mapElement) return;
 
-    $('#sourceSelect').on('change', function() {
-        if ($(this).val()) {
-            const text = $("#sourceSelect option:selected").text().split('(')[0].trim();
-            $('#sourceTextInput').val(text);
-        }
-    });
+    if (routeMap) {
+        routeMap.remove();
+        routeMap = null;
+    }
 
-    $('#destSelect').on('change', function() {
-        if ($(this).val()) {
-            const text = $("#destSelect option:selected").text().split('(')[0].trim();
-            $('#destTextInput').val(text);
-        }
-    });
+    routeMap = L.map('map').setView([15.3647, 75.1240], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors | Travel Dost'
+    }).addTo(routeMap);
 
-    String.prototype.strip = function() { return self.trim ? self.trim() : this.replace(/^\s+|\s+$/g, ''); };
+    currentPolylineGroup = L.layerGroup().addTo(routeMap);
+    setTimeout(() => { routeMap.invalidateSize(); }, 250);
+}
 
-    function searchRoutes() {
-        const sourceVal = $('#sourceSelect').val() || $('#sourceTextInput').val().trim();
-        const destVal = $('#destSelect').val() || $('#destTextInput').val().trim();
+async function startLiveTracking(busNo) {
+    if (!routeMap) initRouteMap();
+    if (!routeMap) return;
 
-        if (!sourceVal || !destVal) {
-            alert("Please provide both Point A (Boarding) and Point B (Destination) stops.");
-            return;
-        }
+    if (liveTrackingInterval) {
+        clearInterval(liveTrackingInterval);
+        liveTrackingInterval = null;
+    }
 
-        $('#resultsContainer').html(`
-            <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
-                <div class="spinner-border text-primary mx-auto mb-3" role="status"></div>
-                <h5 class="fw-bold">Calculating Best Bus Routes...</h5>
-                <p class="text-secondary small">Evaluating direct lines, transfer nodes, fares, and live buses from Point A to Point B...</p>
-            </div>
-        `);
+    const fetchAndUpdate = async () => {
+        try {
+            const res = await fetch(`/api/bus/${encodeURIComponent(busNo)}/live-status/`);
+            if (!res.ok) return;
+            const data = await res.json();
 
-        $.get(`/api/search-route/?source=${encodeURIComponent(sourceVal)}&destination=${encodeURIComponent(destVal)}`, function(data) {
-            if (data.error) {
-                $('#resultsContainer').html(`
-                    <div class="alert alert-warning shadow-sm rounded-3">
-                        <i class="fa-solid fa-triangle-exclamation me-2"></i> ${data.error}
-                    </div>
-                `);
+            if (!data.is_live || data.current_lat === null || data.current_lon === null) {
+                alert(`Bus ${busNo} is currently offline or trip has not started yet.`);
+                if (liveTrackingInterval) {
+                    clearInterval(liveTrackingInterval);
+                    liveTrackingInterval = null;
+                }
                 return;
             }
 
-            if (!data.routes || data.routes.length === 0) {
-                $('#resultsContainer').html(`
-                    <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
-                        <i class="fa-solid fa-circle-question text-muted fa-3x mb-3"></i>
-                        <h5 class="fw-bold">No Direct or Connecting Bus Routes Found</h5>
-                        <p class="text-secondary small">No route connects "${data.source ? data.source.name : sourceVal}" to "${data.destination ? data.destination.name : destVal}". Try searching nearby main terminals like CBT or Hosur.</p>
-                    </div>
-                `);
-                return;
-            }
+            const lat = parseFloat(data.current_lat);
+            const lon = parseFloat(data.current_lon);
 
-            let html = `
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <h5 class="fw-bold m-0"><i class="fa-solid fa-list-check text-success me-2"></i> Found ${data.total_routes_found} Bus Route(s)</h5>
-                    <span class="badge bg-dark fs-6">${data.source.name} ➔ ${data.destination.name}</span>
+            const busDivIcon = L.divIcon({
+                className: 'custom-live-bus-divicon',
+                html: `
+                    <div class="live-bus-marker-wrapper">
+                        <div class="radar-pulse-ring"></div>
+                        <div class="live-bus-badge">
+                            <i class="fa-solid fa-bus"></i> Bus ${data.bus_no}
+                        </div>
+                    </div>
+                `,
+                iconSize: [60, 60],
+                iconAnchor: [30, 30]
+            });
+
+            const popupContent = `
+                <div class="bus-popup p-1">
+                    <h6 class="fw-bold text-primary mb-1"><i class="fa-solid fa-bus me-1"></i>Bus ${data.bus_no}</h6>
+                    <div class="small mb-1">Status: <strong class="text-success">En Route (${data.status})</strong></div>
+                    <div class="small mb-1">Speed: <strong>${data.speed_kmh || 0} km/h</strong></div>
+                    <div class="extra-small text-muted">Updated ${data.last_updated_seconds_ago || 0}s ago</div>
                 </div>
             `;
 
-            data.routes.forEach((rt, idx) => {
-                const isOptimal = idx === 0;
-                const headerTitle = isOptimal ? 'Recommended Optimal Route' : (rt.tag || `Alternative Route ${idx + 1}`);
+            if (!liveBusMarker) {
+                liveBusMarker = L.marker([lat, lon], { icon: busDivIcon }).addTo(routeMap);
+                liveBusMarker.bindPopup(popupContent);
+            } else {
+                liveBusMarker.setIcon(busDivIcon);
+                liveBusMarker.setLatLng([lat, lon]);
+                liveBusMarker.setPopupContent(popupContent);
+            }
 
-                let busesHtml = '';
-                if (rt.buses && rt.buses.length > 0) {
-                    rt.buses.forEach(b => {
-                        const statusBadge = b.tracking_status === 'LIVE' 
-                            ? '<span class="badge bg-success"><i class="fa-solid fa-circle me-1 animate-pulse"></i> LIVE</span>'
-                            : '<span class="badge bg-secondary">OFFLINE</span>';
-                        busesHtml += `<a href="/live-tracking/${b.id}/" class="btn btn-sm btn-outline-primary me-1 mb-1">Bus ${b.bus_number} ${statusBadge}</a>`;
-                    });
+            routeMap.setView([lat, lon], 14, { animate: true });
+        } catch (err) {
+            console.error('Error fetching live bus tracking data:', err);
+        }
+    };
+
+    await fetchAndUpdate();
+    liveTrackingInterval = setInterval(fetchAndUpdate, 3500);
+}
+
+async function renderRouteOnMap(route, cardElement) {
+    if (!routeMap) {
+        initRouteMap();
+    }
+    if (!routeMap) return;
+
+    document.querySelectorAll('.route-card').forEach(c => {
+        c.classList.remove('active');
+    });
+    if (cardElement) {
+        cardElement.classList.add('active');
+    }
+
+    currentPolylineGroup.clearLayers();
+    const boundsLayers = [];
+
+    if (route.legs && route.legs.length > 0) {
+        const totalLegs = route.legs.length;
+
+        for (let legIndex = 0; legIndex < totalLegs; legIndex++) {
+            const leg = route.legs[legIndex];
+            if (!leg.path_coords || leg.path_coords.length === 0) continue;
+
+            const legLatLons = [];
+            const osrmCoordStrs = [];
+
+            leg.path_coords.forEach(coord => {
+                const lat = parseFloat(coord.lat);
+                const lon = parseFloat(coord.lon !== undefined ? coord.lon : coord.lng);
+                if (!isNaN(lat) && !isNaN(lon)) {
+                    legLatLons.push([lat, lon]);
+                    osrmCoordStrs.push(`${lon.toFixed(6)},${lat.toFixed(6)}`);
+                }
+            });
+
+            if (legLatLons.length < 2) continue;
+
+            const legColor = legIndex === 0 ? '#2563eb' : '#9333ea';
+            let renderedGeoJson = false;
+
+            try {
+                let queryStrs = osrmCoordStrs;
+                if (osrmCoordStrs.length > 22) {
+                    const step = Math.ceil(osrmCoordStrs.length / 15);
+                    queryStrs = [
+                        osrmCoordStrs[0],
+                        ...osrmCoordStrs.slice(1, -1).filter((_, idx) => idx % step === 0),
+                        osrmCoordStrs[osrmCoordStrs.length - 1]
+                    ];
                 }
 
-                // Segment 1 details
-                const seg1 = rt.segment_1 || {};
-                const seg1Name = seg1.route_name || rt.route_name || 'Direct Route';
-                const seg1Board = seg1.board_at || data.source.name;
-                const seg1Stops = seg1.stops_str || (seg1.stops ? seg1.stops.map(s=>s.name).join(' → ') : `${seg1Board} → ${data.destination.name}`);
-                const seg1Alight = seg1.alight_at || (rt.segment_2 ? rt.transfer_point : data.destination.name);
-                const seg1Fare = (seg1.fare !== undefined ? seg1.fare : rt.estimated_fare).toFixed(2);
+                const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${queryStrs.join(';')}?overview=full&geometries=geojson`;
+                const res = await fetch(osrmUrl);
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.code === 'Ok' && data.routes && data.routes[0] && data.routes[0].geometry) {
+                        const geojsonGeometry = data.routes[0].geometry;
 
-                // Segment 2 details (ONLY if transfers > 0)
-                const seg2 = (rt.transfers > 0) ? rt.segment_2 : null;
-                let seg2Html = '';
-                if (seg2) {
-                    const seg2Name = seg2.route_name || 'Connecting Route';
-                    const seg2Board = seg2.board_at || rt.transfer_point;
-                    const seg2Stops = seg2.stops_str || (seg2.stops ? seg2.stops.map(s=>s.name).join(' → ') : `${seg2Board} → ${data.destination.name}`);
-                    const seg2Dest = seg2.destination || data.destination.name;
-                    const seg2Fare = (seg2.fare !== undefined ? seg2.fare : 0).toFixed(2);
+                        const roadLayer = L.geoJSON(geojsonGeometry, {
+                            style: {
+                                color: legColor,
+                                weight: 5,
+                                opacity: 0.85,
+                                lineCap: 'round',
+                                lineJoin: 'round'
+                            }
+                        });
+                        currentPolylineGroup.addLayer(roadLayer);
+                        boundsLayers.push(roadLayer);
+                        renderedGeoJson = true;
+                    }
+                }
+            } catch (err) {
+                console.warn('Direct OSRM fetch failed, attempting backend road-geometry fallback:', err);
+            }
 
-                    seg2Html = `
-                        <div class="p-3 bg-white rounded-3 border mb-3">
-                            <h6 class="fw-bold text-primary mb-2"><i class="fa-solid fa-bus-simple me-1"></i> Segment 2: ${seg2Name}</h6>
-                            <div class="small mb-1"><strong>Board at:</strong> ${seg2Board}</div>
-                            <div class="small text-secondary mb-1"><strong>Stops:</strong> ${seg2Stops}</div>
-                            <div class="small mb-1"><strong>Destination:</strong> ${seg2Dest}</div>
-                            <div class="small text-success fw-bold"><strong>Fare:</strong> ₹${seg2Fare}</div>
+            if (!renderedGeoJson) {
+                try {
+                    const backendRes = await fetch('/api/routes/road-geometry/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ coordinates: legLatLons })
+                    });
+                    if (backendRes.ok) {
+                        const backendData = await backendRes.json();
+                        if (backendData.status === 'success' && backendData.geometry) {
+                            const roadLayer = L.geoJSON(backendData.geometry, {
+                                style: {
+                                    color: legColor,
+                                    weight: 5,
+                                    opacity: 0.85,
+                                    lineCap: 'round',
+                                    lineJoin: 'round'
+                                }
+                            });
+                            currentPolylineGroup.addLayer(roadLayer);
+                            boundsLayers.push(roadLayer);
+                            renderedGeoJson = true;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Backend road-geometry fallback failed:', e);
+                }
+            }
+
+            if (!renderedGeoJson) {
+                const polylineFallback = L.polyline(legLatLons, {
+                    color: legColor,
+                    weight: 5,
+                    opacity: 0.85,
+                    lineCap: 'round',
+                    lineJoin: 'round'
+                });
+                currentPolylineGroup.addLayer(polylineFallback);
+                boundsLayers.push(polylineFallback);
+            }
+
+            leg.path_coords.forEach((coord, idx) => {
+                const lat = parseFloat(coord.lat);
+                const lon = parseFloat(coord.lon !== undefined ? coord.lon : coord.lng);
+                if (isNaN(lat) || isNaN(lon)) return;
+
+                const isOrigin = legIndex === 0 && idx === 0;
+                const isDestination = legIndex === totalLegs - 1 && idx === leg.path_coords.length - 1;
+                const isTransferHub = (legIndex > 0 && idx === 0) || (legIndex < totalLegs - 1 && idx === leg.path_coords.length - 1);
+
+                let marker = null;
+
+                if (isOrigin) {
+                    marker = L.circleMarker([lat, lon], {
+                        radius: 9,
+                        fillColor: '#10b981',
+                        color: '#ffffff',
+                        weight: 2,
+                        fillOpacity: 1
+                    }).bindPopup(`<div class="p-1"><strong>🟢 Point A (Origin): ${coord.stop_name}</strong><br><small>Boarding Stop</small></div>`);
+                } else if (isDestination) {
+                    marker = L.circleMarker([lat, lon], {
+                        radius: 9,
+                        fillColor: '#ef4444',
+                        color: '#ffffff',
+                        weight: 2,
+                        fillOpacity: 1
+                    }).bindPopup(`<div class="p-1"><strong>🔴 Point B (Destination): ${coord.stop_name}</strong><br><small>Alighting Stop</small></div>`);
+                } else if (isTransferHub) {
+                    marker = L.circleMarker([lat, lon], {
+                        radius: 8,
+                        fillColor: '#f97316',
+                        color: '#ffffff',
+                        weight: 2,
+                        fillOpacity: 1
+                    }).bindPopup(`<div class="p-1"><strong>🔄 Transfer Hub: ${coord.stop_name}</strong><br><small>Change Bus Here</small></div>`);
+                } else {
+                    marker = L.circleMarker([lat, lon], {
+                        radius: 5,
+                        fillColor: '#3b82f6',
+                        color: '#ffffff',
+                        weight: 1,
+                        fillOpacity: 0.9
+                    }).bindPopup(`<div class="p-1"><strong>🚏 ${coord.stop_name}</strong><br><small>Leg ${legIndex + 1} Stop</small></div>`);
+                }
+
+                currentPolylineGroup.addLayer(marker);
+            });
+        }
+    }
+
+    if (boundsLayers.length > 0) {
+        const featureGroup = L.featureGroup(boundsLayers);
+        if (featureGroup.getBounds().isValid()) {
+            routeMap.fitBounds(featureGroup.getBounds(), { padding: [40, 40] });
+        }
+    }
+
+    setTimeout(() => { routeMap.invalidateSize(); }, 150);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initRouteMap();
+
+    fetch('/api/stops/autocomplete/')
+        .then(res => {
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            return res.json();
+        })
+        .then(data => {
+            if (data && data.stops && data.stops.length > 0) {
+                const optionsHtml = data.stops.map(stop => `<option value="${stop}">`).join('');
+                
+                const srcList = document.getElementById('sourceInputList');
+                const dstList = document.getElementById('destInputList');
+                const stopsDataList = document.getElementById('stopsDataList');
+
+                if (srcList) srcList.innerHTML = optionsHtml;
+                if (dstList) dstList.innerHTML = optionsHtml;
+                if (stopsDataList) stopsDataList.innerHTML = optionsHtml;
+            }
+        })
+        .catch(err => console.error('Error fetching stop autocomplete data:', err));
+
+    const sourceInput = document.getElementById('sourceTextInput');
+    const sourceSelect = document.getElementById('sourceSelect');
+    const destInput = document.getElementById('destTextInput');
+    const destSelect = document.getElementById('destSelect');
+
+    if (sourceInput && sourceSelect) {
+        sourceInput.addEventListener('input', function() {
+            const val = this.value.toLowerCase().trim();
+            if (!val) return;
+            Array.from(sourceSelect.options).forEach(opt => {
+                if (opt.text.toLowerCase().includes(val)) {
+                    sourceSelect.value = opt.value;
+                }
+            });
+        });
+        sourceSelect.addEventListener('change', function() {
+            if (this.value) {
+                const text = this.options[this.selectedIndex].text.split('(')[0].trim();
+                sourceInput.value = text;
+            }
+        });
+    }
+
+    if (destInput && destSelect) {
+        destInput.addEventListener('input', function() {
+            const val = this.value.toLowerCase().trim();
+            if (!val) return;
+            Array.from(destSelect.options).forEach(opt => {
+                if (opt.text.toLowerCase().includes(val)) {
+                    destSelect.value = opt.value;
+                }
+            });
+        });
+        destSelect.addEventListener('change', function() {
+            if (this.value) {
+                const text = this.options[this.selectedIndex].text.split('(')[0].trim();
+                destInput.value = text;
+            }
+        });
+    }
+
+    async function executeSearch(e) {
+        if (e) e.preventDefault();
+
+        const src = (sourceInput ? sourceInput.value.trim() : '') || (sourceSelect ? sourceSelect.value.trim() : '');
+        const dst = (destInput ? destInput.value.trim() : '') || (destSelect ? destSelect.value.trim() : '');
+
+        if (!src || !dst) {
+            alert('Please provide both Point A (Boarding) and Point B (Destination) stops.');
+            return;
+        }
+
+        const container = document.getElementById('resultsContainer');
+        container.innerHTML = `
+            <div class="card border-0 shadow-sm rounded-4 p-5 text-center bg-white">
+                <div class="spinner-border text-primary mx-auto mb-3" role="status"></div>
+                <h5 class="fw-bold text-dark mb-1">Finding fastest bus routes...</h5>
+                <p class="text-secondary small m-0">Evaluating direct lines, CBT priority, transfer nodes, fares, and live buses...</p>
+            </div>
+        `;
+
+        try {
+            const res = await fetch(`/api/routes/search/?source=${encodeURIComponent(src)}&destination=${encodeURIComponent(dst)}`);
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            const data = await res.json();
+
+            container.innerHTML = '';
+
+            if (data.status === 'error' || !data.top_routes || data.top_routes.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-warning shadow-sm rounded-3 border-0 p-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <i class="fa-solid fa-triangle-exclamation fa-2x text-warning"></i>
+                            <div>
+                                <h6 class="fw-bold m-0 text-dark">No Direct or Connecting Bus Routes Found</h6>
+                                <p class="small mb-0 mt-1 text-secondary">No direct or connecting buses found between these stops. Try selecting a major hub like CBT or Jubilee Circle.</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const header = document.createElement('div');
+            header.className = 'd-flex align-items-center justify-content-between mb-3';
+            header.innerHTML = `
+                <h5 class="fw-bold m-0"><i class="fa-solid fa-list-check text-success me-2"></i> Found ${data.total_options || data.top_routes.length} Route(s)</h5>
+                <span class="badge bg-dark fs-6">${data.source} ➔ ${data.destination}</span>
+            `;
+            container.appendChild(header);
+
+            // Render Top 5 Result Cards
+            for (let index = 0; index < Math.min(5, data.top_routes.length); index++) {
+                const route = data.top_routes[index];
+                const card = document.createElement('div');
+                card.className = `card route-card p-4 mb-4 ${index === 0 ? 'active' : ''}`;
+                card.style.cursor = 'pointer';
+
+                const isDirect = route.transfers === 0;
+                const badgeHtml = isDirect 
+                    ? `<span class="badge badge-direct">Direct Bus</span>`
+                    : `<span class="badge badge-transfer">1 Transfer</span>`;
+
+                let cbtBadgeHtml = '';
+                if (route.cbt_priority_rank === 0 || route.cbt_priority_rank === 1) {
+                    cbtBadgeHtml = `<span class="badge badge-cbt">⭐ CBT Route</span>`;
+                }
+
+                const totalStops = route.total_stops || 0;
+                const estMins = Math.round(totalStops * 2.5) || 10;
+                const totalFare = (route.estimated_fare || 0).toFixed(2);
+
+                const leg1 = route.legs[0] || {};
+                const leg2 = route.legs[1] || null;
+                const finalDestination = leg2 ? leg2.alight_at : leg1.alight_at;
+
+                // Query live status for leg1 bus
+                let leg1LiveHtml = `<span class="badge badge-offline">Offline</span> <span class="text-muted extra-small ms-1">Trip not started yet</span>`;
+                if (leg1.bus_no) {
+                    try {
+                        const busStatusRes = await fetch(`/api/bus/${encodeURIComponent(leg1.bus_no)}/live-status/`);
+                        if (busStatusRes.ok) {
+                            const busStatusData = await busStatusRes.json();
+                            if (busStatusData.is_live) {
+                                leg1LiveHtml = `
+                                    <span class="badge badge-live">● LIVE</span>
+                                    <button class="btn btn-sm btn-primary rounded-pill btn-track ms-2" onclick="event.stopPropagation(); startLiveTracking('${leg1.bus_no}')">
+                                        <i class="fa-solid fa-bus me-1"></i> Track Bus
+                                    </button>
+                                `;
+                            }
+                        }
+                    } catch (e) {}
+                }
+
+                // Query live status for leg2 bus (if present)
+                let leg2LiveHtml = `<span class="badge badge-offline">Offline</span> <span class="text-muted extra-small ms-1">Trip not started yet</span>`;
+                if (leg2 && leg2.bus_no) {
+                    try {
+                        const bus2StatusRes = await fetch(`/api/bus/${encodeURIComponent(leg2.bus_no)}/live-status/`);
+                        if (bus2StatusRes.ok) {
+                            const bus2StatusData = await bus2StatusRes.json();
+                            if (bus2StatusData.is_live) {
+                                leg2LiveHtml = `
+                                    <span class="badge badge-live">● LIVE</span>
+                                    <button class="btn btn-sm btn-primary rounded-pill btn-track ms-2" onclick="event.stopPropagation(); startLiveTracking('${leg2.bus_no}')">
+                                        <i class="fa-solid fa-bus me-1"></i> Track Bus
+                                    </button>
+                                `;
+                            }
+                        }
+                    } catch (e) {}
+                }
+
+                let timelineHtml = `
+                    <div class="journey-timeline my-3">
+                        <!-- Boarding Step -->
+                        <div class="timeline-step">
+                            <div class="timeline-dot origin"><i class="fa-solid fa-circle"></i></div>
+                            <div class="timeline-content">
+                                <div class="small text-dark mb-1">Board <strong>Bus ${leg1.bus_no || 'Ordinary'}</strong> at <strong>${leg1.board_at}</strong> ${leg1LiveHtml}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Leg 1 Dotted Line & Intermediate Stops -->
+                        <div class="timeline-line">
+                            <details class="intermediate-dropdown">
+                                <summary class="text-secondary extra-small fw-semibold cursor-pointer">${leg1.stops_in_leg || (leg1.path_names ? leg1.path_names.length : 0)} intermediate stops ▾</summary>
+                                <div class="stop-list-box p-2 my-1 bg-light rounded border extra-small text-secondary">
+                                    ${leg1.path_names ? leg1.path_names.join(' → ') : leg1.board_at + ' → ' + leg1.alight_at}
+                                </div>
+                            </details>
+                        </div>
+                `;
+
+                if (leg2) {
+                    timelineHtml += `
+                        <!-- Transfer Step -->
+                        <div class="timeline-step">
+                            <div class="timeline-dot transfer"><i class="fa-solid fa-right-left"></i></div>
+                            <div class="timeline-content">
+                                <div class="small text-dark mb-1">Alight at <strong>${leg1.alight_at}</strong> & Switch to <strong>Bus ${leg2.bus_no || 'Ordinary'}</strong> ${leg2LiveHtml}</div>
+                            </div>
+                        </div>
+
+                        <!-- Leg 2 Dotted Line & Intermediate Stops -->
+                        <div class="timeline-line">
+                            <details class="intermediate-dropdown">
+                                <summary class="text-secondary extra-small fw-semibold cursor-pointer">${leg2.stops_in_leg || (leg2.path_names ? leg2.path_names.length : 0)} intermediate stops ▾</summary>
+                                <div class="stop-list-box p-2 my-1 bg-light rounded border extra-small text-secondary">
+                                    ${leg2.path_names ? leg2.path_names.join(' → ') : leg2.board_at + ' → ' + leg2.alight_at}
+                                </div>
+                            </details>
                         </div>
                     `;
                 }
 
-                // Ticket Summary breakdown
-                let ticketSummaryStr = '';
-                if (seg2) {
-                    ticketSummaryStr = `${seg1Name}: ₹${seg1Fare} + ${seg2.route_name}: ₹${(seg2.fare||0).toFixed(2)} | Total Fare: ₹${rt.estimated_fare.toFixed(2)}`;
-                } else {
-                    ticketSummaryStr = `${seg1Name}: ₹${seg1Fare} | Total Fare: ₹${rt.estimated_fare.toFixed(2)}`;
-                }
-
-                html += `
-                    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 ${isOptimal ? 'border-start border-5 border-success bg-light' : 'bg-white'}">
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                            <span class="badge ${isOptimal ? 'bg-success' : 'bg-primary'} px-3 py-2 rounded-pill fw-bold fs-6">
-                                ${headerTitle}
-                            </span>
-                            <span class="badge bg-dark px-3 py-2 rounded-pill fs-6">
-                                Total Fare: ₹${rt.estimated_fare.toFixed(2)}
-                            </span>
-                        </div>
-
-                        <div class="row g-2 mb-3 text-center extra-small">
-                            <div class="col-3">
-                                <div class="bg-white p-2 rounded border">
-                                    <span class="text-muted d-block">TOTAL FARE</span>
-                                    <strong class="text-success fs-6">₹${rt.estimated_fare.toFixed(2)}</strong>
-                                </div>
+                timelineHtml += `
+                        <!-- Final Destination Step -->
+                        <div class="timeline-step">
+                            <div class="timeline-dot destination"><i class="fa-solid fa-location-dot"></i></div>
+                            <div class="timeline-content">
+                                <div class="small text-dark">Arrive at <strong>${finalDestination}</strong></div>
                             </div>
-                            <div class="col-3">
-                                <div class="bg-white p-2 rounded border">
-                                    <span class="text-muted d-block">TRAVEL TIME</span>
-                                    <strong class="text-info fs-6">~${rt.estimated_duration_mins} mins</strong>
-                                </div>
-                            </div>
-                            <div class="col-3">
-                                <div class="bg-white p-2 rounded border">
-                                    <span class="text-muted d-block">DISTANCE</span>
-                                    <strong class="text-dark fs-6">${rt.estimated_distance_km} KM</strong>
-                                </div>
-                            </div>
-                            <div class="col-3">
-                                <div class="bg-white p-2 rounded border">
-                                    <span class="text-muted d-block">TRANSFERS</span>
-                                    <strong class="text-primary fs-6">${rt.transfers}</strong>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Segment 1 -->
-                        <div class="p-3 bg-white rounded-3 border mb-3">
-                            <h6 class="fw-bold text-primary mb-2"><i class="fa-solid fa-bus-simple me-1"></i> Segment 1: ${seg1Name}</h6>
-                            <div class="small mb-1"><strong>Board at:</strong> ${seg1Board}</div>
-                            <div class="small text-secondary mb-1"><strong>Stops:</strong> ${seg1Stops}</div>
-                            <div class="small mb-1"><strong>Alight at:</strong> ${seg1Alight}</div>
-                            <div class="small text-success fw-bold"><strong>Fare:</strong> ₹${seg1Fare}</div>
-                        </div>
-
-                        <!-- Segment 2 (ONLY if transfers > 0) -->
-                        ${seg2Html}
-
-                        <!-- Transfer Point (ONLY if applicable) -->
-                        ${(rt.transfers > 0 && rt.transfer_point) ? `
-                            <div class="p-3 rounded bg-warning bg-opacity-10 border border-warning mb-3 small">
-                                <i class="fa-solid fa-right-left text-warning me-1"></i> <strong>🔄 Transfer Point:</strong> Change bus at <strong>${rt.transfer_point}</strong>
-                            </div>
-                        ` : ''}
-
-                        <!-- Ticket Summary -->
-                        <div class="p-3 rounded bg-dark text-white mb-3 small">
-                            <i class="fa-solid fa-ticket text-warning me-1"></i> <strong>🎫 Ticket Summary:</strong> ${ticketSummaryStr}
-                        </div>
-
-                        <div class="d-flex justify-content-end mt-2 pt-2 border-top">
-                            <a href="/live-tracking/${rt.buses && rt.buses.length > 0 ? rt.buses[0].id : ''}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
-                                <i class="fa-solid fa-map-location-dot me-1"></i> Live Bus Tracking
-                            </a>
                         </div>
                     </div>
                 `;
-            });
 
-            $('#resultsContainer').html(html);
+                card.innerHTML = `
+                    <!-- Card Header -->
+                    <div class="card-header border-0 bg-transparent p-0 mb-2 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            ${badgeHtml}
+                            ${cbtBadgeHtml}
+                        </div>
+                        <div class="d-flex align-items-center gap-3 text-secondary small font-monospace">
+                            <span><i class="fa-solid fa-bus me-1 text-primary"></i>Total Stops: <strong>${totalStops}</strong></span>
+                            <span><i class="fa-solid fa-clock me-1 text-info"></i><strong>~${estMins} mins</strong></span>
+                            <span class="text-success fw-bold fs-6">₹${totalFare}</span>
+                        </div>
+                    </div>
+
+                    <!-- Card Body (Step-by-Step Journey Timeline) -->
+                    <div class="card-body p-0">
+                        ${timelineHtml}
+                    </div>
+                `;
+
+                card.onclick = () => renderRouteOnMap(route, card);
+                container.appendChild(card);
+            }
+
+            if (data.top_routes.length > 0) {
+                const firstCard = container.querySelector('.route-card');
+                renderRouteOnMap(data.top_routes[0], firstCard);
+            }
+        } catch (err) {
+            console.error('Fetch error:', err);
+            container.innerHTML = `
+                <div class="alert alert-danger shadow-sm rounded-3 border-0 p-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <i class="fa-solid fa-circle-exclamation fa-2x text-danger"></i>
+                        <div>
+                            <h6 class="fw-bold m-0 text-dark">Failed to Load Routes</h6>
+                            <p class="small mb-0 mt-1 text-secondary">Unable to connect to route engine. Check network connection or console for details.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    const searchForm = document.getElementById('routeSearchForm');
+    if (searchForm) {
+        searchForm.addEventListener('submit', executeSearch);
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('source') && urlParams.get('destination')) {
+        executeSearch();
+    } else if (sourceSelect && sourceSelect.value && destSelect && destSelect.value) {
+        executeSearch();
+    }
+
+    const btnMyLocation = document.getElementById('btnUseMyLocation');
+    if (btnMyLocation) {
+        btnMyLocation.addEventListener('click', function() {
+            if ("geolocation" in navigator) {
+                this.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Locating...';
+                navigator.geolocation.getCurrentPosition(pos => {
+                    fetch(`/api/nearby-stops/?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}&limit=1`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.nearby_stops && data.nearby_stops.length > 0) {
+                                const topStop = data.nearby_stops[0];
+                                if (sourceSelect) sourceSelect.value = topStop.id;
+                                if (sourceInput) sourceInput.value = topStop.stop_name;
+                                btnMyLocation.innerHTML = `<i class="fa-solid fa-check text-success me-1"></i> ${topStop.stop_name}`;
+                            }
+                        })
+                        .catch(() => {
+                            btnMyLocation.innerHTML = '<i class="fa-solid fa-crosshairs text-danger me-1"></i> Use My Location for Point A';
+                        });
+                });
+            }
         });
     }
-
-    $('#routeSearchForm').on('submit', function(e) {
-        e.preventDefault();
-        searchRoutes();
-    });
-
-    if ($('#sourceSelect').val() && $('#destSelect').val()) {
-        searchRoutes();
-    }
-
-    $('#btnUseMyLocation').on('click', function() {
-        if ("geolocation" in navigator) {
-            $(this).html('<i class="fa-solid fa-spinner fa-spin me-1"></i> Locating...');
-            navigator.geolocation.getCurrentPosition(function(pos) {
-                $.get(`/api/nearby-stops/?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}&limit=1`, function(data) {
-                    if (data.nearby_stops && data.nearby_stops.length > 0) {
-                        const topStop = data.nearby_stops[0];
-                        $('#sourceSelect').val(topStop.id);
-                        $('#sourceTextInput').val(topStop.stop_name);
-                        $('#btnUseMyLocation').html(`<i class="fa-solid fa-check text-success me-1"></i> ${topStop.stop_name}`);
-                    }
-                });
-            });
-        }
-    });
 });
 </script>
 {% endblock %}

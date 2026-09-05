@@ -9,13 +9,28 @@ from tracking.decorators import admin_required, driver_required, user_required
 
 
 def home_view(request):
-    if not request.user.is_authenticated:
-        return redirect('login')
-    if request.user.is_admin():
-        return redirect('admin-dashboard')
-    elif request.user.is_driver():
-        return redirect('driver-portal')
-    return redirect('user-dashboard')
+    if request.user.is_authenticated:
+        if request.user.is_admin():
+            return redirect('admin-dashboard')
+        elif request.user.is_driver():
+            return redirect('driver-portal')
+        return redirect('user-dashboard')
+
+    # Public landing page with live metrics
+    stops = BusStop.objects.filter(is_active=True).order_by('stop_name')
+    routes_count = Route.objects.filter(is_active=True).count()
+    stops_count = BusStop.objects.filter(is_active=True).count()
+    buses_count = Bus.objects.filter(is_active=True).count()
+    live_buses_count = Bus.objects.filter(is_active=True, tracking_status='LIVE', trip_status='IN_TRANSIT').count()
+
+    context = {
+        'stops': stops,
+        'routes_count': routes_count,
+        'stops_count': stops_count,
+        'buses_count': buses_count,
+        'live_buses_count': live_buses_count,
+    }
+    return render(request, 'index.html', context)
 
 
 @login_required(login_url='login')
@@ -34,21 +49,33 @@ def route_finder_view(request):
 
 @login_required(login_url='login')
 def live_tracking_view(request, bus_id=None):
-    buses = Bus.objects.filter(is_active=True).select_related('route')
+    # Strictly fetch buses that are currently on an active trip (IN_TRANSIT and LIVE)
+    live_buses = Bus.objects.filter(
+        is_active=True,
+        tracking_status='LIVE',
+        trip_status='IN_TRANSIT'
+    ).select_related('route', 'driver')
+
     selected_bus = None
     if bus_id:
-        selected_bus = get_object_or_404(Bus, id=bus_id)
+        selected_bus = Bus.objects.filter(id=bus_id, is_active=True).select_related('route', 'driver').first()
     elif request.GET.get('bus_id'):
         b_id = request.GET.get('bus_id')
         if b_id.isdigit():
-            selected_bus = Bus.objects.filter(id=int(b_id)).first()
+            selected_bus = Bus.objects.filter(id=int(b_id), is_active=True).select_related('route', 'driver').first()
 
-    all_stops = BusStop.objects.filter(is_active=True)
+    # If no specific bus selected and there are live buses, default to first live bus
+    if not selected_bus and live_buses.exists():
+        selected_bus = live_buses.first()
+
+    all_stops = BusStop.objects.filter(is_active=True).order_by('stop_name')
 
     context = {
-        'buses': buses,
+        'buses': live_buses,
+        'live_buses': live_buses,
         'selected_bus': selected_bus,
         'all_stops': all_stops,
+        'live_buses_count': live_buses.count(),
     }
     return render(request, 'live_tracking.html', context)
 
@@ -249,14 +276,74 @@ def admin_delete_bus_view(request, pk):
 def user_dashboard_view(request):
     stops = BusStop.objects.filter(is_active=True).order_by('stop_name')
     routes = Route.objects.filter(is_active=True)
-    buses = Bus.objects.filter(is_active=True).select_related('route')
-    fares = Fare.objects.select_related('route', 'source_stop', 'destination_stop').all()
+
+    # Strictly active live buses currently in transit
+    active_live_buses = Bus.objects.filter(
+        is_active=True,
+        tracking_status='LIVE',
+        trip_status='IN_TRANSIT'
+    ).select_related('route', 'driver')
+
+    # Curated fleet sample for directory display
+    buses = Bus.objects.filter(is_active=True).select_related('route')[:12]
+    fares = Fare.objects.select_related('route', 'source_stop', 'destination_stop').all()[:6]
+
+    # Curated Hubballi-Dharwad Prime Transit Corridors
+    prime_corridors = [
+        {
+            'name': 'CBT Hubballi ⇄ Dharwad BRTS Bus Stand',
+            'type': 'BRTS Chigari Green Express',
+            'badge': 'bg-success text-white',
+            'icon': 'fa-bolt',
+            'frequency': 'Every 4-8 mins',
+            'duration': '32 mins',
+            'fare': '₹22',
+            'distance': '20.8 km',
+            'stops_count': 16,
+        },
+        {
+            'name': 'Hubballi Railway Station ⇄ Airport (Gokul)',
+            'type': 'City Feeder Line',
+            'badge': 'bg-primary text-white',
+            'icon': 'fa-plane-departure',
+            'frequency': 'Every 15-20 mins',
+            'duration': '22 mins',
+            'fare': '₹15',
+            'distance': '9.4 km',
+            'stops_count': 9,
+        },
+        {
+            'name': 'CBT Hubballi ⇄ Navanagar KIMS Hospital',
+            'type': 'Twin Cities Metro Route',
+            'badge': 'bg-warning text-dark',
+            'icon': 'fa-hospital',
+            'frequency': 'Every 10 mins',
+            'duration': '18 mins',
+            'fare': '₹14',
+            'distance': '8.2 km',
+            'stops_count': 8,
+        },
+        {
+            'name': 'Dharwad CBT ⇄ SDM Medical College Sattur',
+            'type': 'Suburban Regular',
+            'badge': 'bg-info text-dark',
+            'icon': 'fa-graduation-cap',
+            'frequency': 'Every 12 mins',
+            'duration': '15 mins',
+            'fare': '₹12',
+            'distance': '7.1 km',
+            'stops_count': 7,
+        }
+    ]
 
     context = {
         'stops': stops,
         'routes': routes,
         'buses': buses,
+        'active_live_buses': active_live_buses,
+        'live_buses_count': active_live_buses.count(),
         'fares': fares,
+        'prime_corridors': prime_corridors,
     }
     return render(request, 'user_dashboard.html', context)
 

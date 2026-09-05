@@ -1,11 +1,14 @@
-/* Travel Dost Driver GPS Transmitter & Map Preview */
+/* Travel Dost Driver GPS Transmitter & Telemetry Cockpit */
 
 let driverSocket = null;
 let geoIntervalId = null;
 let simIntervalId = null;
+let countdownIntervalId = null;
 let currentTrackingBusId = null;
 let driverMap = null;
 let driverMarker = null;
+let packetsSentCount = 0;
+let nextSyncCountdown = 5;
 
 // Route Waypoints for Viva/Demo simulation (KLEIT -> Vidya Nagar -> Unkal Lake -> Navanagar -> Rayapur -> Sattur -> Dharwad CBT)
 const simWaypoints = [
@@ -35,21 +38,58 @@ $(document.body).ready(function() {
         currentTrackingBusId = busId;
         const isSimMode = $('#simToggle').is(':checked');
 
-        initDriverSocket(busId, function() {
-            if (isSimMode) {
-                startSimulationMode();
-            } else {
-                startBrowserGpsTracking();
-            }
+        // Step 1: Explicitly notify backend that Trip is IN_TRANSIT and bus is LIVE
+        $.ajax({
+            url: '/api/driver/trip/start/',
+            type: 'POST',
+            data: JSON.stringify({ bus_no: busId, bus_id: busId }),
+            contentType: 'application/json',
+            success: function(response) {
+                console.log("Trip started on backend:", response);
 
-            $('#btnStartTrip').addClass('d-none');
-            $('#btnStopTrip').removeClass('d-none');
-            $('#simToggle').prop('disabled', true);
-            $('#driverStatusBadge')
-                .removeClass('bg-secondary bg-danger')
-                .addClass('bg-success')
-                .html('<i class="fa-solid fa-signal me-1 animate-pulse"></i> LIVE TRIP ACTIVE');
-            $('#telemetryStatus').text('LIVE TRIP ACTIVE').removeClass('text-warning').addClass('text-success');
+                // Step 2: Establish WebSocket Connection
+                initDriverSocket(busId, function() {
+                    // Step 3: Start 5-second interval tracking
+                    if (isSimMode) {
+                        startSimulationMode();
+                    } else {
+                        startBrowserGpsTracking();
+                    }
+
+                    startCountdownTicker();
+
+                    $('#btnStartTrip').addClass('d-none');
+                    $('#btnStopTrip').removeClass('d-none');
+                    $('#simToggle').prop('disabled', true);
+                    $('#busSelectDropdown').prop('disabled', true);
+                    $('#driverStatusBadge')
+                        .removeClass('bg-secondary bg-danger')
+                        .addClass('bg-success')
+                        .html('<span class="live-dot me-1"></span> LIVE TRIP ACTIVE');
+                    $('#telemetryStatus').text('IN_TRANSIT (LIVE)').removeClass('text-warning text-secondary').addClass('text-success');
+                });
+            },
+            error: function(xhr) {
+                console.warn("REST start trip error, proceeding with socket:", xhr);
+                initDriverSocket(busId, function() {
+                    if (isSimMode) {
+                        startSimulationMode();
+                    } else {
+                        startBrowserGpsTracking();
+                    }
+                    startCountdownTicker();
+
+                    $('#btnStartTrip').addClass('d-none');
+                    $('#btnStopTrip').removeClass('d-none');
+                    $('#simToggle').prop('disabled', true);
+                    $('#busSelectDropdown').prop('disabled', true);
+                    $('#driverStatusBadge')
+                        .removeClass('bg-secondary bg-danger')
+                        .addClass('bg-success')
+                        .html('<span class="live-dot me-1"></span> LIVE TRIP ACTIVE');
+                    $('#telemetryStatus').text('IN_TRANSIT (LIVE)').removeClass('text-warning text-secondary').addClass('text-success');
+                });
+            }
         });
     });
 
@@ -64,20 +104,20 @@ function initDriverMap() {
     driverMap = L.map('driverMap').setView([15.36470, 75.12400], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
-        attribution: '&copy; OpenStreetMap'
+        attribution: '&copy; OpenStreetMap | Travel Dost'
     }).addTo(driverMap);
 
     const busIcon = L.divIcon({
         className: 'custom-bus-icon',
-        html: `<div style="background: #2563eb; color: white; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 2px solid white;">
-                <i class="fa-solid fa-bus" style="font-size: 16px;"></i>
+        html: `<div style="background: #10b981; color: white; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(16,185,129,0.5); border: 2px solid white;">
+                <i class="fa-solid fa-bus" style="font-size: 18px;"></i>
                </div>`,
-        iconSize: [34, 34],
-        iconAnchor: [17, 17]
+        iconSize: [38, 38],
+        iconAnchor: [19, 19]
     });
 
     driverMarker = L.marker([15.36470, 75.12400], { icon: busIcon }).addTo(driverMap)
-        .bindPopup("<b>Your Assigned Bus</b><br>Location telemetry active.")
+        .bindPopup("<b>Your Assigned Bus</b><br>5-second GPS telemetry active.")
         .openPopup();
 }
 
@@ -107,37 +147,72 @@ function initDriverSocket(busId, callback) {
     }
 }
 
+function startCountdownTicker() {
+    if (countdownIntervalId) clearInterval(countdownIntervalId);
+    nextSyncCountdown = 5;
+    updateCountdownUI();
+
+    countdownIntervalId = setInterval(function() {
+        nextSyncCountdown--;
+        if (nextSyncCountdown <= 0) {
+            nextSyncCountdown = 5;
+        }
+        updateCountdownUI();
+    }, 1000);
+}
+
+function updateCountdownUI() {
+    $('#gpsCountdown').html(`<i class="fa-solid fa-satellite-dish me-1 text-warning"></i> Next GPS sync in <strong>${nextSyncCountdown}s</strong>`);
+}
+
 function sendGpsPayload(lat, lng, speed, heading) {
+    packetsSentCount++;
+    nextSyncCountdown = 5;
+    updateCountdownUI();
+
     const payload = {
         action: 'location_update',
         bus_id: currentTrackingBusId,
+        bus_no: currentTrackingBusId,
         latitude: lat,
         longitude: lng,
+        lat: lat,
+        lon: lng,
         speed: speed || 0.0,
         heading: heading || 0.0,
         status: 'LIVE'
     };
 
-    // Send over WebSocket if open
+    // 1. Send via WebSocket
     if (driverSocket && driverSocket.readyState === WebSocket.OPEN) {
         driverSocket.send(JSON.stringify(payload));
     }
 
-    // Always post REST fallback to update DB
+    // 2. Send via REST endpoint to guarantee DB update & trip lifecycle
     $.ajax({
-        url: `/api/buses/${currentTrackingBusId}/location/`,
+        url: '/api/driver/trip/update-location/',
         type: 'POST',
         data: JSON.stringify(payload),
-        contentType: 'application/json'
+        contentType: 'application/json',
+        error: function() {
+            // Fallback
+            $.ajax({
+                url: `/api/buses/${currentTrackingBusId}/location/`,
+                type: 'POST',
+                data: JSON.stringify(payload),
+                contentType: 'application/json'
+            });
+        }
     });
 
-    // Update telemetry UI
+    // 3. Update Cockpit Telemetry UI
     $('#gpsLat').text(lat.toFixed(6));
     $('#gpsLng').text(lng.toFixed(6));
-    $('#gpsSpeed').text(`${(speed || 0).toFixed(1)} km/h`);
+    $('#gpsSpeed').text(Math.round(speed || 0));
     $('#gpsLastSent').text(new Date().toLocaleTimeString());
+    $('#gpsPacketCount').html(`<i class="fa-solid fa-signal me-1 text-success"></i> Pings: <strong>${packetsSentCount}</strong>`);
 
-    // Update map marker
+    // 4. Update driver preview map
     if (driverMap && driverMarker) {
         const newLatLng = new L.LatLng(lat, lng);
         driverMarker.setLatLng(newLatLng);
@@ -147,19 +222,19 @@ function sendGpsPayload(lat, lng, speed, heading) {
 
 function startBrowserGpsTracking() {
     if ("geolocation" in navigator) {
-        // Send initial location
+        // Immediate initial transmission
         navigator.geolocation.getCurrentPosition(
             function(position) {
                 processAndSendPosition(position);
             },
             function(err) {
-                alert("Browser Geolocation Error: " + err.message + "\nSwitching to Viva Simulation Mode.");
+                console.warn("Initial GPS error, switching to simulation:", err);
                 startSimulationMode();
             },
-            { enableHighAccuracy: true }
+            { enableHighAccuracy: true, timeout: 4500, maximumAge: 0 }
         );
 
-        // Continuously send GPS location every 5 seconds
+        // Continuous transmission every 5,000 milliseconds (5 seconds)
         if (geoIntervalId) clearInterval(geoIntervalId);
         geoIntervalId = setInterval(function() {
             navigator.geolocation.getCurrentPosition(
@@ -167,13 +242,13 @@ function startBrowserGpsTracking() {
                     processAndSendPosition(position);
                 },
                 function(err) {
-                    console.warn("Interval location error:", err);
+                    console.warn("Interval 5s GPS poll error:", err);
                 },
-                { enableHighAccuracy: true, timeout: 4000 }
+                { enableHighAccuracy: true, timeout: 4500, maximumAge: 0 }
             );
-        }, 5000); // 5 seconds continuous location updates
+        }, 5000);
     } else {
-        alert("Browser does not support Geolocation. Switching to Simulation Mode.");
+        alert("Browser does not support Geolocation. Switching to simulation mode.");
         startSimulationMode();
     }
 }
@@ -195,13 +270,13 @@ function startSimulationMode() {
     const wpInitial = waypoints[0];
     sendGpsPayload(wpInitial.lat, wpInitial.lng, wpInitial.speed || 35.0, wpInitial.heading || 90);
 
+    // Broadcast simulation location update every 5 seconds
     simIntervalId = setInterval(function() {
         simIndex = (simIndex + 1) % waypoints.length;
         const wp = waypoints[simIndex];
         sendGpsPayload(wp.lat, wp.lng, wp.speed || 35.0, wp.heading || 90);
-    }, 5000); // broadcast location update every 5 seconds
+    }, 5000);
 }
-
 
 function stopTrip() {
     if (geoIntervalId) {
@@ -214,22 +289,27 @@ function stopTrip() {
         simIntervalId = null;
     }
 
-    if (driverSocket) {
-        driverSocket.close();
-        driverSocket = null;
+    if (countdownIntervalId) {
+        clearInterval(countdownIntervalId);
+        countdownIntervalId = null;
     }
 
-    // Mark bus offline via API
+    // Explicitly notify backend and WebSockets that Trip has COMPLETED and bus is OFFLINE
     if (currentTrackingBusId) {
-        $.ajax({
-            url: `/api/buses/${currentTrackingBusId}/location/`,
-            type: 'POST',
-            data: JSON.stringify({
+        if (driverSocket && driverSocket.readyState === WebSocket.OPEN) {
+            driverSocket.send(JSON.stringify({
+                action: 'trip_end',
                 bus_id: currentTrackingBusId,
-                latitude: parseFloat($('#gpsLat').text()) || 15.36470,
-                longitude: parseFloat($('#gpsLng').text()) || 75.12400,
                 status: 'OFFLINE'
-            }),
+            }));
+            driverSocket.close();
+            driverSocket = null;
+        }
+
+        $.ajax({
+            url: '/api/driver/trip/end/',
+            type: 'POST',
+            data: JSON.stringify({ bus_no: currentTrackingBusId, bus_id: currentTrackingBusId }),
             contentType: 'application/json'
         });
     }
@@ -237,9 +317,12 @@ function stopTrip() {
     $('#btnStartTrip').removeClass('d-none');
     $('#btnStopTrip').addClass('d-none');
     $('#simToggle').prop('disabled', false);
+    $('#busSelectDropdown').prop('disabled', false);
     $('#driverStatusBadge')
         .removeClass('bg-success')
         .addClass('bg-secondary')
         .html('<i class="fa-solid fa-power-off me-1"></i> STANDBY');
-    $('#telemetryStatus').text('STANDBY').removeClass('text-success').addClass('text-warning');
+    $('#telemetryStatus').text('STANDBY (OFFLINE)').removeClass('text-success').addClass('text-warning');
+    $('#gpsSpeed').text('0');
+    $('#gpsCountdown').html('<i class="fa-solid fa-clock me-1"></i> Sync every 5.0s');
 }

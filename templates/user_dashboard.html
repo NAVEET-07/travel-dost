@@ -1,39 +1,276 @@
 {% extends 'base.html' %}
 
-{% block title %}Passenger Dashboard — Travel Dost{% endblock %}
+{% block title %}Passenger Commuter Portal — Travel Dost Hubballi-Dharwad{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Dashboard Specific Enhancements */
+.commuter-hero-card {
+    background: linear-gradient(135deg, #0a0f1d 0%, #0f172a 50%, #1e293b 100%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 24px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+    position: relative;
+    overflow: hidden;
+}
+
+.commuter-hero-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 380px;
+    height: 380px;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.25) 0%, rgba(37, 99, 235, 0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.live-trip-alert-card {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    border-radius: 20px;
+    box-shadow: 0 12px 28px rgba(16, 185, 129, 0.15);
+}
+
+.standby-trip-alert-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+}
+
+.fast-search-card {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.corridor-card {
+    transition: all 0.3s ease;
+    border-radius: 18px;
+    background: #ffffff;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+}
+.corridor-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.12);
+    border-color: #93c5fd;
+}
+
+.btn-swap-dash {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    border: 2px solid #cbd5e1;
+    color: #334155;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+.btn-swap-dash:hover {
+    background: var(--primary-color);
+    color: #ffffff;
+    border-color: var(--primary-color);
+    transform: rotate(180deg);
+}
+
+.quick-hub-pill {
+    font-size: 0.76rem;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.quick-hub-pill:hover {
+    background: #eff6ff;
+    color: #2563eb;
+    border-color: #93c5fd;
+}
+</style>
+{% endblock %}
 
 {% block content %}
-<!-- Top Header Bar -->
-<div class="bg-dark text-white py-4 border-bottom border-secondary border-opacity-25 mb-4 shadow-sm">
-    <div class="container-fluid px-lg-5">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-            <div class="d-flex align-items-center gap-3">
-                <div class="bg-primary text-white p-3 rounded-4 shadow">
-                    <i class="fa-solid fa-user-check fa-2x"></i>
+<div class="container-fluid px-lg-5 py-4">
+
+    <!-- 1. Personalized Commuter Hero Card -->
+    <div class="commuter-hero-card p-4 p-md-5 text-white mb-4">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+                <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                    <span class="badge bg-primary px-3 py-1 rounded-pill small">
+                        <i class="fa-solid fa-user-check me-1"></i> COMMUTER PORTAL
+                    </span>
+                    <span class="badge bg-emerald-subtle text-success border border-success border-opacity-25 px-3 py-1 rounded-pill small">
+                        <span class="live-dot me-1"></span> NWKRTC & Chigari BRTS Active
+                    </span>
+                    <span class="badge bg-secondary bg-opacity-50 text-light px-3 py-1 rounded-pill small" id="liveClockDisplay">
+                        <i class="fa-solid fa-clock me-1"></i> Real-Time Transit
+                    </span>
                 </div>
-                <div>
-                    <div class="d-flex align-items-center gap-2 mb-1">
-                        <span class="badge bg-primary rounded-pill px-2 small">PASSENGER PORTAL</span>
-                        <span class="text-secondary small">• Hubballi-Dharwad Twin Cities</span>
-                    </div>
-                    <h2 class="fw-bold m-0 text-white">Welcome, {{ user.username }}</h2>
-                    <p class="text-secondary m-0 small">Plan your trip, track buses live, check fares, and locate boarding stops.</p>
-                </div>
+
+                <h1 class="display-5 fw-extrabold m-0 text-white mb-2">
+                    Namaskara, <span class="gradient-text">{{ user.username|title }}</span> 👋
+                </h1>
+                <p class="text-light text-opacity-80 lead fs-6 m-0" style="max-width: 620px;">
+                    Smart public transit platform for the Hubballi–Dharwad Twin Cities. Track real-time driver GPS locations, find connecting routes, and plan your daily commute seamlessly.
+                </p>
             </div>
-            <div class="d-flex gap-2">
-                <a href="{% url 'route-finder' %}" class="btn btn-transit-primary btn-sm px-4">
-                    <i class="fa-solid fa-diamond-turn-right me-1"></i> Find Route
-                </a>
-                <a href="{% url 'tracking' %}" class="btn btn-transit-amber btn-sm px-4">
-                    <span class="live-dot me-1"></span> Live Map
-                </a>
+
+            <div class="col-lg-4 text-lg-end">
+                <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                    <a href="{% url 'tracking' %}" class="btn btn-transit-amber rounded-pill px-4 py-2 shadow">
+                        <span class="live-dot me-1"></span> Live GPS Map
+                    </a>
+                    <a href="{% url 'route-finder' %}" class="btn btn-outline-light rounded-pill px-4 py-2">
+                        <i class="fa-solid fa-diamond-turn-right me-1 text-primary"></i> Route Planner
+                    </a>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<div class="container-fluid px-lg-5 mb-5">
-    <!-- User Quick Navigation Cards -->
+    <!-- 2. Real-Time Active Trips Highlight (STRICT REAL-TIME ONLY) -->
+    <div class="mb-5">
+        {% if active_live_buses %}
+            <div class="live-trip-alert-card p-4 text-white">
+                <div class="row align-items-center g-3">
+                    <div class="col-md-8">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-success text-white p-3 rounded-4 shadow">
+                                <i class="fa-solid fa-tower-broadcast fa-2x animate-pulse"></i>
+                            </div>
+                            <div>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="badge bg-success rounded-pill px-2 py-1 small">
+                                        <span class="live-dot me-1"></span> {{ active_live_buses|length }} ACTIVE VEHICLE(S) STREAMING
+                                    </span>
+                                    <span class="text-info extra-small">Continuous 5s GPS Fix</span>
+                                </div>
+                                <h4 class="fw-bold m-0 text-white">
+                                    Bus {{ active_live_buses.0.bus_number }} is Live on {{ active_live_buses.0.route.route_name }}
+                                </h4>
+                                <p class="text-light text-opacity-80 small m-0 mt-1">
+                                    Driver transmitting real-time coordinates. Route trajectory and upcoming stop ETAs available on the map.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <a href="{% url 'live-tracking-bus' active_live_buses.0.id %}" class="btn btn-success btn-lg rounded-pill px-4 py-2 fw-bold shadow">
+                            <i class="fa-solid fa-location-arrow me-1"></i> Track Live on Map ➔
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="standby-trip-alert-card p-4 text-white">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-secondary bg-opacity-25 text-warning p-3 rounded-4 border border-secondary border-opacity-25">
+                            <i class="fa-solid fa-satellite-dish fa-2x"></i>
+                        </div>
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="badge bg-slate-800 text-warning border border-warning border-opacity-25 rounded-pill px-2 py-1 small">
+                                    FLEET STANDBY MODE
+                                </span>
+                                <span class="text-secondary extra-small">No Fake Static Markers</span>
+                            </div>
+                            <h5 class="fw-bold m-0 text-white">All Buses are Currently at Depots / Terminus</h5>
+                            <p class="text-secondary small m-0 mt-1">
+                                Real-time tracking activates automatically the moment a driver starts their trip and transmits GPS.
+                            </p>
+                        </div>
+                    </div>
+                    <div>
+                        <a href="{% url 'driver-portal' %}" class="btn btn-outline-warning rounded-pill btn-sm px-4 py-2 fw-semibold">
+                            <i class="fa-solid fa-gauge-high me-1"></i> Start a Trip as Driver
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- 3. Embedded Quick Journey Finder Widget -->
+    <div class="fast-search-card p-4 p-md-4 mb-5">
+        <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+            <div class="d-flex align-items-center gap-2">
+                <span class="bg-primary-subtle text-primary p-2 rounded-3">
+                    <i class="fa-solid fa-diamond-turn-right"></i>
+                </span>
+                <h5 class="fw-bold m-0 text-dark">Quick Journey Planner</h5>
+            </div>
+            <span class="text-secondary extra-small fw-semibold">DIRECT & 1-TRANSFER SMART DIJKSTRA</span>
+        </div>
+
+        <form action="{% url 'route-finder' %}" method="GET" id="dashSearchForm">
+            <div class="row g-3 align-items-center">
+                <!-- Source Stop -->
+                <div class="col-md-5">
+                    <label class="form-label text-secondary small fw-bold text-uppercase mb-1" style="font-size: 0.72rem;">
+                        <i class="fa-solid fa-circle text-success me-1"></i> Boarding Stop (Point A)
+                    </label>
+                    <select name="source" class="form-select rounded-3 shadow-none fw-medium" id="dashSourceSelect" required>
+                        <option value="">Select Boarding Stop...</option>
+                        {% for st in stops %}
+                            <option value="{{ st.id }}">{{ st.stop_name }} ({{ st.area }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Swap Button -->
+                <div class="col-md-2 text-center my-1 my-md-0">
+                    <button type="button" class="btn-swap-dash" id="btnSwapDash" title="Swap Origin and Destination">
+                        <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                    </button>
+                </div>
+
+                <!-- Destination Stop -->
+                <div class="col-md-5">
+                    <label class="form-label text-secondary small fw-bold text-uppercase mb-1" style="font-size: 0.72rem;">
+                        <i class="fa-solid fa-location-dot text-danger me-1"></i> Destination Stop (Point B)
+                    </label>
+                    <select name="destination" class="form-select rounded-3 shadow-none fw-medium" id="dashDestSelect" required>
+                        <option value="">Select Destination Stop...</option>
+                        {% for st in stops %}
+                            <option value="{{ st.id }}">{{ st.stop_name }} ({{ st.area }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Popular Hub Shortcut Pills -->
+            <div class="d-flex align-items-center flex-wrap gap-2 mt-3 pt-2 border-top">
+                <span class="extra-small text-secondary fw-bold text-uppercase">Popular Hubs:</span>
+                <span class="quick-hub-pill" data-query="cbt"><i class="fa-solid fa-bus text-primary me-1"></i> CBT Hubballi</span>
+                <span class="quick-hub-pill" data-query="dharwad brts"><i class="fa-solid fa-bolt text-warning me-1"></i> Dharwad BRTS</span>
+                <span class="quick-hub-pill" data-query="airport"><i class="fa-solid fa-plane text-info me-1"></i> Airport</span>
+                <span class="quick-hub-pill" data-query="railway station"><i class="fa-solid fa-train text-danger me-1"></i> Railway Stn</span>
+                <span class="quick-hub-pill" data-query="navanagar"><i class="fa-solid fa-hospital text-success me-1"></i> Navanagar</span>
+                <span class="quick-hub-pill" data-query="sattur"><i class="fa-solid fa-graduation-cap text-primary me-1"></i> SDM Sattur</span>
+
+                <div class="ms-auto d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" id="btnDashMyLocation">
+                        <i class="fa-solid fa-crosshairs text-danger me-1"></i> Use GPS
+                    </button>
+                    <button type="submit" class="btn btn-transit-primary btn-sm rounded-pill px-4 fw-bold">
+                        <i class="fa-solid fa-magnifying-glass me-1"></i> Search Buses
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- 4. Transit Service Shortcuts (4 Glassmorphic Cards) -->
     <div class="row g-4 mb-5">
         <div class="col-md-3 col-sm-6">
             <a href="{% url 'route-finder' %}" class="text-decoration-none">
@@ -41,9 +278,9 @@
                     <div class="bg-primary-subtle text-primary p-3 rounded-4 d-inline-flex mb-3 shadow-sm">
                         <i class="fa-solid fa-route fa-2x"></i>
                     </div>
-                    <h5 class="fw-bold text-dark mb-1">Search Buses</h5>
-                    <p class="text-secondary small mb-3">Direct & 1-transfer routes between any two stops.</p>
-                    <span class="btn btn-sm btn-outline-primary rounded-pill px-4 fw-semibold">Find Route ➔</span>
+                    <h5 class="fw-bold text-dark mb-1">Route Finder</h5>
+                    <p class="text-secondary small mb-3">Direct & 1-transfer shortest routes with stage fares.</p>
+                    <span class="btn btn-sm btn-outline-primary rounded-pill px-4 fw-semibold">Plan Trip ➔</span>
                 </div>
             </a>
         </div>
@@ -54,8 +291,8 @@
                     <div class="bg-success-subtle text-success p-3 rounded-4 d-inline-flex mb-3 shadow-sm">
                         <i class="fa-solid fa-tower-broadcast fa-2x"></i>
                     </div>
-                    <h5 class="fw-bold text-dark mb-1">Live Tracking</h5>
-                    <p class="text-secondary small mb-3">Watch buses moving live on map via GPS telemetry.</p>
+                    <h5 class="fw-bold text-dark mb-1">Live Bus Map</h5>
+                    <p class="text-secondary small mb-3">Real-time driver GPS coordinates streaming every 5s.</p>
                     <span class="btn btn-sm btn-outline-success rounded-pill px-4 fw-semibold">Live Map ➔</span>
                 </div>
             </a>
@@ -68,7 +305,7 @@
                         <i class="fa-solid fa-location-crosshairs fa-2x"></i>
                     </div>
                     <h5 class="fw-bold text-dark mb-1">Nearby Stops</h5>
-                    <p class="text-secondary small mb-3">Locate stops within walking distance via GPS.</p>
+                    <p class="text-secondary small mb-3">Find boarding stops within walking distance via GPS.</p>
                     <span class="btn btn-sm btn-outline-danger rounded-pill px-4 fw-semibold">Scan Stops ➔</span>
                 </div>
             </a>
@@ -80,62 +317,108 @@
                     <div class="bg-warning-subtle text-warning p-3 rounded-4 d-inline-flex mb-3 shadow-sm">
                         <i class="fa-solid fa-bus-simple fa-2x"></i>
                     </div>
-                    <h5 class="fw-bold text-dark mb-1">Bus Fleet & Fares</h5>
-                    <p class="text-secondary small mb-3">Explore Chigari BRTS, Ordinary & Express fares.</p>
+                    <h5 class="fw-bold text-dark mb-1">Active Fleet & Fares</h5>
+                    <p class="text-secondary small mb-3">Ordinary, Express, and Chigari BRTS schedule charts.</p>
                     <span class="btn btn-sm btn-outline-warning rounded-pill px-4 fw-semibold">View Fleet ➔</span>
                 </div>
             </a>
         </div>
     </div>
 
-    <!-- Active Fleet Table & Fares Quick List -->
-    <div class="row g-4">
+    <!-- 5. Prime Twin Cities Transit Corridors -->
+    <div class="mb-5">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <div>
+                <h4 class="fw-bold m-0 text-dark">Prime Twin Cities Corridors</h4>
+                <p class="text-secondary small m-0">Fastest and most frequented routes across Hubballi & Dharwad.</p>
+            </div>
+            <a href="{% url 'routes' %}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                View All Routes
+            </a>
+        </div>
+
+        <div class="row g-3">
+            {% for c in prime_corridors %}
+                <div class="col-md-6 col-xl-3">
+                    <div class="corridor-card p-3 h-100 d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <span class="badge {{ c.badge }} rounded-pill small">
+                                    <i class="fa-solid {{ c.icon }} me-1"></i> {{ c.type }}
+                                </span>
+                                <strong class="text-success fs-6">{{ c.fare }}</strong>
+                            </div>
+                            <h6 class="fw-bold text-dark mb-2">{{ c.name }}</h6>
+                            <div class="small text-secondary mb-3">
+                                <div><i class="fa-solid fa-route text-primary me-1"></i> {{ c.distance }} • ~{{ c.duration }}</div>
+                                <div><i class="fa-solid fa-stopwatch text-warning me-1"></i> Frequency: <strong>{{ c.frequency }}</strong></div>
+                            </div>
+                        </div>
+                        <a href="{% url 'route-finder' %}" class="btn btn-sm btn-outline-secondary rounded-pill w-100 extra-small fw-semibold">
+                            Check Schedules & Stops ➔
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 6. Fleet Status & NWKRTC Fare Guidelines -->
+    <div class="row g-4 mb-4">
+        <!-- Bus Fleet Status Table (Clean, Genuine Status) -->
         <div class="col-lg-7">
-            <div class="transit-card p-4">
+            <div class="transit-card p-4 h-100">
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <div class="d-flex align-items-center gap-2">
                         <i class="fa-solid fa-bus text-primary fs-5"></i>
-                        <h5 class="fw-bold m-0 text-dark">Active Bus Fleet Status</h5>
+                        <h5 class="fw-bold m-0 text-dark">Bus Fleet Directory</h5>
                     </div>
                     <a href="{% url 'buses' %}" class="btn btn-sm btn-outline-primary rounded-pill px-3" style="font-size: 0.78rem;">
-                        View All Fleet
+                        View All {{ buses_count }} Buses
                     </a>
                 </div>
+
                 <div class="table-responsive">
                     <table class="table table-hover align-middle small mb-0">
-                        <thead class="table-light text-secondary text-uppercase" style="font-size: 0.72rem;">
+                        <thead class="table-light text-secondary text-uppercase extra-small">
                             <tr>
                                 <th>Bus No</th>
                                 <th>Service Name</th>
                                 <th>Category</th>
                                 <th>Assigned Route</th>
-                                <th>Telemetry</th>
+                                <th>Live Status</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for b in buses %}
                                 <tr>
-                                    <td><strong class="text-dark">Bus {{ b.bus_number }}</strong></td>
+                                    <td><strong class="text-dark font-monospace">Bus {{ b.bus_number }}</strong></td>
                                     <td>{{ b.bus_name }}</td>
                                     <td><span class="badge bg-light text-secondary border">{{ b.get_bus_type_display }}</span></td>
                                     <td><span class="text-secondary">{{ b.route.route_name|default:"Unassigned" }}</span></td>
                                     <td>
-                                        {% if b.tracking_status == 'LIVE' %}
+                                        {% if b.tracking_status == 'LIVE' and b.trip_status == 'IN_TRANSIT' %}
                                             <span class="badge bg-success"><span class="live-dot me-1"></span> LIVE</span>
                                         {% else %}
-                                            <span class="badge bg-secondary">OFFLINE</span>
+                                            <span class="badge bg-light text-secondary border">SCHEDULED</span>
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <a href="{% url 'live-tracking-bus' b.id %}" class="btn btn-sm btn-primary rounded-pill px-3 py-1" style="font-size: 0.75rem;">
-                                            <i class="fa-solid fa-location-arrow me-1"></i> Track
-                                        </a>
+                                        {% if b.tracking_status == 'LIVE' and b.trip_status == 'IN_TRANSIT' %}
+                                            <a href="{% url 'live-tracking-bus' b.id %}" class="btn btn-sm btn-success rounded-pill px-3 py-1 extra-small">
+                                                <i class="fa-solid fa-location-arrow me-1"></i> Track Live
+                                            </a>
+                                        {% else %}
+                                            <a href="{% url 'bus-detail' b.id %}" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 extra-small">
+                                                Details
+                                            </a>
+                                        {% endif %}
                                     </td>
                                 </tr>
                             {% empty %}
                                 <tr>
-                                    <td colspan="6" class="text-center text-muted py-4">No active buses currently configured.</td>
+                                    <td colspan="6" class="text-center text-muted py-4">No buses currently configured in fleet.</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -144,14 +427,25 @@
             </div>
         </div>
 
+        <!-- NWKRTC Fare Guidelines & Transit Pass Info -->
         <div class="col-lg-5">
             <div class="transit-card p-4 h-100">
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <div class="d-flex align-items-center gap-2">
-                        <i class="fa-solid fa-receipt text-success fs-5"></i>
-                        <h5 class="fw-bold m-0 text-dark">Official NWKRTC Fare Chart</h5>
+                        <i class="fa-solid fa-ticket text-warning fs-5"></i>
+                        <h5 class="fw-bold m-0 text-dark">NWKRTC Fare Stages & Passes</h5>
                     </div>
                     <span class="badge bg-light text-secondary border small">Hubballi–Dharwad</span>
+                </div>
+
+                <div class="p-3 bg-light rounded-3 mb-3 border">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-success px-2 py-1">SHAKTI SCHEME</span>
+                        <strong class="small text-dark">Free Travel for Women</strong>
+                    </div>
+                    <p class="extra-small text-secondary m-0">
+                        Applicable on all NWKRTC City Ordinary, Suburban and Express services across Karnataka with valid domicile ID.
+                    </p>
                 </div>
 
                 <div class="list-group list-group-flush extra-small">
@@ -170,11 +464,69 @@
                             </span>
                         </div>
                     {% empty %}
-                        <div class="text-muted py-4 text-center">No fare chart records found.</div>
+                        <div class="text-muted py-4 text-center">Standard NWKRTC fare stages: ₹7 (Stage 1), ₹12 (Stage 2), ₹18 (Stage 3), ₹22 (Full Corridor).</div>
                     {% endfor %}
                 </div>
             </div>
         </div>
     </div>
+
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Dynamic live clock in hero card
+    function updateClock() {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        $('#liveClockDisplay').html(`<i class="fa-solid fa-clock me-1"></i> ${timeStr}`);
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // Stop Swap Functionality
+    $('#btnSwapDash').on('click', function() {
+        const sVal = $('#dashSourceSelect').val();
+        const dVal = $('#dashDestSelect').val();
+        $('#dashSourceSelect').val(dVal);
+        $('#dashDestSelect').val(sVal);
+    });
+
+    // Quick Hub Pills Click Handler
+    $('.quick-hub-pill').on('click', function() {
+        const query = $(this).data('query').toLowerCase();
+        const target = $('#dashSourceSelect').val() ? '#dashDestSelect' : '#dashSourceSelect';
+
+        $(`${target} option`).each(function() {
+            if ($(this).text().toLowerCase().includes(query)) {
+                $(`${target}`).val($(this).val());
+                return false;
+            }
+        });
+    });
+
+    // Auto-detect GPS Location for boarding stop
+    $('#btnDashMyLocation').on('click', function() {
+        if ("geolocation" in navigator) {
+            $(this).html('<i class="fa-solid fa-spinner fa-spin me-1"></i> Scanning...');
+            navigator.geolocation.getCurrentPosition(function(pos) {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                $.get(`/api/nearby-stops/?lat=${lat}&lng=${lng}&limit=1`, function(data) {
+                    if (data.nearby_stops && data.nearby_stops.length > 0) {
+                        const nearest = data.nearby_stops[0];
+                        $('#dashSourceSelect').val(nearest.id);
+                        $('#btnDashMyLocation').html(`<i class="fa-solid fa-check text-success me-1"></i> ${nearest.stop_name}`);
+                    }
+                });
+            }, function(err) {
+                alert("Location permission denied. Please pick a stop from the dropdown.");
+                $('#btnDashMyLocation').html('<i class="fa-solid fa-crosshairs text-danger me-1"></i> Use GPS');
+            });
+        }
+    });
+});
+</script>
 {% endblock %}

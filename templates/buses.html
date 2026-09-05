@@ -59,10 +59,10 @@
                         <span class="badge bg-primary text-white fs-6 px-3 py-2 rounded-pill fw-bold shadow-sm">
                             <i class="fa-solid fa-bus me-1"></i> Bus {{ b.bus_number }}
                         </span>
-                        {% if b.tracking_status == 'LIVE' %}
+                        {% if b.tracking_status == 'LIVE' and b.trip_status == 'IN_TRANSIT' %}
                             <span class="badge-transit badge-direct"><span class="live-dot me-1"></span> LIVE</span>
                         {% else %}
-                            <span class="badge bg-light text-secondary border small">OFFLINE</span>
+                            <span class="badge bg-light text-secondary border small">STANDBY</span>
                         {% endif %}
                     </div>
 
@@ -83,9 +83,15 @@
                         <a href="{% url 'bus-detail' b.id %}" class="btn btn-outline-secondary btn-sm rounded-pill flex-grow-1 fw-semibold">
                             Details
                         </a>
-                        <a href="{% url 'live-tracking-bus' b.id %}" class="btn btn-primary btn-sm rounded-pill flex-grow-1 fw-semibold shadow-sm">
-                            <i class="fa-solid fa-location-crosshairs me-1"></i> Track Live
-                        </a>
+                        {% if b.tracking_status == 'LIVE' and b.trip_status == 'IN_TRANSIT' %}
+                            <a href="{% url 'live-tracking-bus' b.id %}" class="btn btn-success btn-sm rounded-pill flex-grow-1 fw-semibold shadow-sm">
+                                <i class="fa-solid fa-location-crosshairs me-1"></i> Track Live
+                            </a>
+                        {% else %}
+                            <a href="{% url 'bus-detail' b.id %}" class="btn btn-outline-primary btn-sm rounded-pill flex-grow-1 fw-semibold">
+                                Schedule
+                            </a>
+                        {% endif %}
                     </div>
                 </div>
             </div>

@@ -88,9 +88,15 @@
                 <div class="transit-card-dark p-4 rounded-4 shadow-lg border border-secondary border-opacity-25">
                     <div class="d-flex align-items-center justify-content-between mb-4">
                         <div class="d-flex align-items-center gap-2">
-                            <span class="badge bg-success text-white px-3 py-2 rounded-pill d-flex align-items-center gap-2">
-                                <span class="live-dot"></span> {{ live_buses_count }} Buses Live
-                            </span>
+                            {% if live_buses_count > 0 %}
+                                <span class="badge bg-success text-white px-3 py-2 rounded-pill d-flex align-items-center gap-2">
+                                    <span class="live-dot"></span> {{ live_buses_count }} Active Bus{{ live_buses_count|pluralize:"es" }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-slate-800 text-warning border border-warning border-opacity-25 px-3 py-2 rounded-pill d-flex align-items-center gap-2 small">
+                                    <i class="fa-solid fa-satellite-dish"></i> Fleet on Standby (0 Live)
+                                </span>
+                            {% endif %}
                         </div>
                         <small class="text-secondary fw-medium">Real-Time Transit IoT</small>
                     </div>
@@ -152,7 +158,7 @@
                         <i class="fa-solid fa-bus-simple fa-xl"></i>
                     </div>
                     <h2 class="display-6 fw-extrabold text-dark m-0">{{ buses_count }}</h2>
-                    <p class="text-secondary small fw-bold text-uppercase m-0 mt-1" style="letter-spacing: 0.05em;">TRACKED FLEET</p>
+                    <p class="text-secondary small fw-bold text-uppercase m-0 mt-1" style="letter-spacing: 0.05em;">TOTAL FLEET</p>
                 </div>
             </div>
             <div class="col-6 col-md-3">
@@ -175,11 +181,11 @@
             </div>
             <div class="col-6 col-md-3">
                 <div class="p-3 border-start">
-                    <div class="d-inline-flex p-3 rounded-circle bg-danger-subtle text-danger mb-2">
+                    <div class="d-inline-flex p-3 rounded-circle {% if live_buses_count > 0 %}bg-success-subtle text-success{% else %}bg-secondary-subtle text-secondary{% endif %} mb-2">
                         <i class="fa-solid fa-tower-broadcast fa-xl"></i>
                     </div>
-                    <h2 class="display-6 fw-extrabold text-danger m-0">{{ live_buses_count }}</h2>
-                    <p class="text-secondary small fw-bold text-uppercase m-0 mt-1" style="letter-spacing: 0.05em;">LIVE SESSIONS</p>
+                    <h2 class="display-6 fw-extrabold {% if live_buses_count > 0 %}text-success{% else %}text-secondary{% endif %} m-0">{{ live_buses_count }}</h2>
+                    <p class="text-secondary small fw-bold text-uppercase m-0 mt-1" style="letter-spacing: 0.05em;">ACTIVE TRIPS</p>
                 </div>
             </div>
         </div>

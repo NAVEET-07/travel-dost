@@ -60,13 +60,20 @@
 
                     <input type="hidden" id="driverBusId" value="{{ assigned_bus.id }}">
 
-                    <!-- Speedometer Gauge -->
+                    <!-- Speedometer Gauge & Sync Heartbeat -->
                     <div class="my-4 text-center">
                         <div class="driver-speed-gauge mb-2">
                             <span class="driver-speed-number" id="gpsSpeed">0</span>
                             <span class="text-secondary small fw-bold" style="font-size: 0.65rem; letter-spacing: 0.08em;">KM / H</span>
                         </div>
-                        <span class="badge bg-light text-secondary border small"><span class="live-dot me-1"></span> Speed Telemetry</span>
+                        <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap">
+                            <span class="badge bg-light text-secondary border small" id="gpsCountdown">
+                                <i class="fa-solid fa-clock me-1 text-primary"></i> Sync every <strong>5.0s</strong>
+                            </span>
+                            <span class="badge bg-light text-secondary border small" id="gpsPacketCount">
+                                <i class="fa-solid fa-satellite-dish me-1 text-success"></i> Pings: <strong>0</strong>
+                            </span>
+                        </div>
                     </div>
 
                     <!-- Simulation Mode Toggle for indoor Viva testing -->
@@ -76,25 +83,30 @@
                             <i class="fa-solid fa-gamepad text-warning me-1"></i> Simulation Mode (Indoor Viva Demo)
                         </label>
                         <small class="d-block text-secondary mt-1" style="font-size: 0.78rem;">
-                            Streams route waypoints smoothly every 4 seconds for indoor presentation demos.
+                            Streams route waypoints smoothly every 5 seconds for indoor presentation demos.
                         </small>
                     </div>
 
                     <!-- Action Buttons -->
                     <div class="d-grid gap-3 mb-4">
                         <button type="button" class="btn btn-success btn-lg rounded-pill fw-bold py-3 shadow" id="btnStartTrip">
-                            <i class="fa-solid fa-play me-2"></i> START TRIP TRANSMISSION
+                            <i class="fa-solid fa-play me-2"></i> START TRIP (BEGIN 5S STREAMING)
                         </button>
                         <button type="button" class="btn btn-danger btn-lg rounded-pill fw-bold py-3 shadow d-none" id="btnStopTrip">
-                            <i class="fa-solid fa-stop me-2"></i> STOP TRIP TRANSMISSION
+                            <i class="fa-solid fa-stop me-2"></i> STOP TRIP (SET BUS OFFLINE)
                         </button>
                     </div>
 
                     <!-- Telemetry Monitor -->
                     <div class="p-3 bg-slate-900 text-white rounded-4 border border-secondary border-opacity-25 shadow-sm">
-                        <h6 class="text-warning fw-bold mb-3 border-bottom border-secondary border-opacity-25 pb-2" style="font-size: 0.78rem; letter-spacing: 0.05em;">
-                            <i class="fa-solid fa-microchip me-2"></i>LIVE VEHICLE TELEMETRY
-                        </h6>
+                        <div class="d-flex align-items-center justify-content-between mb-3 border-bottom border-secondary border-opacity-25 pb-2">
+                            <h6 class="text-warning fw-bold m-0" style="font-size: 0.78rem; letter-spacing: 0.05em;">
+                                <i class="fa-solid fa-microchip me-2"></i>LIVE VEHICLE TELEMETRY
+                            </h6>
+                            <span class="badge bg-primary bg-opacity-25 text-info border border-info border-opacity-25 extra-small">
+                                5-Second Interval
+                            </span>
+                        </div>
                         <div class="row g-2 small">
                             <div class="col-6">
                                 <span class="text-secondary d-block" style="font-size: 0.7rem;">BUS IDENTIFIER</span>
@@ -102,7 +114,7 @@
                             </div>
                             <div class="col-6">
                                 <span class="text-secondary d-block" style="font-size: 0.7rem;">SESSION STATUS</span>
-                                <strong class="text-warning font-monospace" id="telemetryStatus">STANDBY</strong>
+                                <strong class="text-warning font-monospace" id="telemetryStatus">STANDBY (OFFLINE)</strong>
                             </div>
                             <div class="col-6">
                                 <span class="text-secondary d-block" style="font-size: 0.7rem;">LATITUDE</span>

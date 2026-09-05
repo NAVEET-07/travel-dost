@@ -94,6 +94,26 @@ class BusTrackingConsumer(AsyncWebsocketConsumer):
                             'bus_all',
                             payload
                         )
+            elif action in ['trip_end', 'stop_trip', 'trip_stop']:
+                bus_id = data.get('bus_id') or self.bus_id
+                if bus_id:
+                    bus_update = await self.end_bus_trip(bus_id)
+                    payload = {
+                        'type': 'bus_location_broadcast',
+                        'bus_id': int(bus_id),
+                        'bus_number': bus_update['bus_number'] if bus_update else '',
+                        'bus_name': bus_update['bus_name'] if bus_update else '',
+                        'bus_type': '',
+                        'latitude': None,
+                        'longitude': None,
+                        'speed': 0.0,
+                        'heading': 0.0,
+                        'status': 'OFFLINE',
+                        'timestamp': timezone.now().isoformat()
+                    }
+                    await self.channel_layer.group_send(f'bus_{bus_id}', payload)
+                    await self.channel_layer.group_send('bus_all', payload)
+
             elif action == 'ping':
                 await self.send(text_data=json.dumps({'type': 'pong'}))
 
@@ -111,12 +131,12 @@ class BusTrackingConsumer(AsyncWebsocketConsumer):
             'bus_number': event['bus_number'],
             'bus_name': event['bus_name'],
             'bus_type': event['bus_type'],
-            'latitude': event['latitude'],
-            'longitude': event['longitude'],
-            'speed': event['speed'],
-            'heading': event['heading'],
-            'status': event['status'],
-            'timestamp': event['timestamp']
+            'latitude': event.get('latitude'),
+            'longitude': event.get('longitude'),
+            'speed': event.get('speed', 0.0),
+            'heading': event.get('heading', 0.0),
+            'status': event.get('status', 'LIVE'),
+            'timestamp': event.get('timestamp')
         }))
 
     @database_sync_to_async
@@ -125,8 +145,12 @@ class BusTrackingConsumer(AsyncWebsocketConsumer):
         try:
             bus = Bus.objects.get(id=bus_id)
             bus.tracking_status = status
+            if status == 'LIVE':
+                bus.trip_status = 'IN_TRANSIT'
+            elif status == 'OFFLINE':
+                bus.trip_status = 'COMPLETED'
             bus.last_updated = timezone.now()
-            bus.save(update_fields=['tracking_status', 'last_updated'])
+            bus.save(update_fields=['tracking_status', 'trip_status', 'last_updated'])
 
             loc = BusLocation.objects.create(
                 bus=bus,
@@ -141,6 +165,22 @@ class BusTrackingConsumer(AsyncWebsocketConsumer):
                 'bus_name': bus.bus_name,
                 'bus_type': bus.get_bus_type_display(),
                 'timestamp': loc.timestamp.isoformat()
+            }
+        except Bus.DoesNotExist:
+            return None
+
+    @database_sync_to_async
+    def end_bus_trip(self, bus_id):
+        from tracking.models import Bus
+        try:
+            bus = Bus.objects.get(id=bus_id)
+            bus.tracking_status = 'OFFLINE'
+            bus.trip_status = 'COMPLETED'
+            bus.last_updated = timezone.now()
+            bus.save(update_fields=['tracking_status', 'trip_status', 'last_updated'])
+            return {
+                'bus_number': bus.bus_number,
+                'bus_name': bus.bus_name
             }
         except Bus.DoesNotExist:
             return None
@@ -170,7 +210,8 @@ class BusTrackingConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def get_all_latest_buses_data(self):
         from tracking.models import Bus
-        buses = Bus.objects.filter(is_active=True).select_related('route')
+        # STRICT REAL-TIME: Only return buses that are actively IN_TRANSIT and LIVE
+        buses = Bus.objects.filter(is_active=True, tracking_status='LIVE', trip_status='IN_TRANSIT').select_related('route')
         buses_list = []
         for bus in buses:
             loc = bus.get_current_location()

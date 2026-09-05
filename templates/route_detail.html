@@ -1,26 +1,46 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ route.route_name }} Details — Travel Dost{% endblock %}
+{% block title %}{{ route.route_name }} Stops & Schedule — Travel Dost{% endblock %}
 
 {% block content %}
-<div class="bg-dark text-white py-4 border-bottom border-secondary mb-4">
+<div class="bg-dark text-white py-4 border-bottom border-secondary border-opacity-25 mb-4 shadow-sm">
     <div class="container px-lg-5">
-        <h2 class="fw-bold m-0">{{ route.route_name }}</h2>
-        <p class="text-secondary m-0">{{ route.start_point }} ➔ {{ route.end_point }}</p>
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div>
+                <span class="badge bg-success rounded-pill px-3 py-1 small fw-bold mb-2">TRANSIT CORRIDOR</span>
+                <h2 class="fw-bold m-0 text-white">{{ route.route_name }}</h2>
+                <div class="d-flex align-items-center gap-2 mt-1 small text-secondary">
+                    <span><i class="fa-solid fa-circle text-success me-1"></i> {{ route.start_point }}</span>
+                    <span>➔</span>
+                    <span><i class="fa-solid fa-location-dot text-danger me-1"></i> {{ route.end_point }}</span>
+                </div>
+            </div>
+            <a href="{% url 'route-finder' %}?source={{ route.start_point }}&destination={{ route.end_point }}" class="btn btn-transit-primary btn-sm px-4">
+                <i class="fa-solid fa-diamond-turn-right me-1"></i> Check Fares & Journey
+            </a>
+        </div>
     </div>
 </div>
 
 <div class="container px-lg-5 mb-5">
     <div class="row g-4">
         <div class="col-lg-8">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
-                <h5 class="fw-bold mb-4"><i class="fa-solid fa-list-ol text-primary me-2"></i>Ordered Stop Sequence</h5>
-                <div class="timeline-step-list">
+            <div class="transit-card p-4">
+                <h5 class="fw-bold mb-4 text-dark"><i class="fa-solid fa-signs-post text-primary me-2"></i>Ordered Stop Sequence</h5>
+                <div class="transit-stepper ps-4">
                     {% for rs in route_stops %}
-                        <div class="timeline-step">
-                            <div class="timeline-bullet"></div>
-                            <h6 class="fw-bold m-0">Stop #{{ rs.stop_order }}: {{ rs.bus_stop.stop_name }}</h6>
-                            <p class="text-secondary small m-0">{{ rs.bus_stop.area }} • Distance: {{ rs.distance_from_start_km }} KM</p>
+                        <div class="stepper-leg">
+                            <div class="stepper-node {% if forloop.first %}node-boarding{% elif forloop.last %}node-destination{% endif %}"></div>
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <div>
+                                    <span class="badge bg-light text-secondary border small me-1">#{{ rs.stop_order }}</span>
+                                    <strong class="text-dark">{{ rs.bus_stop.stop_name }}</strong>
+                                    <span class="text-secondary small ms-1">({{ rs.bus_stop.area }})</span>
+                                </div>
+                                <span class="badge bg-light text-secondary border small">
+                                    <i class="fa-solid fa-road me-1"></i>{{ rs.distance_from_start_km }} km
+                                </span>
+                            </div>
                         </div>
                     {% endfor %}
                 </div>
@@ -28,16 +48,21 @@
         </div>
 
         <div class="col-lg-4">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
-                <h5 class="fw-bold mb-3"><i class="fa-solid fa-bus text-success me-2"></i>Assigned Fleet</h5>
+            <div class="transit-card p-4 h-100">
+                <h5 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-bus text-success me-2"></i>Assigned Vehicles</h5>
                 <div class="list-group list-group-flush extra-small">
                     {% for b in assigned_buses %}
-                        <a href="{% url 'live-tracking-bus' b.id %}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2 border-0 mb-1 rounded bg-light">
-                            <strong>Bus {{ b.bus_number }}</strong>
-                            <span class="badge bg-primary">Track Live</span>
+                        <a href="{% url 'live-tracking-bus' b.id %}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2 px-3 border-0 mb-2 rounded-3 bg-light hover-lift">
+                            <div>
+                                <strong class="text-dark">Bus {{ b.bus_number }}</strong>
+                                <span class="text-secondary d-block small">{{ b.bus_name }}</span>
+                            </div>
+                            <span class="btn btn-sm btn-primary rounded-pill px-3 py-1" style="font-size: 0.72rem;">
+                                <i class="fa-solid fa-location-crosshairs me-1"></i> Track
+                            </span>
                         </a>
                     {% empty %}
-                        <div class="text-muted py-2">No buses assigned currently.</div>
+                        <div class="text-muted py-4 text-center">No active vehicles assigned to this route right now.</div>
                     {% endfor %}
                 </div>
             </div>

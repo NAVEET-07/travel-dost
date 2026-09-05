@@ -1,27 +1,28 @@
 {% extends 'base.html' %}
 
-{% block title %}Driver Dashboard — Travel Dost{% endblock %}
+{% block title %}Driver Cockpit & GPS Streamer — Travel Dost{% endblock %}
 
 {% block content %}
-<div class="bg-dark text-white py-4 border-bottom border-secondary mb-4">
+<div class="bg-dark text-white py-4 border-bottom border-secondary border-opacity-25 mb-4 shadow-sm">
     <div class="container px-lg-5">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
             <div class="d-flex align-items-center gap-3">
-                <div class="bg-warning text-dark p-3 rounded-3">
-                    <i class="fa-solid fa-mobile-screen-button fa-2x"></i>
+                <div class="bg-warning text-dark p-3 rounded-4 shadow">
+                    <i class="fa-solid fa-gauge-high fa-2x"></i>
                 </div>
                 <div>
-                    <h2 class="fw-bold m-0">Driver Dashboard</h2>
-                    <p class="text-secondary m-0">Transmit real-time GPS location updates for your assigned bus.</p>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-warning text-dark fw-bold rounded-pill px-2 small">DRIVER CONSOLE</span>
+                        <span class="text-secondary small">• NWKRTC Vehicle IoT</span>
+                    </div>
+                    <h2 class="fw-bold m-0 text-white">Driver Cockpit & GPS Streamer</h2>
+                    <p class="text-secondary m-0 small">Broadcast phone GPS coordinates directly to passengers via WebSocket.</p>
                 </div>
             </div>
             <div class="d-flex align-items-center gap-2">
-                <span class="badge bg-secondary px-3 py-2 fs-6 rounded-pill me-2" id="driverStatusBadge">
+                <span class="badge bg-secondary px-3 py-2 rounded-pill shadow-sm" id="driverStatusBadge">
                     <i class="fa-solid fa-power-off me-1"></i> STANDBY
                 </span>
-                <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm rounded-pill px-3">
-                    <i class="fa-solid fa-right-from-bracket me-1"></i> Logout ({{ user.username }})
-                </a>
             </div>
         </div>
     </div>
@@ -31,13 +32,13 @@
     <div class="row g-4 justify-content-center">
         <!-- Driver Control Card -->
         <div class="col-lg-6 col-md-8">
-            <div class="card border-0 shadow-lg rounded-4 p-4 bg-white">
+            <div class="transit-card p-4 p-md-4">
                 {% if assigned_bus %}
                     <!-- Bus Selector Dropdown -->
                     {% if driver_buses %}
                     <div class="mb-3">
-                        <label for="busSelectDropdown" class="form-label text-secondary small fw-bold text-uppercase">Select Bus to Drive:</label>
-                        <select id="busSelectDropdown" class="form-select form-select-lg rounded-3 border-primary shadow-sm" onchange="window.location.href='?bus_id=' + this.value">
+                        <label for="busSelectDropdown" class="form-label text-secondary small fw-bold text-uppercase" style="font-size: 0.72rem;">Select Bus Vehicle to Stream:</label>
+                        <select id="busSelectDropdown" class="form-select form-select-lg rounded-3 fw-bold border-primary shadow-sm" onchange="window.location.href='?bus_id=' + this.value">
                             {% for b in driver_buses %}
                                 <option value="{{ b.id }}" {% if b.id == assigned_bus.id %}selected{% endif %}>
                                     Bus {{ b.bus_number }} — {{ b.route.route_name|default:b.bus_name }}
@@ -49,67 +50,67 @@
 
                     <div class="d-flex align-items-center justify-content-between mb-4 border-bottom pb-3">
                         <div>
-                            <span class="badge bg-success px-3 py-1 mb-1"><i class="fa-solid fa-signal me-1"></i> LIVE TRACKING BUS</span>
-                            <h4 class="fw-bold m-0 text-dark">Bus {{ assigned_bus.bus_number }} — {{ assigned_bus.bus_name }}</h4>
-                            <p class="text-secondary small m-0">
-                                Type: <strong>{{ assigned_bus.get_bus_type_display }}</strong> | Route: <strong class="text-primary">{{ assigned_bus.route.route_name|default:"Unassigned" }}</strong>
+                            <span class="badge bg-success rounded-pill px-3 py-1 mb-1 small"><i class="fa-solid fa-signal me-1"></i> ACTIVE TRANSMITTER</span>
+                            <h4 class="fw-bold m-0 text-dark">Bus {{ assigned_bus.bus_number }}</h4>
+                            <p class="text-secondary small m-0 mt-1">
+                                Category: <strong>{{ assigned_bus.get_bus_type_display }}</strong> | Route: <strong class="text-primary">{{ assigned_bus.route.route_name|default:"Unassigned" }}</strong>
                             </p>
                         </div>
                     </div>
 
                     <input type="hidden" id="driverBusId" value="{{ assigned_bus.id }}">
 
+                    <!-- Speedometer Gauge -->
+                    <div class="my-4 text-center">
+                        <div class="driver-speed-gauge mb-2">
+                            <span class="driver-speed-number" id="gpsSpeed">0</span>
+                            <span class="text-secondary small fw-bold" style="font-size: 0.65rem; letter-spacing: 0.08em;">KM / H</span>
+                        </div>
+                        <span class="badge bg-light text-secondary border small"><span class="live-dot me-1"></span> Speed Telemetry</span>
+                    </div>
 
                     <!-- Simulation Mode Toggle for indoor Viva testing -->
-                    <div class="form-check form-switch mb-4 p-3 bg-light rounded-3 border">
+                    <div class="form-check form-switch mb-4 p-3 bg-light rounded-4 border">
                         <input class="form-check-input ms-0 me-2" type="checkbox" id="simToggle">
                         <label class="form-check-label fw-bold text-dark" for="simToggle">
-                            <i class="fa-solid fa-gamepad text-warning me-1"></i> Simulate Driving (Indoor Viva Demo Mode)
+                            <i class="fa-solid fa-gamepad text-warning me-1"></i> Simulation Mode (Indoor Viva Demo)
                         </label>
-                        <small class="d-block text-secondary mt-1">
-                            Enable this to automatically stream route waypoints every 5 seconds for indoor viva demonstrations.
+                        <small class="d-block text-secondary mt-1" style="font-size: 0.78rem;">
+                            Streams route waypoints smoothly every 4 seconds for indoor presentation demos.
                         </small>
                     </div>
 
                     <!-- Action Buttons -->
                     <div class="d-grid gap-3 mb-4">
-                        <button type="button" class="btn btn-success btn-lg rounded-pill fw-bold py-3 shadow-sm" id="btnStartTrip">
-                            <i class="fa-solid fa-play me-2"></i> START TRIP
+                        <button type="button" class="btn btn-success btn-lg rounded-pill fw-bold py-3 shadow" id="btnStartTrip">
+                            <i class="fa-solid fa-play me-2"></i> START TRIP TRANSMISSION
                         </button>
-                        <button type="button" class="btn btn-danger btn-lg rounded-pill fw-bold py-3 shadow-sm d-none" id="btnStopTrip">
-                            <i class="fa-solid fa-stop me-2"></i> STOP TRIP
+                        <button type="button" class="btn btn-danger btn-lg rounded-pill fw-bold py-3 shadow d-none" id="btnStopTrip">
+                            <i class="fa-solid fa-stop me-2"></i> STOP TRIP TRANSMISSION
                         </button>
                     </div>
 
                     <!-- Telemetry Monitor -->
-                    <div class="p-3 bg-dark text-white rounded-3">
-                        <h6 class="text-warning fw-bold mb-3 border-bottom border-secondary pb-2">
-                            <i class="fa-solid fa-microchip me-2"></i>Current Trip Telemetry
+                    <div class="p-3 bg-slate-900 text-white rounded-4 border border-secondary border-opacity-25 shadow-sm">
+                        <h6 class="text-warning fw-bold mb-3 border-bottom border-secondary border-opacity-25 pb-2" style="font-size: 0.78rem; letter-spacing: 0.05em;">
+                            <i class="fa-solid fa-microchip me-2"></i>LIVE VEHICLE TELEMETRY
                         </h6>
-                        <div class="row g-2 extra-small">
+                        <div class="row g-2 small">
                             <div class="col-6">
-                                <span class="text-secondary d-block">BUS ID</span>
-                                <strong class="fs-6 font-monospace text-primary">#{{ assigned_bus.id }} (Bus {{ assigned_bus.bus_number }})</strong>
+                                <span class="text-secondary d-block" style="font-size: 0.7rem;">BUS IDENTIFIER</span>
+                                <strong class="text-primary font-monospace">Bus {{ assigned_bus.bus_number }}</strong>
                             </div>
                             <div class="col-6">
-                                <span class="text-secondary d-block">TRIP STATUS</span>
-                                <strong class="fs-6 font-monospace text-warning" id="telemetryStatus">STANDBY</strong>
+                                <span class="text-secondary d-block" style="font-size: 0.7rem;">SESSION STATUS</span>
+                                <strong class="text-warning font-monospace" id="telemetryStatus">STANDBY</strong>
                             </div>
                             <div class="col-6">
-                                <span class="text-secondary d-block">LATITUDE</span>
-                                <strong class="fs-6 font-monospace text-info" id="gpsLat">15.364700</strong>
+                                <span class="text-secondary d-block" style="font-size: 0.7rem;">LATITUDE</span>
+                                <strong class="text-info font-monospace" id="gpsLat">15.364700</strong>
                             </div>
                             <div class="col-6">
-                                <span class="text-secondary d-block">LONGITUDE</span>
-                                <strong class="fs-6 font-monospace text-info" id="gpsLng">75.124000</strong>
-                            </div>
-                            <div class="col-6">
-                                <span class="text-secondary d-block">SPEED</span>
-                                <strong class="fs-6 font-monospace text-white" id="gpsSpeed">0.0 km/h</strong>
-                            </div>
-                            <div class="col-6">
-                                <span class="text-secondary d-block">LAST UPDATE</span>
-                                <strong class="fs-6 font-monospace text-white" id="gpsLastSent">Never</strong>
+                                <span class="text-secondary d-block" style="font-size: 0.7rem;">LONGITUDE</span>
+                                <strong class="text-info font-monospace" id="gpsLng">75.124000</strong>
                             </div>
                         </div>
                     </div>
@@ -119,8 +120,8 @@
                             <i class="fa-solid fa-bus-slash fa-3x"></i>
                         </div>
                         <h4 class="fw-bold">No Bus Assigned</h4>
-                        <p class="text-secondary">Your driver account (<strong>{{ user.username }}</strong>) has not been assigned to a bus yet.</p>
-                        <p class="text-muted small">Please contact your System Administrator to assign a bus to your account.</p>
+                        <p class="text-secondary">Your driver account (<strong>{{ user.username }}</strong>) is not assigned to a bus yet.</p>
+                        <p class="text-muted small">Contact the transit administrator to assign a vehicle to your profile.</p>
                     </div>
                 {% endif %}
             </div>
@@ -128,9 +129,12 @@
 
         <!-- Live Bus Map Preview for Driver -->
         <div class="col-lg-6 col-md-8">
-            <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-white">
-                <h5 class="fw-bold mb-3"><i class="fa-solid fa-map-location-dot text-primary me-2"></i>Live Bus Tracking Preview</h5>
-                <div id="driverMap" style="height: 380px; width: 100%; border-radius: 12px;" class="shadow-inner"></div>
+            <div class="transit-card p-4 h-100">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="fw-bold m-0 text-dark"><i class="fa-solid fa-map-location-dot text-primary me-2"></i>GPS Route Snapping</h5>
+                    <span class="badge bg-success small"><span class="live-dot me-1"></span> Stream Ready</span>
+                </div>
+                <div id="driverMap" style="height: 420px; width: 100%; border-radius: 14px;" class="shadow-sm"></div>
             </div>
         </div>
     </div>
@@ -149,4 +153,3 @@
 </script>
 <script src="/static/js/driver_gps.js"></script>
 {% endblock %}
-

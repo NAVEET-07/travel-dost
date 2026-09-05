@@ -1,32 +1,39 @@
 {% extends 'base.html' %}
 
-{% block title %}Admin Login — Travel Dost{% endblock %}
+{% block title %}Transit Operations Admin Login — Travel Dost{% endblock %}
 
 {% block content %}
 <div class="container py-5 my-4">
     <div class="row justify-content-center">
         <div class="col-md-5 col-lg-4">
-            <div class="card border-0 shadow-lg rounded-4 p-4 bg-white border-top border-4 border-primary">
+            <div class="transit-card p-4 p-md-5 bg-white shadow-lg border-0 rounded-4">
                 <div class="text-center mb-4">
-                    <span class="bg-primary text-white p-3 rounded-circle d-inline-block mb-2">
-                        <i class="fa-solid fa-user-shield fa-2x"></i>
-                    </span>
-                    <h4 class="fw-bold">Admin Portal Login</h4>
-                    <p class="text-secondary small">System Control & Management Access</p>
+                    <div class="brand-badge text-white d-inline-flex align-items-center justify-content-center rounded-4 mb-3 shadow" style="width: 56px; height: 56px;">
+                        <i class="fa-solid fa-shield-halved fa-2x"></i>
+                    </div>
+                    <h4 class="fw-bold m-0 text-dark">Transit Operations</h4>
+                    <p class="text-secondary small mt-1">NWKRTC System Control & Administration</p>
+                </div>
+
+                <!-- 1-Click Demo Fill for Admin -->
+                <div class="p-2 mb-3 rounded-3 bg-light border text-center">
+                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1" id="btnAdminDemoFill" style="font-size: 0.75rem;">
+                        <i class="fa-solid fa-key me-1"></i> Auto-fill Admin (admin / admin123)
+                    </button>
                 </div>
 
                 <form id="adminLoginForm">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold small">Admin Username</label>
-                        <input type="text" class="form-control rounded-3" id="adminUsername" placeholder="e.g. admin" required>
+                        <label class="form-label fw-bold small text-secondary">ADMIN USERNAME</label>
+                        <input type="text" class="form-control rounded-3 fw-medium" id="adminUsername" placeholder="e.g. admin" required>
                     </div>
                     <div class="mb-4">
-                        <label class="form-label fw-semibold small">Password</label>
-                        <input type="password" class="form-control rounded-3" id="adminPassword" placeholder="••••••••" required>
+                        <label class="form-label fw-bold small text-secondary">SECURITY PASSWORD</label>
+                        <input type="password" class="form-control rounded-3 fw-medium" id="adminPassword" placeholder="••••••••" required>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 fw-bold mb-3">
-                        <i class="fa-solid fa-lock me-1"></i> Log In to Admin Portal
+                    <button type="submit" class="btn btn-transit-primary w-100 py-3 mb-3 shadow" id="btnAdminSubmit">
+                        <i class="fa-solid fa-lock me-2"></i> Access Operations Portal
                     </button>
                 </form>
             </div>
@@ -37,21 +44,32 @@
 
 {% block extra_js %}
 <script>
+$('#btnAdminDemoFill').on('click', function() {
+    $('#adminUsername').val('admin');
+    $('#adminPassword').val('admin123');
+    $('#adminLoginForm').submit();
+});
+
 $('#adminLoginForm').on('submit', function(e) {
     e.preventDefault();
+    const btn = $('#btnAdminSubmit');
+    btn.html('<i class="fa-solid fa-spinner fa-spin me-2"></i> Verifying...').prop('disabled', true);
+
     $.ajax({
         url: '/api/auth/login/',
         type: 'POST',
         data: JSON.stringify({
-            username: $('#adminUsername').val(),
-            password: $('#adminPassword').val(),
+            username: $('#adminUsername').val().trim(),
+            password: $('#adminPassword').val().trim(),
             role: 'ADMIN'
         }),
         contentType: 'application/json',
         success: function(res) {
+            btn.html('<i class="fa-solid fa-check me-2"></i> Authorized!');
             window.location.href = res.redirect_url || '/admin/dashboard/';
         },
         error: function(err) {
+            btn.html('<i class="fa-solid fa-lock me-2"></i> Access Operations Portal').prop('disabled', false);
             alert(err.responseJSON ? err.responseJSON.error : "Invalid admin credentials.");
         }
     });

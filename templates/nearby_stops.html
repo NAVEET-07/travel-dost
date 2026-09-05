@@ -3,20 +3,25 @@
 {% block title %}Nearby Bus Stops Locator — Travel Dost{% endblock %}
 
 {% block content %}
-<div class="bg-dark text-white py-4 border-bottom border-secondary mb-4">
+<!-- Header Bar -->
+<div class="bg-dark text-white py-4 border-bottom border-secondary border-opacity-25 mb-4 shadow-sm">
     <div class="container px-lg-5">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
             <div class="d-flex align-items-center gap-3">
-                <div class="bg-danger text-white p-3 rounded-3">
-                    <i class="fa-solid fa-street-view fa-2x"></i>
+                <div class="bg-danger text-white p-3 rounded-4 shadow">
+                    <i class="fa-solid fa-location-crosshairs fa-2x"></i>
                 </div>
                 <div>
-                    <h2 class="fw-bold m-0">Nearby Bus Stops Locator</h2>
-                    <p class="text-secondary m-0">Detect your current GPS location and discover nearest bus stops in Hubballi–Dharwad.</p>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-danger text-white rounded-pill px-2 small">GPS RADAR LOCATOR</span>
+                        <span class="text-secondary small">• Hubballi–Dharwad Twin Cities</span>
+                    </div>
+                    <h2 class="fw-bold m-0 text-white">Nearby Bus Stops Locator</h2>
+                    <p class="text-secondary m-0 small">Detect your location with high accuracy and view all bus boarding points within walking distance.</p>
                 </div>
             </div>
-            <button class="btn btn-danger btn-lg rounded-pill px-4" id="btnDetectNearby">
-                <i class="fa-solid fa-location-arrow me-2"></i> Detect My Location
+            <button class="btn btn-danger btn-lg rounded-pill px-4 shadow" id="btnDetectNearby">
+                <i class="fa-solid fa-crosshairs me-2"></i> Detect My GPS Location
             </button>
         </div>
     </div>
@@ -26,20 +31,37 @@
     <div class="row g-4">
         <!-- Map Column -->
         <div class="col-lg-7">
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-                <div id="nearbyMap" style="height: 550px;"></div>
+            <div class="transit-card overflow-hidden p-0 shadow-lg">
+                <div class="bg-slate-900 text-white px-3 py-2 border-bottom border-secondary border-opacity-25 d-flex align-items-center justify-content-between">
+                    <span class="small fw-bold"><i class="fa-solid fa-map-pin text-danger me-2"></i>Geolocated Boarding Stops</span>
+                    <span class="badge bg-light text-secondary border small">500m to 5km Scan</span>
+                </div>
+                <div id="nearbyMap" style="height: 560px;"></div>
             </div>
         </div>
 
         <!-- List Column -->
         <div class="col-lg-5">
-            <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-white">
-                <h5 class="fw-bold mb-3"><i class="fa-solid fa-list-ol text-primary me-2"></i>Nearest Bus Stops</h5>
+            <div class="transit-card p-4 h-100">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="fw-bold m-0 text-dark"><i class="fa-solid fa-signs-post text-primary me-2"></i>Closest Boarding Stops</h5>
+                    <span class="badge bg-light text-secondary border" id="stopCountBadge">0 Found</span>
+                </div>
+
                 <div id="nearbyListContainer">
                     <div class="text-center text-muted py-5">
-                        <i class="fa-solid fa-compass fa-3x mb-3 text-secondary opacity-50"></i>
-                        <h5>Click "Detect My Location"</h5>
-                        <p class="small">Grant GPS browser permissions to find bus stops closest to your current position.</p>
+                        <div class="radar-wave-box mb-3">
+                            <div class="radar-circle"></div>
+                            <div class="radar-circle"></div>
+                            <div class="radar-circle"></div>
+                            <div class="position-absolute top-50 start-50 translate-middle text-primary">
+                                <i class="fa-solid fa-street-view fa-2x"></i>
+                            </div>
+                        </div>
+                        <h5 class="fw-bold text-dark">Radar Ready to Scan</h5>
+                        <p class="small text-secondary max-w-xs mx-auto" style="max-width: 280px;">
+                            Click "Detect My GPS Location" above to find the nearest bus stops, walking distance, and bus routes.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -57,38 +79,52 @@ $(document.body).ready(function() {
     function findNearby(lat, lng) {
         $('#nearbyListContainer').html(`
             <div class="text-center py-5">
-                <div class="spinner-border text-primary mb-3" role="status"></div>
-                <p>Calculating distances to Hubballi-Dharwad stops...</p>
+                <div class="spinner-border text-danger mb-3" role="status"></div>
+                <h6 class="fw-bold text-dark">Scanning Hubballi–Dharwad Stops...</h6>
+                <p class="small text-secondary">Calculating walking times and GPS distances...</p>
             </div>
         `);
 
-        $.get(`/api/nearby-stops/?lat=${lat}&lng=${lng}&limit=6`, function(data) {
+        $.get(`/api/nearby-stops/?lat=${lat}&lng=${lng}&limit=8`, function(data) {
             if (!data.nearby_stops || data.nearby_stops.length === 0) {
-                $('#nearbyListContainer').html('<div class="alert alert-warning">No nearby stops found.</div>');
+                $('#nearbyListContainer').html(`
+                    <div class="alert alert-warning rounded-4 border-0 p-3 text-center">
+                        <i class="fa-solid fa-triangle-exclamation text-warning fa-2x mb-2"></i>
+                        <p class="small m-0">No bus stops found within range. Try zooming out on the map.</p>
+                    </div>
+                `);
                 return;
             }
+
+            $('#stopCountBadge').text(`${data.nearby_stops.length} Found`);
 
             // Plot on Leaflet map
             updatePassengerMarker(lat, lng);
             plotBusStops(data.nearby_stops);
 
-            let html = '<div class="list-group list-group-flush">';
+            let html = '<div class="d-flex flex-column gap-2">';
             data.nearby_stops.forEach((stop, idx) => {
                 const distText = stop.distance_km < 1.0 
-                    ? `<strong>${stop.distance_meters}</strong> meters` 
+                    ? `<strong>${stop.distance_meters}</strong> m` 
                     : `<strong>${stop.distance_km}</strong> km`;
 
+                const walkMins = Math.max(1, Math.round((stop.distance_meters || 500) / 80));
+
                 html += `
-                    <div class="list-group-item py-3 border-bottom d-flex align-items-center justify-content-between">
+                    <div class="transit-card p-3 d-flex align-items-center justify-content-between hover-lift">
                         <div class="d-flex align-items-center gap-3">
-                            <span class="badge bg-primary rounded-circle p-2 fs-6" style="width: 32px; height: 32px;">${idx + 1}</span>
+                            <span class="badge bg-primary rounded-circle p-2 fs-6 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">${idx + 1}</span>
                             <div>
-                                <h6 class="fw-bold m-0">${stop.stop_name}</h6>
-                                <small class="text-secondary">${stop.area} • Distance: ${distText}</small>
+                                <h6 class="fw-bold m-0 text-dark">${stop.stop_name}</h6>
+                                <div class="d-flex align-items-center gap-2 mt-1 small text-secondary">
+                                    <span><i class="fa-solid fa-location-dot text-danger me-1"></i>${distText}</span>
+                                    <span>•</span>
+                                    <span><i class="fa-solid fa-person-walking text-primary me-1"></i>~${walkMins} min walk</span>
+                                </div>
                             </div>
                         </div>
-                        <a href="/find-route/?source=${stop.id}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                            Select This Stop
+                        <a href="/find-route/?source=${stop.id}" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold" style="font-size: 0.78rem;">
+                            Plan Bus ➔
                         </a>
                     </div>
                 `;
@@ -100,14 +136,14 @@ $(document.body).ready(function() {
 
     $('#btnDetectNearby').on('click', function() {
         if ("geolocation" in navigator) {
-            $(this).html('<i class="fa-solid fa-spinner fa-spin me-2"></i> Detecting GPS...');
+            $(this).html('<i class="fa-solid fa-spinner fa-spin me-2"></i> Scanning GPS...');
             navigator.geolocation.getCurrentPosition(function(pos) {
                 findNearby(pos.coords.latitude, pos.coords.longitude);
-                $('#btnDetectNearby').html('<i class="fa-solid fa-location-arrow me-2"></i> Location Detected');
+                $('#btnDetectNearby').html('<i class="fa-solid fa-check text-white me-2"></i> GPS Located');
             }, function(err) {
-                alert("Could not access GPS location. Defaulting to KLEIT Hubballi reference.");
+                alert("GPS permission was denied. Loading Hubballi City Center reference stops.");
                 findNearby(15.3647, 75.1240);
-                $('#btnDetectNearby').html('<i class="fa-solid fa-location-arrow me-2"></i> Detect My Location');
+                $('#btnDetectNearby').html('<i class="fa-solid fa-crosshairs me-2"></i> Detect My GPS Location');
             });
         }
     });

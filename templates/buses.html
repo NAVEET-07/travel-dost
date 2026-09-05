@@ -1,39 +1,51 @@
 {% extends 'base.html' %}
 
-{% block title %}Bus Directory — Travel Dost{% endblock %}
+{% block title %}Bus Fleet Catalog — Travel Dost{% endblock %}
 
 {% block content %}
-<div class="bg-dark text-white py-4 border-bottom border-secondary mb-4">
+<div class="bg-dark text-white py-4 border-bottom border-secondary border-opacity-25 mb-4 shadow-sm">
     <div class="container px-lg-5">
-        <div class="d-flex align-items-center gap-3">
-            <div class="bg-primary text-white p-3 rounded-3">
-                <i class="fa-solid fa-bus-simple fa-2x"></i>
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-primary text-white p-3 rounded-4 shadow">
+                    <i class="fa-solid fa-bus-simple fa-2x"></i>
+                </div>
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-warning text-dark fw-bold rounded-pill px-2 small">NWKRTC & CHIGARI</span>
+                        <span class="text-secondary small">• Hubballi-Dharwad Fleet</span>
+                    </div>
+                    <h2 class="fw-bold m-0 text-white">Active Bus Fleet Catalog</h2>
+                    <p class="text-secondary m-0 small">Explore tracked buses, service types, route assignments & telemetry.</p>
+                </div>
             </div>
-            <div>
-                <h2 class="fw-bold m-0">NWKRTC & BRTS Bus Catalog</h2>
-                <p class="text-secondary m-0">Browse active buses operating in Hubballi–Dharwad twin cities.</p>
-            </div>
+            <a href="{% url 'tracking' %}" class="btn btn-transit-amber btn-sm px-4">
+                <span class="live-dot me-1"></span> Live Map View
+            </a>
         </div>
     </div>
 </div>
 
 <div class="container px-lg-5 mb-5">
     <!-- Filter Bar -->
-    <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white">
+    <div class="transit-card p-3 mb-4">
         <form method="GET" class="row g-3 align-items-center">
             <div class="col-md-5">
-                <input type="text" name="q" class="form-control rounded-pill" placeholder="Search by bus number or route name..." value="{{ query }}">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0 text-secondary"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" name="q" class="form-control border-start-0 ps-0 fw-medium" placeholder="Search by bus number or route name..." value="{{ query }}">
+                </div>
             </div>
             <div class="col-md-4">
-                <select name="type" class="form-select rounded-pill">
-                    <option value="">-- All Bus Types --</option>
+                <select name="type" class="form-select fw-medium">
+                    <option value="">-- All Transit Categories --</option>
                     {% for key, val in type_choices %}
                         <option value="{{ key }}" {% if selected_type == key %}selected{% endif %}>{{ val }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="col-md-3">
-                <button type="submit" class="btn btn-primary rounded-pill w-100"><i class="fa-solid fa-filter me-1"></i> Filter Buses</button>
+                <button type="submit" class="btn btn-transit-primary w-100"><i class="fa-solid fa-filter me-1"></i> Filter Buses</button>
             </div>
         </form>
     </div>
@@ -42,32 +54,47 @@
     <div class="row g-4">
         {% for b in buses %}
             <div class="col-md-4">
-                <div class="card feature-card h-100 p-4">
+                <div class="transit-card h-100 p-4 d-flex flex-column hover-lift">
                     <div class="d-flex align-items-center justify-content-between mb-3">
-                        <span class="badge bg-primary fs-6 px-3 py-2 rounded-pill">Bus {{ b.bus_number }}</span>
+                        <span class="badge bg-primary text-white fs-6 px-3 py-2 rounded-pill fw-bold shadow-sm">
+                            <i class="fa-solid fa-bus me-1"></i> Bus {{ b.bus_number }}
+                        </span>
                         {% if b.tracking_status == 'LIVE' %}
-                            <span class="badge bg-success"><i class="fa-solid fa-circle me-1 animate-pulse"></i> LIVE</span>
+                            <span class="badge-transit badge-direct"><span class="live-dot me-1"></span> LIVE</span>
                         {% else %}
-                            <span class="badge bg-secondary">OFFLINE</span>
+                            <span class="badge bg-light text-secondary border small">OFFLINE</span>
                         {% endif %}
                     </div>
 
-                    <h5 class="fw-bold mb-1">{{ b.bus_name }}</h5>
-                    <p class="text-secondary small mb-3"><i class="fa-solid fa-tag me-1"></i> Type: {{ b.get_bus_type_display }}</p>
+                    <h5 class="fw-bold mb-1 text-dark">{{ b.bus_name }}</h5>
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="badge bg-light text-secondary border small">{{ b.get_bus_type_display }}</span>
+                        {% if b.driver %}
+                            <small class="text-secondary"><i class="fa-solid fa-id-badge text-info me-1"></i> {{ b.driver.username }}</small>
+                        {% endif %}
+                    </div>
                     
-                    <div class="bg-light rounded-3 p-3 mb-3 small">
-                        <strong>Assigned Route:</strong>
-                        <p class="m-0 text-dark font-semibold">{{ b.route.route_name|default:"Unassigned" }}</p>
+                    <div class="p-3 mb-3 rounded-4 bg-light border small">
+                        <span class="text-secondary small fw-bold text-uppercase d-block mb-1" style="font-size: 0.68rem; letter-spacing: 0.05em;">ASSIGNED ROUTE</span>
+                        <strong class="text-primary font-semibold">{{ b.route.route_name|default:"Unassigned / Depot Standby" }}</strong>
                     </div>
 
-                    <div class="d-flex gap-2 mt-auto">
-                        <a href="{% url 'bus-detail' b.id %}" class="btn btn-outline-secondary btn-sm rounded-pill flex-grow-1">Details</a>
-                        <a href="{% url 'live-tracking-bus' b.id %}" class="btn btn-primary btn-sm rounded-pill flex-grow-1"><i class="fa-solid fa-location-dot me-1"></i> Track Live</a>
+                    <div class="d-flex gap-2 mt-auto pt-2 border-top border-light">
+                        <a href="{% url 'bus-detail' b.id %}" class="btn btn-outline-secondary btn-sm rounded-pill flex-grow-1 fw-semibold">
+                            Details
+                        </a>
+                        <a href="{% url 'live-tracking-bus' b.id %}" class="btn btn-primary btn-sm rounded-pill flex-grow-1 fw-semibold shadow-sm">
+                            <i class="fa-solid fa-location-crosshairs me-1"></i> Track Live
+                        </a>
                     </div>
                 </div>
             </div>
         {% empty %}
-            <div class="col-12 text-center py-5 text-muted">No matching buses found.</div>
+            <div class="col-12 text-center py-5 text-muted">
+                <i class="fa-solid fa-bus-simple fa-3x mb-3 text-secondary opacity-50"></i>
+                <h5>No matching buses found</h5>
+                <p class="small text-secondary">Try clearing search filters or checking another bus category.</p>
+            </div>
         {% endfor %}
     </div>
 </div>

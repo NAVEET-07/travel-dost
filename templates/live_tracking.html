@@ -4,35 +4,38 @@
 
 {% block extra_css %}
 <style>
-/* Custom Bus Pin & Stop Styling */
+/* Live Bus Pin & Marker Styling */
 .bus-marker-wrapper {
     position: relative;
-    width: 44px;
-    height: 44px;
+    width: 46px;
+    height: 46px;
 }
 .bus-marker-pin {
-    width: 38px;
-    height: 38px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    border: 3px solid white;
+    font-size: 19px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.45);
+    border: 3px solid #ffffff;
+    transition: transform 0.4s ease;
 }
 .bus-number-badge {
     position: absolute;
     bottom: -6px;
     right: -6px;
-    background: #000;
-    color: #fff;
+    background: #0f172a;
+    color: #ffffff;
     font-size: 10px;
-    font-weight: bold;
-    padding: 2px 6px;
-    border-radius: 10px;
-    border: 1px solid #3b82f6;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 12px;
+    border: 1px solid #38bdf8;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
 .pulse-active {
     animation: busPulse 2s infinite;
@@ -42,92 +45,92 @@
     70% { box-shadow: 0 0 0 16px rgba(37, 99, 235, 0); }
     100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
 }
+
 .stop-badge-pill {
     padding: 4px 10px;
-    border-radius: 16px;
+    border-radius: 14px;
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 700;
     white-space: nowrap;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.2);
     background: #ffffff;
     color: #1e293b;
-    border: 2px solid #3b82f6;
+    border: 2px solid #2563eb;
 }
-.stop-marker-boarding {
-    background: #10b981 !important;
-    color: #ffffff !important;
-    border-color: #047857 !important;
-    font-size: 12px !important;
-    font-weight: bold !important;
-    z-index: 1000 !important;
+
+.telemetry-overlay-box {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    z-index: 1000;
+    background: rgba(15, 23, 42, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 18px;
+    box-shadow: 0 16px 36px rgba(0,0,0,0.4);
+    min-width: 290px;
+    max-width: 350px;
+    color: #ffffff;
 }
-.stop-marker-destination {
-    background: #ef4444 !important;
-    color: #ffffff !important;
-    border-color: #991b1b !important;
-    font-size: 12px !important;
-    font-weight: bold !important;
-    z-index: 1000 !important;
+
+.bus-strip-card {
+    transition: all 0.2s ease;
+    border-radius: 12px;
+    cursor: pointer;
 }
-.stop-marker-next {
-    background: #f59e0b !important;
-    color: #000000 !important;
-    border-color: #d97706 !important;
-    font-size: 12px !important;
-    font-weight: bold !important;
-    z-index: 999 !important;
+.bus-strip-card:hover {
+    background: #eff6ff !important;
+    transform: translateX(3px);
 }
-.stop-marker-passed {
-    background: #e2e8f0 !important;
-    color: #64748b !important;
-    border-color: #94a3b8 !important;
-    opacity: 0.8;
-}
-.next-stop-card {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    border-left: 5px solid #10b981;
+.bus-strip-card.active {
+    background: #eff6ff !important;
+    border-left: 4px solid var(--primary-color) !important;
 }
 </style>
-
 {% endblock %}
 
 {% block content %}
-<div class="bg-dark text-white py-3 border-bottom border-secondary mb-3">
+<!-- Top Header Bar -->
+<div class="bg-dark text-white py-3 border-bottom border-secondary border-opacity-25 mb-4 shadow-sm">
     <div class="container-fluid px-lg-5">
         <div class="row align-items-center g-3">
             <div class="col-md-4">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="bg-primary text-white p-2 rounded animate-pulse">
-                        <i class="fa-solid fa-location-crosshairs fa-lg"></i>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="bg-primary text-white p-3 rounded-4 shadow">
+                        <i class="fa-solid fa-satellite-dish fa-xl"></i>
                     </span>
                     <div>
-                        <h4 class="fw-bold m-0">Live Bus Tracking</h4>
-                        <small class="text-secondary">Hubballi–Dharwad Live Route & Next Stop View</small>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="live-dot"></span>
+                            <span class="text-warning small fw-bold tracking-wide">WEBSOCKET IOT TELEMETRY</span>
+                        </div>
+                        <h4 class="fw-bold m-0 text-white">Live Bus GPS Tracking</h4>
                     </div>
                 </div>
             </div>
 
-            <!-- Bus Select Dropdown & Status Bar -->
+            <!-- Bus Selector & Status -->
             <div class="col-md-8">
                 <div class="d-flex flex-wrap align-items-center justify-content-md-end gap-3">
                     <div class="d-flex align-items-center gap-2">
-                        <label class="fw-semibold text-secondary small">SELECT BUS:</label>
-                        <select class="form-select form-select-sm rounded-pill bg-dark text-white border-secondary" id="busSelect" style="min-width: 260px;">
+                        <label class="fw-bold text-secondary small text-uppercase m-0" style="font-size: 0.72rem;">SELECT BUS:</label>
+                        <select class="form-select form-select-sm rounded-pill bg-slate-900 text-white border-secondary border-opacity-50 px-3 py-2 shadow-sm" id="busSelect" style="min-width: 280px;">
                             <option value="all">-- Select Bus to Track --</option>
                             {% for b in buses %}
                                 <option value="{{ b.id }}" {% if selected_bus and selected_bus.id == b.id %}selected{% endif %}>
-                                    Bus {{ b.bus_number }} ({{ b.route.route_name|default:b.bus_name }})
+                                    Bus {{ b.bus_number }} — {{ b.route.route_name|default:b.bus_name }}
                                 </option>
                             {% endfor %}
                         </select>
                     </div>
 
-                    <div id="liveStatusBadge" class="badge bg-secondary p-2 rounded-pill">
-                        <i class="fa-solid fa-wifi me-1"></i> Live Connection Ready
+                    <div id="liveStatusBadge" class="badge bg-success text-white px-3 py-2 rounded-pill d-flex align-items-center gap-1 shadow-sm">
+                        <i class="fa-solid fa-wifi me-1"></i> WebSocket Live
                     </div>
 
-                    <button class="btn btn-outline-light btn-sm rounded-pill px-3" id="btnPassengerLocation">
-                        <i class="fa-solid fa-street-view text-danger me-1"></i> Locate Me
+                    <button class="btn btn-outline-light btn-sm rounded-pill px-3 py-2 shadow-sm" id="btnPassengerLocation">
+                        <i class="fa-solid fa-crosshairs text-danger me-1"></i> Locate Me
                     </button>
                 </div>
             </div>
@@ -139,33 +142,36 @@
     <div class="row g-4">
         <!-- Leaflet Map Container -->
         <div class="col-lg-9">
-            <div class="card border-0 shadow-lg rounded-4 overflow-hidden position-relative">
-                <div id="map" style="height: 650px;"></div>
+            <div class="transit-card overflow-hidden position-relative p-0 shadow-lg">
+                <div id="map" style="height: 660px; border-radius: 16px;"></div>
 
                 <!-- Overlay Speed & Telemetry Card -->
-                <div class="position-absolute bottom-0 start-0 m-3 p-3 text-white rounded-4 shadow-lg border border-secondary next-stop-card" style="z-index: 1000; min-width: 300px; max-width: 360px;" id="telemetryCard">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <strong class="text-warning fs-6" id="telBusNum">Select Bus</strong>
-                        <span class="badge bg-success" id="telStatus">LIVE</span>
+                <div class="telemetry-overlay-box p-3" id="telemetryCard">
+                    <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom border-secondary border-opacity-25">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="live-dot"></span>
+                            <strong class="text-warning small" id="telBusNum">Select Bus</strong>
+                        </div>
+                        <span class="badge-transit badge-direct" id="telStatus" style="font-size: 0.65rem;">LIVE</span>
                     </div>
 
-                    <div class="row g-2 text-center extra-small text-secondary mt-1">
+                    <div class="row g-2 text-center small text-secondary mt-1">
                         <div class="col-4">
-                            <div class="border border-secondary rounded p-1 bg-black">
-                                <span class="d-block text-white fw-bold fs-6" id="telSpeed">30.0</span>
-                                <span>KM/H</span>
+                            <div class="border border-secondary border-opacity-25 rounded-3 p-2 bg-black bg-opacity-40">
+                                <span class="d-block text-white fw-bold fs-5 lh-1" id="telSpeed">0.0</span>
+                                <span style="font-size: 0.65rem; letter-spacing: 0.05em;">KM/H</span>
                             </div>
                         </div>
                         <div class="col-4">
-                            <div class="border border-secondary rounded p-1 bg-black">
-                                <span class="d-block text-white fw-bold fs-6" id="telHeading">90°</span>
-                                <span>HEADING</span>
+                            <div class="border border-secondary border-opacity-25 rounded-3 p-2 bg-black bg-opacity-40">
+                                <span class="d-block text-white fw-bold fs-5 lh-1" id="telHeading">0°</span>
+                                <span style="font-size: 0.65rem; letter-spacing: 0.05em;">HEADING</span>
                             </div>
                         </div>
                         <div class="col-4">
-                            <div class="border border-secondary rounded p-1 bg-black">
-                                <span class="d-block text-white fw-bold fs-6" id="telUpdated">Live</span>
-                                <span>GPS</span>
+                            <div class="border border-secondary border-opacity-25 rounded-3 p-2 bg-black bg-opacity-40">
+                                <span class="d-block text-info fw-bold fs-5 lh-1" id="telUpdated">Live</span>
+                                <span style="font-size: 0.65rem; letter-spacing: 0.05em;">GPS FIX</span>
                             </div>
                         </div>
                     </div>
@@ -175,34 +181,35 @@
 
         <!-- Sidebar Bus Details & Stop Sequence -->
         <div class="col-lg-3">
-            <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-white">
-                <h5 class="fw-bold mb-3"><i class="fa-solid fa-circle-info text-primary me-2"></i>Bus & Route Info</h5>
+            <div class="transit-card p-4 h-100">
+                <h5 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-circle-info text-primary me-2"></i>Bus Route Details</h5>
 
                 <div id="sidebarBusInfo">
                     <div class="text-center text-muted py-4">
-                        <i class="fa-solid fa-bus-simple fa-2x mb-2 opacity-50"></i>
-                        <p class="small">Choose a bus to view route stops and live driver GPS status.</p>
+                        <i class="fa-solid fa-bus-simple fa-2x mb-2 text-secondary opacity-50"></i>
+                        <p class="small text-secondary m-0">Select an active bus to inspect route stops, ETA, and live location.</p>
                     </div>
                 </div>
 
-                <hr class="my-3">
+                <hr class="my-3 border-secondary border-opacity-25">
 
-                <h6 class="fw-bold mb-3"><i class="fa-solid fa-bus-simple text-success me-2"></i>Active Buses Directory</h6>
+                <h6 class="fw-bold mb-3 small text-uppercase text-secondary" style="letter-spacing: 0.06em;">
+                    <i class="fa-solid fa-bus text-success me-2"></i>Active Bus Fleet
+                </h6>
                 <div class="list-group list-group-flush extra-small overflow-y-auto" style="max-height: 250px;">
                     {% if buses %}
                         {% for b in buses %}
-                            <a href="{% url 'live-tracking-bus' b.id %}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2 border-0 mb-1 rounded bg-light">
+                            <a href="{% url 'live-tracking-bus' b.id %}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2 border-0 mb-1 rounded-3 bg-light bus-strip-card">
                                 <div>
-                                    <strong>Bus {{ b.bus_number }}</strong>
-                                    <span class="text-muted d-block">{{ b.route.route_name|default:b.bus_name }}</span>
+                                    <strong class="text-dark">Bus {{ b.bus_number }}</strong>
+                                    <span class="text-secondary d-block small">{{ b.route.route_name|default:b.bus_name }}</span>
                                 </div>
-                                <span class="badge bg-success"><i class="fa-solid fa-circle me-1 animate-pulse"></i> LIVE</span>
+                                <span class="badge bg-success small"><span class="live-dot me-1"></span> LIVE</span>
                             </a>
                         {% endfor %}
                     {% else %}
-                        <div class="alert alert-light text-muted border text-center p-3">
-                            <i class="fa-solid fa-bus fa-2x mb-2 text-secondary opacity-50"></i>
-                            <p class="m-0 small font-monospace">No active buses currently.</p>
+                        <div class="alert alert-light text-muted border text-center p-3 small">
+                            No active buses streaming right now.
                         </div>
                     {% endif %}
                 </div>
@@ -226,14 +233,13 @@ $(document.body).ready(function() {
             if (data.error) return;
 
             $('#telBusNum').text(`Bus ${data.bus_number} (${data.bus_type})`);
-            $('#telStatus').text(data.tracking_status).attr('class', data.tracking_status === 'LIVE' ? 'badge bg-success' : 'badge bg-secondary');
+            $('#telStatus').text(data.tracking_status).attr('class', data.tracking_status === 'LIVE' ? 'badge-transit badge-direct' : 'badge-transit badge-transfer');
 
             if (data.latest_location) {
                 $('#telSpeed').text(data.latest_location.speed.toFixed(1));
                 $('#telHeading').text(`${data.latest_location.heading}°`);
             }
 
-            // Update Bus Marker on map (Requirement 3)
             if (data.latest_location) {
                 updateBusMarkerOnMap({
                     bus_id: data.bus_id,
@@ -253,21 +259,19 @@ $(document.body).ready(function() {
             if (data.route_stops && data.route_stops.length > 0) {
                 plotRouteStopsOnly(data.route_stops);
 
-                // Render Sidebar Info
                 let sidebarHtml = `
                     <div class="mb-3">
                         <strong class="d-block fs-6 text-primary">${data.route_name}</strong>
-                        <span class="badge bg-light text-dark border mt-1">Total Stops: ${data.route_stops.length}</span>
+                        <span class="badge bg-light text-secondary border mt-1">Total Stops: ${data.route_stops.length}</span>
                     </div>
 
-                    <h6 class="fw-bold extra-small text-uppercase text-secondary mb-2">Route Stop Sequence:</h6>
+                    <h6 class="fw-bold extra-small text-uppercase text-secondary mb-2">Stop Sequence:</h6>
                     <div class="list-group extra-small overflow-y-auto" style="max-height: 280px;">
                 `;
 
                 data.route_stops.forEach((st, i) => {
                     const isCurrent = data.current_stop && st.id === data.current_stop.id;
                     const isNext = data.next_stop && st.id === data.next_stop.id;
-                    const isPassed = currentIdx >= 0 && i < currentIdx;
 
                     let bgClass = 'bg-white';
                     let badge = '';
@@ -278,15 +282,12 @@ $(document.body).ready(function() {
                     } else if (isNext) {
                         bgClass = 'bg-warning bg-opacity-10 border-start border-4 border-warning';
                         badge = '<span class="badge bg-warning text-dark ms-auto">NEXT STOP</span>';
-                    } else if (isPassed) {
-                        bgClass = 'bg-light text-muted opacity-75';
-                        badge = '<span class="badge bg-secondary ms-auto">Passed</span>';
                     } else {
-                        badge = '<span class="badge bg-primary ms-auto">Upcoming</span>';
+                        badge = '<span class="badge bg-light text-secondary border ms-auto">Upcoming</span>';
                     }
 
                     sidebarHtml += `
-                        <div class="list-group-item d-flex align-items-center justify-content-between p-2 mb-1 rounded ${bgClass}">
+                        <div class="list-group-item d-flex align-items-center justify-content-between p-2 mb-1 rounded-3 ${bgClass}">
                             <div>
                                 <small class="text-muted d-block font-monospace">#${i + 1}</small>
                                 <strong>${st.name}</strong>
@@ -299,7 +300,6 @@ $(document.body).ready(function() {
                 sidebarHtml += `</div>`;
                 $('#sidebarBusInfo').html(sidebarHtml);
             }
-
         });
     }
 
@@ -308,7 +308,6 @@ $(document.body).ready(function() {
         loadBusRouteDetails(initialBusId);
         startBusTrackingSocket(initialBusId);
     } else {
-        // Fallback: load first bus
         const firstBusVal = $('#busSelect option:eq(1)').val();
         if (firstBusVal) {
             $('#busSelect').val(firstBusVal);

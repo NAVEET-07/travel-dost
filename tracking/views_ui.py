@@ -291,6 +291,6 @@ def register_ui_view(request):
     return render(request, 'register.html')
 
 
-@login_required(login_url='login')
 def about_view(request):
     return render(request, 'about.html')
+

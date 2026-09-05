@@ -30,13 +30,11 @@ if csrf_env:
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 INSTALLED_APPS = [
-    'daphne',  # ASGI web server interface for WebSockets (MUST BE BEFORE staticfiles)
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
     
     # Third party packages
@@ -48,17 +46,43 @@ INSTALLED_APPS = [
     'tracking.apps.TrackingConfig',
 ]
 
+# Daphne ASGI Web Server (must be at the start of INSTALLED_APPS if present)
+try:
+    import daphne
+    INSTALLED_APPS.insert(0, 'daphne')
+except ImportError:
+    pass
+
+# WhiteNoise runserver_nostatic
+try:
+    import whitenoise
+    if 'django.contrib.staticfiles' in INSTALLED_APPS:
+        idx = INSTALLED_APPS.index('django.contrib.staticfiles')
+        INSTALLED_APPS.insert(idx, 'whitenoise.runserver_nostatic')
+except (ImportError, ValueError):
+    pass
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+]
+
+try:
+    import whitenoise
+    MIDDLEWARE.append('whitenoise.middleware.WhiteNoiseMiddleware')
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+except ImportError:
+    pass
+
+MIDDLEWARE.extend([
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-]
+])
+
 
 ROOT_URLCONF = 'travel_dost_backend.urls'
 

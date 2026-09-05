@@ -1,41 +1,66 @@
 {% extends 'base.html' %}
 
-{% block title %}Register Account — Travel Dost{% endblock %}
+{% block title %}Register Transit Account — Travel Dost{% endblock %}
 
 {% block content %}
 <div class="container py-5 my-3">
     <div class="row justify-content-center">
         <div class="col-md-6 col-lg-5">
-            <div class="card border-0 shadow-lg rounded-4 p-4 bg-white">
+            <div class="transit-card p-4 p-md-5 bg-white shadow-lg border-0 rounded-4">
                 <div class="text-center mb-4">
-                    <h4 class="fw-bold">Create Travel Dost Account</h4>
-                    <p class="text-secondary small">Register as a Passenger or Bus Driver / GPS Device Operator</p>
+                    <div class="brand-badge text-white d-inline-flex align-items-center justify-content-center rounded-4 mb-3 shadow" style="width: 56px; height: 56px;">
+                        <i class="fa-solid fa-id-card fa-2x"></i>
+                    </div>
+                    <h3 class="fw-bold m-0 text-dark">Join Travel Dost</h3>
+                    <p class="text-secondary small mt-1">Create an account for passenger transit or driver GPS streaming</p>
                 </div>
 
                 <form id="registerForm">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold small">Username</label>
-                        <input type="text" class="form-control rounded-3" id="regUsername" required>
+                        <label class="form-label fw-bold small text-secondary">USERNAME</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 rounded-start-3 text-secondary">
+                                <i class="fa-solid fa-user"></i>
+                            </span>
+                            <input type="text" class="form-control rounded-end-3 bg-light border-start-0 ps-0 fw-medium" id="regUsername" placeholder="Choose a username" required>
+                        </div>
                     </div>
+
                     <div class="mb-3">
-                        <label class="form-label fw-semibold small">Email Address</label>
-                        <input type="email" class="form-control rounded-3" id="regEmail" required>
+                        <label class="form-label fw-bold small text-secondary">EMAIL ADDRESS</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 rounded-start-3 text-secondary">
+                                <i class="fa-solid fa-envelope"></i>
+                            </span>
+                            <input type="email" class="form-control rounded-end-3 bg-light border-start-0 ps-0 fw-medium" id="regEmail" placeholder="name@example.com" required>
+                        </div>
                     </div>
+
                     <div class="mb-3">
-                        <label class="form-label fw-semibold small">Role</label>
-                        <select class="form-select rounded-3" id="regRole">
-                            <option value="PASSENGER">Passenger</option>
+                        <label class="form-label fw-bold small text-secondary">ACCOUNT ROLE</label>
+                        <select class="form-select rounded-3 fw-medium" id="regRole">
+                            <option value="PASSENGER">Passenger / Commuter</option>
                             <option value="DRIVER">Bus Driver / GPS Device Operator</option>
                         </select>
                     </div>
+
                     <div class="mb-4">
-                        <label class="form-label fw-semibold small">Password</label>
-                        <input type="password" class="form-control rounded-3" id="regPassword" required>
+                        <label class="form-label fw-bold small text-secondary">PASSWORD</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 rounded-start-3 text-secondary">
+                                <i class="fa-solid fa-lock"></i>
+                            </span>
+                            <input type="password" class="form-control rounded-end-3 bg-light border-start-0 ps-0 fw-medium" id="regPassword" placeholder="Create secure password" required>
+                        </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 fw-bold mb-3">Register Account</button>
-                    <div class="text-center small">
-                        <span class="text-secondary">Already registered?</span> <a href="{% url 'login' %}" class="fw-bold">Sign In</a>
+                    <button type="submit" class="btn btn-transit-primary w-100 py-3 mb-3 shadow" id="btnRegSubmit">
+                        <i class="fa-solid fa-user-plus me-2"></i> Register Account
+                    </button>
+
+                    <div class="text-center small pt-3 border-top border-light">
+                        <span class="text-secondary">Already have an account?</span> 
+                        <a href="{% url 'login' %}" class="fw-bold text-primary text-decoration-none ms-1">Sign In</a>
                     </div>
                 </form>
             </div>
@@ -48,22 +73,27 @@
 <script>
 $('#registerForm').on('submit', function(e) {
     e.preventDefault();
+    const btn = $('#btnRegSubmit');
+    btn.html('<i class="fa-solid fa-spinner fa-spin me-2"></i> Registering...').prop('disabled', true);
+
     $.ajax({
         url: '/api/auth/register/',
         type: 'POST',
         data: JSON.stringify({
-            username: $('#regUsername').val(),
-            email: $('#regEmail').val(),
+            username: $('#regUsername').val().trim(),
+            email: $('#regEmail').val().trim(),
             role: $('#regRole').val(),
-            password: $('#regPassword').val()
+            password: $('#regPassword').val().trim()
         }),
         contentType: 'application/json',
         success: function(res) {
-            alert("Account registered successfully! Please login.");
+            btn.html('<i class="fa-solid fa-check me-2"></i> Registered!');
+            alert("Account registered successfully! Please sign in.");
             window.location.href = '/login/';
         },
         error: function(err) {
-            alert(JSON.stringify(err.responseJSON));
+            btn.html('<i class="fa-solid fa-user-plus me-2"></i> Register Account').prop('disabled', false);
+            alert(err.responseJSON ? JSON.stringify(err.responseJSON) : "Registration error.");
         }
     });
 });

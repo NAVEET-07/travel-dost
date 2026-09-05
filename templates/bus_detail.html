@@ -1,18 +1,24 @@
 {% extends 'base.html' %}
 
-{% block title %}Bus {{ bus.bus_number }} Details — Travel Dost{% endblock %}
+{% block title %}Bus {{ bus.bus_number }} Telemetry Details — Travel Dost{% endblock %}
 
 {% block content %}
-<div class="bg-dark text-white py-4 border-bottom border-secondary mb-4">
+<div class="bg-dark text-white py-4 border-bottom border-secondary border-opacity-25 mb-4 shadow-sm">
     <div class="container px-lg-5">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
             <div>
-                <span class="badge bg-primary px-3 py-2 rounded-pill fs-6 mb-2">Bus {{ bus.bus_number }}</span>
-                <h2 class="fw-bold m-0">{{ bus.bus_name }}</h2>
-                <p class="text-secondary m-0">Type: {{ bus.get_bus_type_display }} | Route: {{ bus.route.route_name|default:"Unassigned" }}</p>
+                <span class="badge bg-primary px-3 py-2 rounded-pill fs-6 mb-2 fw-bold shadow-sm">
+                    <i class="fa-solid fa-bus me-1"></i> Bus {{ bus.bus_number }}
+                </span>
+                <h2 class="fw-bold m-0 text-white">{{ bus.bus_name }}</h2>
+                <div class="d-flex align-items-center gap-2 mt-1 small text-secondary">
+                    <span class="badge bg-light text-dark border">{{ bus.get_bus_type_display }}</span>
+                    <span>•</span>
+                    <span>Route: <strong class="text-primary">{{ bus.route.route_name|default:"Unassigned" }}</strong></span>
+                </div>
             </div>
-            <a href="{% url 'live-tracking-bus' bus.id %}" class="btn btn-success btn-lg rounded-pill px-4">
-                <i class="fa-solid fa-location-crosshairs me-2"></i> Track Bus {{ bus.bus_number }} Live
+            <a href="{% url 'live-tracking-bus' bus.id %}" class="btn btn-transit-amber btn-lg px-4 shadow">
+                <span class="live-dot me-2"></span> Track Bus {{ bus.bus_number }} Live Map
             </a>
         </div>
     </div>
@@ -21,55 +27,59 @@
 <div class="container px-lg-5 mb-5">
     <div class="row g-4">
         <div class="col-lg-6">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-                <h5 class="fw-bold mb-3"><i class="fa-solid fa-circle-info text-primary me-2"></i>Telemetry & Status</h5>
-                <div class="row g-3 text-secondary small">
+            <div class="transit-card p-4 mb-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="fw-bold m-0 text-dark"><i class="fa-solid fa-microchip text-primary me-2"></i>Telemetry & Diagnostics</h5>
+                    {% if bus.tracking_status == 'LIVE' %}
+                        <span class="badge-transit badge-direct"><span class="live-dot me-1"></span> LIVE</span>
+                    {% else %}
+                        <span class="badge bg-light text-secondary border small">OFFLINE</span>
+                    {% endif %}
+                </div>
+                
+                <div class="row g-3 small">
                     <div class="col-6">
-                        <strong class="d-block text-dark">Tracking Status</strong>
-                        {% if bus.tracking_status == 'LIVE' %}
-                            <span class="badge bg-success"><i class="fa-solid fa-circle me-1 animate-pulse"></i> LIVE</span>
-                        {% else %}
-                            <span class="badge bg-secondary">OFFLINE</span>
-                        {% endif %}
+                        <div class="p-3 bg-light rounded-4 border">
+                            <span class="text-secondary small fw-bold d-block text-uppercase" style="font-size: 0.68rem;">SPEED</span>
+                            <strong class="fs-5 text-dark">{{ current_loc.speed|default:"0.0" }}</strong> <span class="text-secondary">km/h</span>
+                        </div>
                     </div>
                     <div class="col-6">
-                        <strong class="d-block text-dark">Last Updated</strong>
-                        <span>{{ bus.last_updated|timesince }} ago</span>
+                        <div class="p-3 bg-light rounded-4 border">
+                            <span class="text-secondary small fw-bold d-block text-uppercase" style="font-size: 0.68rem;">HEADING</span>
+                            <strong class="fs-5 text-dark">{{ current_loc.heading|default:"0" }}°</strong> <span class="text-secondary">compass</span>
+                        </div>
                     </div>
                     <div class="col-6">
-                        <strong class="d-block text-dark">Current Latitude</strong>
-                        <span>{{ current_loc.latitude|default:"N/A" }}</span>
+                        <div class="p-3 bg-light rounded-4 border">
+                            <span class="text-secondary small fw-bold d-block text-uppercase" style="font-size: 0.68rem;">CURRENT LATITUDE</span>
+                            <strong class="font-monospace text-primary">{{ current_loc.latitude|default:"N/A" }}</strong>
+                        </div>
                     </div>
                     <div class="col-6">
-                        <strong class="d-block text-dark">Current Longitude</strong>
-                        <span>{{ current_loc.longitude|default:"N/A" }}</span>
-                    </div>
-                    <div class="col-6">
-                        <strong class="d-block text-dark">Current Speed</strong>
-                        <span>{{ current_loc.speed|default:"0.0" }} km/h</span>
-                    </div>
-                    <div class="col-6">
-                        <strong class="d-block text-dark">Heading</strong>
-                        <span>{{ current_loc.heading|default:"0.0" }}°</span>
+                        <div class="p-3 bg-light rounded-4 border">
+                            <span class="text-secondary small fw-bold d-block text-uppercase" style="font-size: 0.68rem;">CURRENT LONGITUDE</span>
+                            <strong class="font-monospace text-primary">{{ current_loc.longitude|default:"N/A" }}</strong>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="col-lg-6">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
-                <h5 class="fw-bold mb-3"><i class="fa-solid fa-clock-rotate-left text-warning me-2"></i>Recent Location Logs</h5>
+            <div class="transit-card p-4 h-100">
+                <h5 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-clock-rotate-left text-warning me-2"></i>Recent Location Pings</h5>
                 <div class="list-group list-group-flush extra-small">
                     {% for loc in location_history %}
-                        <div class="list-group-item py-2 border-0 mb-1 rounded bg-light d-flex align-items-center justify-content-between">
+                        <div class="list-group-item py-2 px-3 border-0 mb-2 rounded-3 bg-light d-flex align-items-center justify-content-between">
                             <div>
-                                <strong>({{ loc.latitude|floatformat:4 }}, {{ loc.longitude|floatformat:4 }})</strong>
-                                <span class="text-muted ms-2">Speed: {{ loc.speed }} km/h</span>
+                                <strong class="font-monospace text-dark">({{ loc.latitude|floatformat:4 }}, {{ loc.longitude|floatformat:4 }})</strong>
+                                <span class="text-secondary ms-2"><i class="fa-solid fa-gauge me-1"></i>{{ loc.speed }} km/h</span>
                             </div>
-                            <span class="text-muted">{{ loc.timestamp|date:"H:i:s" }}</span>
+                            <span class="badge bg-white text-secondary border">{{ loc.timestamp|date:"H:i:s" }}</span>
                         </div>
                     {% empty %}
-                        <div class="text-muted py-3 text-center">No location history recorded yet.</div>
+                        <div class="text-muted py-4 text-center">No location history recorded yet.</div>
                     {% endfor %}
                 </div>
             </div>

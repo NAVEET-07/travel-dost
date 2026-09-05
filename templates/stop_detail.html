@@ -1,40 +1,63 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ stop.stop_name }} — Travel Dost{% endblock %}
+{% block title %}{{ stop.stop_name }} Boarding Hub — Travel Dost{% endblock %}
 
 {% block content %}
-<div class="bg-dark text-white py-4 border-bottom border-secondary mb-4">
+<div class="bg-dark text-white py-4 border-bottom border-secondary border-opacity-25 mb-4 shadow-sm">
     <div class="container px-lg-5">
-        <h2 class="fw-bold m-0">{{ stop.stop_name }}</h2>
-        <p class="text-secondary m-0">Area: {{ stop.area }} | GPS Coords: ({{ stop.latitude }}, {{ stop.longitude }})</p>
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div>
+                <span class="badge bg-info text-dark rounded-pill px-3 py-1 small fw-bold mb-2">BOARDING STOP</span>
+                <h2 class="fw-bold m-0 text-white">{{ stop.stop_name }}</h2>
+                <div class="d-flex align-items-center gap-2 mt-1 small text-secondary">
+                    <span><i class="fa-solid fa-map-pin text-danger me-1"></i> Area: <strong>{{ stop.area }}</strong></span>
+                    <span>•</span>
+                    <span class="font-monospace">GPS: {{ stop.latitude|floatformat:5 }}, {{ stop.longitude|floatformat:5 }}</span>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'route-finder' %}?source={{ stop.id }}" class="btn btn-transit-primary btn-sm px-4">
+                    <i class="fa-solid fa-person-walking me-1"></i> Depart From Here
+                </a>
+            </div>
+        </div>
     </div>
 </div>
 
 <div class="container px-lg-5 mb-5">
     <div class="row g-4">
         <div class="col-lg-6">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
-                <h5 class="fw-bold mb-3"><i class="fa-solid fa-route text-primary me-2"></i>Routes Serving This Stop</h5>
+            <div class="transit-card p-4 h-100">
+                <h5 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-route text-primary me-2"></i>Bus Routes Serving This Stop</h5>
                 <div class="list-group list-group-flush extra-small">
                     {% for rs in passing_routes %}
-                        <a href="{% url 'route-detail' rs.route.id %}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2 border-0 mb-1 rounded bg-light">
-                            <strong>{{ rs.route.route_name }}</strong>
-                            <span class="badge bg-secondary">Stop #{{ rs.stop_order }}</span>
+                        <a href="{% url 'route-detail' rs.route.id %}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2 px-3 border-0 mb-2 rounded-3 bg-light hover-lift">
+                            <div>
+                                <strong class="text-dark fs-6">{{ rs.route.route_name }}</strong>
+                                <span class="text-secondary d-block small">{{ rs.route.start_point }} ➔ {{ rs.route.end_point }}</span>
+                            </div>
+                            <span class="badge bg-primary-subtle text-primary border border-primary border-opacity-25 px-3 py-1 rounded-pill fw-bold">
+                                Stop #{{ rs.stop_order }}
+                            </span>
                         </a>
                     {% empty %}
-                        <div class="text-muted py-2">No active routes registered for this stop.</div>
+                        <div class="text-muted py-4 text-center">No registered routes passing through this stop.</div>
                     {% endfor %}
                 </div>
             </div>
         </div>
 
         <div class="col-lg-6">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
-                <h5 class="fw-bold mb-3"><i class="fa-solid fa-magnifying-glass-location text-success me-2"></i>Route Finder Shortcut</h5>
-                <p class="text-secondary small">Set <strong>{{ stop.stop_name }}</strong> as your boarding point or destination in the route finder:</p>
-                <div class="d-flex gap-2">
-                    <a href="{% url 'route-finder' %}?source={{ stop.id }}" class="btn btn-primary rounded-pill flex-grow-1">Set as Source</a>
-                    <a href="{% url 'route-finder' %}?destination={{ stop.id }}" class="btn btn-outline-primary rounded-pill flex-grow-1">Set as Destination</a>
+            <div class="transit-card p-4 h-100">
+                <h5 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-compass text-success me-2"></i>Journey Planner Shortcuts</h5>
+                <p class="text-secondary small mb-4">Set <strong>{{ stop.stop_name }}</strong> directly into the Point A ➔ Point B route finder to compute fares, times, and transfers:</p>
+                <div class="d-flex flex-column gap-3">
+                    <a href="{% url 'route-finder' %}?source={{ stop.id }}" class="btn btn-transit-primary py-3 fw-bold text-center shadow-sm">
+                        <i class="fa-solid fa-circle text-success me-2"></i> Board Here (Set as Point A)
+                    </a>
+                    <a href="{% url 'route-finder' %}?destination={{ stop.id }}" class="btn btn-outline-secondary py-3 fw-bold text-center rounded-pill">
+                        <i class="fa-solid fa-location-dot text-danger me-2"></i> Alight Here (Set as Point B)
+                    </a>
                 </div>
             </div>
         </div>

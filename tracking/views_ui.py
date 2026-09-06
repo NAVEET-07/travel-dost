@@ -6,6 +6,7 @@ from django.contrib import messages
 
 from tracking.models import User, BusStop, Route, RouteStop, Bus, GPSDevice, BusLocation, Fare, BusTrackingSession, SearchHistory
 from tracking.decorators import admin_required, driver_required, user_required
+from tracking.services.distance import haversine_distance
 
 
 def home_view(request):
@@ -21,7 +22,11 @@ def home_view(request):
     routes_count = Route.objects.filter(is_active=True).count()
     stops_count = BusStop.objects.filter(is_active=True).count()
     buses_count = Bus.objects.filter(is_active=True).count()
-    live_buses_count = Bus.objects.filter(is_active=True, tracking_status='LIVE', trip_status='IN_TRANSIT').count()
+    live_buses_count = Bus.objects.filter(
+        is_active=True,
+        tracking_status='LIVE',
+        trip_status__in=['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT']
+    ).count()
 
     context = {
         'stops': stops,
@@ -49,11 +54,11 @@ def route_finder_view(request):
 
 @login_required(login_url='login')
 def live_tracking_view(request, bus_id=None):
-    # Strictly fetch buses that are currently on an active trip (IN_TRANSIT and LIVE)
+    # Strictly fetch buses that are currently on an active trip (ACTIVE, IN_PROGRESS or IN_TRANSIT and LIVE)
     live_buses = Bus.objects.filter(
         is_active=True,
         tracking_status='LIVE',
-        trip_status='IN_TRANSIT'
+        trip_status__in=['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT']
     ).select_related('route', 'driver')
 
     selected_bus = None
@@ -281,60 +286,46 @@ def user_dashboard_view(request):
     active_live_buses = Bus.objects.filter(
         is_active=True,
         tracking_status='LIVE',
-        trip_status='IN_TRANSIT'
+        trip_status__in=['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT']
     ).select_related('route', 'driver')
 
-    # Curated fleet sample for directory display
+    # Fleet sample for directory display
     buses = Bus.objects.filter(is_active=True).select_related('route')[:12]
     fares = Fare.objects.select_related('route', 'source_stop', 'destination_stop').all()[:6]
 
-    # Curated Hubballi-Dharwad Prime Transit Corridors
-    prime_corridors = [
-        {
-            'name': 'CBT Hubballi ⇄ Dharwad BRTS Bus Stand',
-            'type': 'BRTS Chigari Green Express',
-            'badge': 'bg-success text-white',
-            'icon': 'fa-bolt',
-            'frequency': 'Every 4-8 mins',
-            'duration': '32 mins',
-            'fare': '₹22',
-            'distance': '20.8 km',
-            'stops_count': 16,
-        },
-        {
-            'name': 'Hubballi Railway Station ⇄ Airport (Gokul)',
-            'type': 'City Feeder Line',
-            'badge': 'bg-primary text-white',
-            'icon': 'fa-plane-departure',
-            'frequency': 'Every 15-20 mins',
-            'duration': '22 mins',
-            'fare': '₹15',
-            'distance': '9.4 km',
-            'stops_count': 9,
-        },
-        {
-            'name': 'CBT Hubballi ⇄ Navanagar KIMS Hospital',
-            'type': 'Twin Cities Metro Route',
-            'badge': 'bg-warning text-dark',
-            'icon': 'fa-hospital',
-            'frequency': 'Every 10 mins',
-            'duration': '18 mins',
-            'fare': '₹14',
-            'distance': '8.2 km',
-            'stops_count': 8,
-        },
-        {
-            'name': 'Dharwad CBT ⇄ SDM Medical College Sattur',
-            'type': 'Suburban Regular',
-            'badge': 'bg-info text-dark',
-            'icon': 'fa-graduation-cap',
-            'frequency': 'Every 12 mins',
-            'duration': '15 mins',
-            'fare': '₹12',
-            'distance': '7.1 km',
-            'stops_count': 7,
-        }
+    # Dynamically generated Hubballi-Dharwad Prime Transit Corridors from actual database routes
+    corridor_routes = Route.objects.filter(is_active=True).annotate(stops_cnt=Count('route_stops')).order_by('-stops_cnt')[:4]
+    prime_corridors = []
+    badges = [
+        ('BRTS Chigari Express', 'bg-success text-white', 'fa-bolt', 'Every 5-10 mins'),
+        ('City Feeder Line', 'bg-primary text-white', 'fa-bus', 'Every 15 mins'),
+        ('Twin Cities Metro Route', 'bg-warning text-dark', 'fa-route', 'Every 10-12 mins'),
+        ('Suburban Regular', 'bg-info text-dark', 'fa-graduation-cap', 'Every 15-20 mins'),
     ]
+    for idx, r in enumerate(corridor_routes):
+        b_type, b_badge, b_icon, b_freq = badges[idx % len(badges)]
+        first_rs = r.route_stops.order_by('stop_order').first()
+        last_rs = r.route_stops.order_by('stop_order').last()
+        dist_km = 0.0
+        if first_rs and last_rs and last_rs.distance_from_start_km > first_rs.distance_from_start_km:
+            dist_km = round(last_rs.distance_from_start_km - first_rs.distance_from_start_km, 1)
+        elif first_rs and last_rs:
+            dist_km = round(haversine_distance(first_rs.bus_stop.latitude, first_rs.bus_stop.longitude, last_rs.bus_stop.latitude, last_rs.bus_stop.longitude), 1)
+        if dist_km <= 0:
+            dist_km = round(r.stops_cnt * 1.4, 1)
+        fare_val = round(10.0 + (dist_km * 1.5))
+        duration_mins = max(10, int(dist_km * 2.5))
+        prime_corridors.append({
+            'name': r.route_name,
+            'type': b_type,
+            'badge': b_badge,
+            'icon': b_icon,
+            'frequency': b_freq,
+            'duration': f'{duration_mins} mins',
+            'fare': f'₹{fare_val}',
+            'distance': f'{dist_km} km',
+            'stops_count': r.stops_cnt,
+        })
 
     context = {
         'stops': stops,

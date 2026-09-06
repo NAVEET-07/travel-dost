@@ -58,15 +58,18 @@ class BusTrackingConsumer(AsyncWebsocketConsumer):
 
             if action in ['location_update', 'update_location']:
                 bus_id = data.get('bus_id') or self.bus_id
-                latitude = float(data.get('latitude'))
-                longitude = float(data.get('longitude'))
+                lat_raw = data.get('latitude') if data.get('latitude') is not None else data.get('lat')
+                lng_raw = data.get('longitude') if data.get('longitude') is not None else (data.get('lon') if data.get('lon') is not None else data.get('lng'))
+                latitude = float(lat_raw) if lat_raw is not None else None
+                longitude = float(lng_raw) if lng_raw is not None else None
                 speed = float(data.get('speed', 0.0))
                 heading = float(data.get('heading', 0.0))
                 status = data.get('status', 'LIVE')
+                client_ts = data.get('timestamp')
 
-                if bus_id and latitude and longitude:
+                if bus_id and latitude is not None and longitude is not None:
                     # Save location to DB asynchronously
-                    bus_update = await self.save_bus_location(bus_id, latitude, longitude, speed, heading, status)
+                    bus_update = await self.save_bus_location(bus_id, latitude, longitude, speed, heading, status, client_ts)
 
                     if bus_update:
                         payload = {
@@ -80,6 +83,7 @@ class BusTrackingConsumer(AsyncWebsocketConsumer):
                             'speed': speed,
                             'heading': heading,
                             'status': status,
+                            'trip_status': bus_update['trip_status'],
                             'timestamp': bus_update['timestamp']
                         }
 
@@ -109,6 +113,7 @@ class BusTrackingConsumer(AsyncWebsocketConsumer):
                         'speed': 0.0,
                         'heading': 0.0,
                         'status': 'OFFLINE',
+                        'trip_status': 'COMPLETED',
                         'timestamp': timezone.now().isoformat()
                     }
                     await self.channel_layer.group_send(f'bus_{bus_id}', payload)
@@ -136,21 +141,30 @@ class BusTrackingConsumer(AsyncWebsocketConsumer):
             'speed': event.get('speed', 0.0),
             'heading': event.get('heading', 0.0),
             'status': event.get('status', 'LIVE'),
+            'trip_status': event.get('trip_status', 'ACTIVE'),
             'timestamp': event.get('timestamp')
         }))
 
     @database_sync_to_async
-    def save_bus_location(self, bus_id, lat, lng, speed, heading, status):
+    def save_bus_location(self, bus_id, lat, lng, speed, heading, status, client_ts=None):
         from tracking.models import Bus, BusLocation
         try:
             bus = Bus.objects.get(id=bus_id)
             bus.tracking_status = status
             if status == 'LIVE':
-                bus.trip_status = 'IN_TRANSIT'
+                bus.trip_status = 'ACTIVE'
             elif status == 'OFFLINE':
                 bus.trip_status = 'COMPLETED'
             bus.last_updated = timezone.now()
             bus.save(update_fields=['tracking_status', 'trip_status', 'last_updated'])
+
+            loc_time = timezone.now()
+            if client_ts:
+                try:
+                    from dateutil.parser import parse
+                    loc_time = parse(client_ts)
+                except Exception:
+                    pass
 
             loc = BusLocation.objects.create(
                 bus=bus,
@@ -158,12 +172,13 @@ class BusTrackingConsumer(AsyncWebsocketConsumer):
                 longitude=lng,
                 speed=speed,
                 heading=heading,
-                timestamp=timezone.now()
+                timestamp=loc_time
             )
             return {
                 'bus_number': bus.bus_number,
                 'bus_name': bus.bus_name,
                 'bus_type': bus.get_bus_type_display(),
+                'trip_status': bus.trip_status,
                 'timestamp': loc.timestamp.isoformat()
             }
         except Bus.DoesNotExist:
@@ -171,13 +186,17 @@ class BusTrackingConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def end_bus_trip(self, bus_id):
-        from tracking.models import Bus
+        from tracking.models import Bus, BusTrackingSession
         try:
             bus = Bus.objects.get(id=bus_id)
             bus.tracking_status = 'OFFLINE'
             bus.trip_status = 'COMPLETED'
             bus.last_updated = timezone.now()
             bus.save(update_fields=['tracking_status', 'trip_status', 'last_updated'])
+            BusTrackingSession.objects.filter(bus=bus, status='ACTIVE').update(
+                status='COMPLETED',
+                ended_at=timezone.now()
+            )
             return {
                 'bus_number': bus.bus_number,
                 'bus_name': bus.bus_name
@@ -190,14 +209,18 @@ class BusTrackingConsumer(AsyncWebsocketConsumer):
         from tracking.models import Bus
         try:
             bus = Bus.objects.get(id=bus_id)
-            loc = bus.get_current_location()
+            # STRICT: Ghost bus elimination - only report active live trip if driver actively started it
+            is_active_trip = (bus.tracking_status == 'LIVE') and (bus.trip_status in ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT'])
+            loc = bus.get_current_location() if is_active_trip else None
+
             return {
                 'bus_id': bus.id,
                 'bus_number': bus.bus_number,
                 'bus_name': bus.bus_name,
                 'bus_type': bus.get_bus_type_display(),
                 'route_name': bus.route.route_name if bus.route else "Unassigned",
-                'status': bus.tracking_status,
+                'status': 'LIVE' if is_active_trip else 'OFFLINE',
+                'trip_status': bus.trip_status,
                 'latitude': loc.latitude if loc else None,
                 'longitude': loc.longitude if loc else None,
                 'speed': loc.speed if loc else 0.0,
@@ -210,8 +233,13 @@ class BusTrackingConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def get_all_latest_buses_data(self):
         from tracking.models import Bus
-        # STRICT REAL-TIME: Only return buses that are actively IN_TRANSIT and LIVE
-        buses = Bus.objects.filter(is_active=True, tracking_status='LIVE', trip_status='IN_TRANSIT').select_related('route')
+        # STRICT REAL-TIME: Only return buses that are actively in an active trip and live
+        buses = Bus.objects.filter(
+            is_active=True,
+            tracking_status='LIVE',
+            trip_status__in=['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT']
+        ).select_related('route')
+
         buses_list = []
         for bus in buses:
             loc = bus.get_current_location()
@@ -223,6 +251,7 @@ class BusTrackingConsumer(AsyncWebsocketConsumer):
                     'bus_type': bus.get_bus_type_display(),
                     'route_name': bus.route.route_name if bus.route else "Unassigned",
                     'status': bus.tracking_status,
+                    'trip_status': bus.trip_status,
                     'latitude': loc.latitude,
                     'longitude': loc.longitude,
                     'speed': loc.speed,

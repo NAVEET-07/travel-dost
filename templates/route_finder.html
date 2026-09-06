@@ -11,6 +11,127 @@
     z-index: 10;
 }
 
+/* Modern High-Contrast Sleek Dark Search Card */
+.search-panel-dark {
+    position: sticky;
+    top: 85px;
+    z-index: 10;
+    background: linear-gradient(165deg, #0b1329 0%, #0f172a 55%, #1e293b 100%);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    border-radius: 22px;
+    box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.6), 0 0 25px rgba(56, 189, 248, 0.08);
+    color: #f8fafc;
+    transition: all 0.3s ease;
+}
+
+.search-panel-dark:hover {
+    border-color: rgba(56, 189, 248, 0.4);
+    box-shadow: 0 25px 50px -10px rgba(0, 0, 0, 0.7), 0 0 30px rgba(56, 189, 248, 0.15);
+}
+
+.search-panel-dark .form-control,
+.search-panel-dark .form-select {
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    color: #ffffff;
+    border-radius: 12px;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.92rem;
+    transition: all 0.2s ease;
+}
+
+.search-panel-dark .form-control:focus,
+.search-panel-dark .form-select:focus {
+    background: rgba(15, 23, 42, 0.98);
+    border-color: #38bdf8;
+    color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25);
+}
+
+.search-panel-dark .form-control::placeholder {
+    color: #64748b;
+}
+
+.search-panel-dark .form-select option {
+    background: #0f172a;
+    color: #f8fafc;
+}
+
+.search-panel-dark .form-label {
+    color: #94a3b8;
+    letter-spacing: 0.05em;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.search-panel-dark .quick-stop-chip {
+    background: rgba(30, 41, 59, 0.85);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    color: #93c5fd;
+    font-size: 0.72rem;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.search-panel-dark .quick-stop-chip:hover {
+    background: rgba(37, 99, 235, 0.4);
+    border-color: #38bdf8;
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.search-panel-dark .btn-swap-stops {
+    background: rgba(30, 41, 59, 0.9);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    color: #38bdf8;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.search-panel-dark .btn-swap-stops:hover {
+    background: #2563eb;
+    color: #ffffff;
+    transform: rotate(180deg);
+}
+
+.search-panel-dark .btn-search-primary {
+    background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+    border: none;
+    color: #ffffff;
+    font-weight: 700;
+    border-radius: 14px;
+    padding: 0.8rem 1.2rem;
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+    transition: all 0.25s ease;
+}
+
+.search-panel-dark .btn-search-primary:hover {
+    box-shadow: 0 12px 28px rgba(37, 99, 235, 0.6);
+    transform: translateY(-2px);
+    color: #ffffff;
+}
+
+.search-panel-dark .btn-reset-dark {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    color: #94a3b8;
+    transition: all 0.2s ease;
+}
+
+.search-panel-dark .btn-reset-dark:hover {
+    background: rgba(148, 163, 184, 0.2);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
 .map-card-header {
     background: #0f172a;
     color: #ffffff;
@@ -66,10 +187,10 @@
     <div class="row g-4">
         <!-- Search Controls Column -->
         <div class="col-lg-4">
-            <div class="transit-card p-4 search-panel-sticky">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <h5 class="fw-bold m-0 text-dark"><i class="fa-solid fa-magnifying-glass-location text-primary me-2"></i>Route Search</h5>
-                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-1" id="btnResetSearch" title="Clear inputs" style="font-size: 0.72rem;">
+            <div class="search-panel-dark p-4">
+                <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom border-secondary border-opacity-25">
+                    <h5 class="fw-bold m-0 text-white"><i class="fa-solid fa-magnifying-glass-location text-info me-2"></i>Route Search</h5>
+                    <button type="button" class="btn btn-sm btn-reset-dark rounded-pill px-2 py-1" id="btnResetSearch" title="Clear inputs" style="font-size: 0.72rem;">
                         <i class="fa-solid fa-rotate-left me-1"></i> Reset
                     </button>
                 </div>
@@ -78,10 +199,10 @@
                     <!-- Boarding Stop (Point A) -->
                     <div class="mb-3">
                         <div class="d-flex align-items-center justify-content-between mb-1">
-                            <label class="form-label fw-bold text-secondary small text-uppercase m-0" style="font-size: 0.72rem;">
+                            <label class="form-label fw-bold small text-uppercase m-0">
                                 <i class="fa-solid fa-circle text-success me-1"></i> POINT A: BOARDING STOP
                             </label>
-                            <button type="button" class="btn btn-link text-primary p-0 text-decoration-none fw-semibold" id="btnUseMyLocation" style="font-size: 0.75rem;">
+                            <button type="button" class="btn btn-link text-info p-0 text-decoration-none fw-semibold" id="btnUseMyLocation" style="font-size: 0.75rem;">
                                 <i class="fa-solid fa-crosshairs text-danger me-1"></i> Use GPS
                             </button>
                         </div>
@@ -118,7 +239,7 @@
 
                     <!-- Destination Stop (Point B) -->
                     <div class="mb-3">
-                        <label class="form-label fw-bold text-secondary small text-uppercase mb-1" style="font-size: 0.72rem;">
+                        <label class="form-label fw-bold small text-uppercase mb-1">
                             <i class="fa-solid fa-location-dot text-danger me-1"></i> POINT B: DESTINATION STOP
                         </label>
                         <input type="text" class="form-control mb-1 fw-medium" id="destTextInput" list="destInputList" placeholder="Type destination stop..." value="{% if selected_dest %}{% for s in stops %}{% if s.id == selected_dest %}{{ s.stop_name }}{% endif %}{% endfor %}{% endif %}" autocomplete="off">
@@ -145,7 +266,7 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-transit-primary btn-lg w-100 mt-3" id="btnSearchRoutes">
+                    <button type="submit" class="btn btn-search-primary btn-lg w-100 mt-3" id="btnSearchRoutes">
                         <i class="fa-solid fa-magnifying-glass me-2"></i> Find Best Routes
                     </button>
                 </form>
@@ -337,157 +458,136 @@ async function renderRouteOnMap(route, cardElement) {
     currentPolylineGroup.clearLayers();
     const boundsLayers = [];
 
+    // Collect continuous ordered stops across the journey without duplicate transfer points
+    const journeyStops = [];
+    const seenStopKeys = new Set();
+
     if (route.legs && route.legs.length > 0) {
-        const totalLegs = route.legs.length;
-
-        for (let legIndex = 0; legIndex < totalLegs; legIndex++) {
-            const leg = route.legs[legIndex];
-            if (!leg.path_coords || leg.path_coords.length === 0) continue;
-
-            const legLatLons = [];
-            const osrmCoordStrs = [];
-
-            leg.path_coords.forEach(coord => {
+        route.legs.forEach(leg => {
+            (leg.path_coords || []).forEach(coord => {
                 const lat = parseFloat(coord.lat);
                 const lon = parseFloat(coord.lon !== undefined ? coord.lon : coord.lng);
                 if (!isNaN(lat) && !isNaN(lon)) {
-                    legLatLons.push([lat, lon]);
-                    osrmCoordStrs.push(`${lon.toFixed(6)},${lat.toFixed(6)}`);
-                }
-            });
-
-            if (legLatLons.length < 2) continue;
-
-            const legColor = legIndex === 0 ? '#2563eb' : '#f59e0b';
-            let renderedGeoJson = false;
-
-            try {
-                let queryStrs = osrmCoordStrs;
-                if (osrmCoordStrs.length > 22) {
-                    const step = Math.ceil(osrmCoordStrs.length / 15);
-                    queryStrs = [
-                        osrmCoordStrs[0],
-                        ...osrmCoordStrs.slice(1, -1).filter((_, idx) => idx % step === 0),
-                        osrmCoordStrs[osrmCoordStrs.length - 1]
-                    ];
-                }
-
-                const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${queryStrs.join(';')}?overview=full&geometries=geojson`;
-                const res = await fetch(osrmUrl);
-                
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data && data.code === 'Ok' && data.routes && data.routes[0] && data.routes[0].geometry) {
-                        const geojsonGeometry = data.routes[0].geometry;
-
-                        const roadLayer = L.geoJSON(geojsonGeometry, {
-                            style: {
-                                color: legColor,
-                                weight: 6,
-                                opacity: 0.85,
-                                lineCap: 'round',
-                                lineJoin: 'round'
-                            }
+                    const key = `${coord.stop_name || ''}_${lat.toFixed(4)}_${lon.toFixed(4)}`;
+                    if (!seenStopKeys.has(key)) {
+                        seenStopKeys.add(key);
+                        journeyStops.push({
+                            stop_name: coord.stop_name || 'Stop',
+                            lat: lat,
+                            lon: lon
                         });
-                        currentPolylineGroup.addLayer(roadLayer);
-                        boundsLayers.push(roadLayer);
-                        renderedGeoJson = true;
                     }
                 }
-            } catch (err) {
-                console.warn('Direct OSRM fetch failed, attempting backend road-geometry fallback:', err);
-            }
-
-            if (!renderedGeoJson) {
-                try {
-                    const backendRes = await fetch('/api/routes/road-geometry/', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ coordinates: legLatLons })
-                    });
-                    if (backendRes.ok) {
-                        const backendData = await backendRes.json();
-                        if (backendData.status === 'success' && backendData.geometry) {
-                            const roadLayer = L.geoJSON(backendData.geometry, {
-                                style: {
-                                    color: legColor,
-                                    weight: 6,
-                                    opacity: 0.85,
-                                    lineCap: 'round',
-                                    lineJoin: 'round'
-                                }
-                            });
-                            currentPolylineGroup.addLayer(roadLayer);
-                            boundsLayers.push(roadLayer);
-                            renderedGeoJson = true;
-                        }
-                    }
-                } catch (e) {
-                    console.warn('Backend road-geometry fallback failed:', e);
-                }
-            }
-
-            if (!renderedGeoJson) {
-                const polylineFallback = L.polyline(legLatLons, {
-                    color: legColor,
-                    weight: 6,
-                    opacity: 0.85,
-                    lineCap: 'round',
-                    lineJoin: 'round'
-                });
-                currentPolylineGroup.addLayer(polylineFallback);
-                boundsLayers.push(polylineFallback);
-            }
-
-            leg.path_coords.forEach((coord, idx) => {
-                const lat = parseFloat(coord.lat);
-                const lon = parseFloat(coord.lon !== undefined ? coord.lon : coord.lng);
-                if (isNaN(lat) || isNaN(lon)) return;
-
-                const isOrigin = legIndex === 0 && idx === 0;
-                const isDestination = legIndex === totalLegs - 1 && idx === leg.path_coords.length - 1;
-                const isTransferHub = (legIndex > 0 && idx === 0) || (legIndex < totalLegs - 1 && idx === leg.path_coords.length - 1);
-
-                let marker = null;
-
-                if (isOrigin) {
-                    marker = L.circleMarker([lat, lon], {
-                        radius: 10,
-                        fillColor: '#10b981',
-                        color: '#ffffff',
-                        weight: 3,
-                        fillOpacity: 1
-                    }).bindPopup(`<div class="p-1"><strong class="text-success">🟢 Point A: ${coord.stop_name}</strong><br><small>Boarding Stop</small></div>`);
-                } else if (isDestination) {
-                    marker = L.circleMarker([lat, lon], {
-                        radius: 10,
-                        fillColor: '#ef4444',
-                        color: '#ffffff',
-                        weight: 3,
-                        fillOpacity: 1
-                    }).bindPopup(`<div class="p-1"><strong class="text-danger">🔴 Point B: ${coord.stop_name}</strong><br><small>Alighting Stop</small></div>`);
-                } else if (isTransferHub) {
-                    marker = L.circleMarker([lat, lon], {
-                        radius: 9,
-                        fillColor: '#f59e0b',
-                        color: '#ffffff',
-                        weight: 3,
-                        fillOpacity: 1
-                    }).bindPopup(`<div class="p-1"><strong class="text-warning">🔄 Transfer Hub: ${coord.stop_name}</strong><br><small>Switch Bus</small></div>`);
-                } else {
-                    marker = L.circleMarker([lat, lon], {
-                        radius: 5,
-                        fillColor: '#3b82f6',
-                        color: '#ffffff',
-                        weight: 1.5,
-                        fillOpacity: 0.9
-                    }).bindPopup(`<div class="p-1"><strong>🚏 ${coord.stop_name}</strong><br><small>En Route Stop</small></div>`);
-                }
-
-                currentPolylineGroup.addLayer(marker);
             });
+        });
+    }
+
+    if (journeyStops.length < 2) return;
+
+    // Strictly ONE primary route polyline
+    let renderedPrimary = false;
+
+    // 1. Check if backend already computed road_geometry
+    if (route.road_geometry && Array.isArray(route.road_geometry) && route.road_geometry.length >= 2) {
+        const primaryRoadLayer = L.polyline(route.road_geometry, {
+            color: '#2563eb', // Transit Electric Blue
+            weight: 6,
+            opacity: 0.92,
+            lineCap: 'round',
+            lineJoin: 'round'
+        });
+        currentPolylineGroup.addLayer(primaryRoadLayer);
+        boundsLayers.push(primaryRoadLayer);
+        renderedPrimary = true;
+    }
+
+    // 2. If not pre-computed, request road geometry ONCE from backend for whole journey
+    if (!renderedPrimary) {
+        try {
+            const legLatLons = journeyStops.map(s => [s.lat, s.lon]);
+            const backendRes = await fetch('/api/routes/road-geometry/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ coordinates: legLatLons })
+            });
+            if (backendRes.ok) {
+                const backendData = await backendRes.json();
+                if (backendData.status === 'success' && backendData.geometry) {
+                    const roadLayer = L.geoJSON(backendData.geometry, {
+                        style: {
+                            color: '#2563eb',
+                            weight: 6,
+                            opacity: 0.92,
+                            lineCap: 'round',
+                            lineJoin: 'round'
+                        }
+                    });
+                    currentPolylineGroup.addLayer(roadLayer);
+                    boundsLayers.push(roadLayer);
+                    renderedPrimary = true;
+                }
+            }
+        } catch (e) {
+            console.warn('Backend road geometry fallback failed:', e);
         }
     }
+
+    // 3. Robust fallback: clean single polyline connecting ordered stops
+    if (!renderedPrimary) {
+        const polylineFallback = L.polyline(journeyStops.map(s => [s.lat, s.lon]), {
+            color: '#2563eb',
+            weight: 6,
+            opacity: 0.92,
+            lineCap: 'round',
+            lineJoin: 'round'
+        });
+        currentPolylineGroup.addLayer(polylineFallback);
+        boundsLayers.push(polylineFallback);
+    }
+
+    // Add clear, distinct markers for stops
+    journeyStops.forEach((coord, idx) => {
+        const isOrigin = idx === 0;
+        const isDestination = idx === journeyStops.length - 1;
+        const isTransferHub = !isOrigin && !isDestination && route.transfers > 0 && route.transfer_point && coord.stop_name.toLowerCase().includes(route.transfer_point.toLowerCase());
+
+        let marker = null;
+        if (isOrigin) {
+            marker = L.circleMarker([coord.lat, coord.lon], {
+                radius: 10,
+                fillColor: '#10b981',
+                color: '#ffffff',
+                weight: 3,
+                fillOpacity: 1
+            }).bindPopup(`<div class="p-1"><strong class="text-success">🟢 Point A: ${coord.stop_name}</strong><br><small>Boarding Stop</small></div>`);
+        } else if (isDestination) {
+            marker = L.circleMarker([coord.lat, coord.lon], {
+                radius: 10,
+                fillColor: '#ef4444',
+                color: '#ffffff',
+                weight: 3,
+                fillOpacity: 1
+            }).bindPopup(`<div class="p-1"><strong class="text-danger">🔴 Point B: ${coord.stop_name}</strong><br><small>Alighting Stop</small></div>`);
+        } else if (isTransferHub) {
+            marker = L.circleMarker([coord.lat, coord.lon], {
+                radius: 9,
+                fillColor: '#f59e0b',
+                color: '#ffffff',
+                weight: 3,
+                fillOpacity: 1
+            }).bindPopup(`<div class="p-1"><strong class="text-warning">🔄 Transfer Hub: ${coord.stop_name}</strong><br><small>Switch Bus</small></div>`);
+        } else {
+            marker = L.circleMarker([coord.lat, coord.lon], {
+                radius: 5,
+                fillColor: '#38bdf8',
+                color: '#ffffff',
+                weight: 1.5,
+                fillOpacity: 0.9
+            }).bindPopup(`<div class="p-1"><strong>🚏 ${coord.stop_name}</strong><br><small>En Route Stop</small></div>`);
+        }
+
+        currentPolylineGroup.addLayer(marker);
+    });
 
     if (boundsLayers.length > 0) {
         const featureGroup = L.featureGroup(boundsLayers);

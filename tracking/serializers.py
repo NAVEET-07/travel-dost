@@ -3,9 +3,11 @@ from tracking.models import User, BusStop, Route, RouteStop, Bus, GPSDevice, Bus
 
 
 class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=True, min_length=4)
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'phone_number']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'phone_number', 'password']
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
@@ -65,7 +67,7 @@ class BusSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'bus_number', 'bus_name', 'bus_type', 'bus_type_display',
             'route', 'route_id', 'driver', 'driver_id', 'driver_username',
-            'is_active', 'tracking_enabled', 'tracking_status',
+            'is_active', 'tracking_enabled', 'tracking_status', 'trip_status',
             'last_updated', 'current_location'
         ]
 

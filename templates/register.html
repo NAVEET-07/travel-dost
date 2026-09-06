@@ -87,13 +87,30 @@ $('#registerForm').on('submit', function(e) {
         }),
         contentType: 'application/json',
         success: function(res) {
-            btn.html('<i class="fa-solid fa-check me-2"></i> Registered!');
-            alert("Account registered successfully! Please sign in.");
-            window.location.href = '/login/';
+            if (res && res.status === 'success' && res.user && res.user.id) {
+                btn.html('<i class="fa-solid fa-circle-check me-2"></i> Persisted & Verified!');
+                btn.removeClass('btn-transit-primary').addClass('btn-success');
+                setTimeout(function() {
+                    window.location.href = '/login/?registered=1';
+                }, 750);
+            } else {
+                btn.html('<i class="fa-solid fa-user-plus me-2"></i> Register Account').prop('disabled', false);
+                alert("Database write verification failed. Please check inputs and retry.");
+            }
         },
         error: function(err) {
             btn.html('<i class="fa-solid fa-user-plus me-2"></i> Register Account').prop('disabled', false);
-            alert(err.responseJSON ? JSON.stringify(err.responseJSON) : "Registration error.");
+            let errMsg = "Registration error.";
+            if (err.responseJSON) {
+                if (typeof err.responseJSON === 'string') {
+                    errMsg = err.responseJSON;
+                } else if (err.responseJSON.error) {
+                    errMsg = err.responseJSON.error;
+                } else {
+                    errMsg = Object.entries(err.responseJSON).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`).join('\n');
+                }
+            }
+            alert(errMsg);
         }
     });
 });

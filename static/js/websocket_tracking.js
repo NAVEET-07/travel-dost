@@ -74,16 +74,16 @@ function startBusTrackingSocket(busId) {
             $('#liveStatusBadge')
                 .removeClass('bg-success')
                 .addClass('bg-warning text-dark')
-                .html('<i class="fa-solid fa-satellite me-1"></i> Live REST Polling (5s)');
+                .html('<i class="fa-solid fa-satellite me-1"></i> Live REST Polling (3s)');
             
             startPollingFallback(busId);
 
-            // Reconnect websocket after 5 seconds if bus selection hasn't changed
+            // Reconnect websocket after 3 seconds if bus selection hasn't changed
             setTimeout(() => {
                 if (currentTrackedBusId === busId && (!trackingSocket || trackingSocket.readyState === WebSocket.CLOSED)) {
                     startBusTrackingSocket(busId);
                 }
-            }, 5000);
+            }, 3000);
         };
 
         trackingSocket.onerror = function(err) {
@@ -101,10 +101,10 @@ function startPollingFallback(busId) {
 
     if (pollingIntervalId) clearInterval(pollingIntervalId);
 
-    // Strictly poll at 5 seconds interval
+    // Strictly poll at 3 seconds interval
     pollingIntervalId = setInterval(() => {
         fetchBusesApi(busId);
-    }, 5000);
+    }, 3000);
 }
 
 function stopPollingFallback() {
@@ -120,7 +120,7 @@ function fetchBusesApi(busId) {
             url: `/api/buses/${busId}/tracking-status/`,
             type: 'GET',
             success: function(resp) {
-                if (resp && resp.is_live && resp.latest_location) {
+                if (resp && resp.is_live && resp.latest_location && ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT'].includes((resp.trip_status || '').toUpperCase())) {
                     const data = {
                         bus_id: resp.bus_id,
                         bus_number: resp.bus_number,
@@ -131,13 +131,17 @@ function fetchBusesApi(busId) {
                         speed: resp.latest_location.speed,
                         heading: resp.latest_location.heading,
                         status: resp.tracking_status,
+                        trip_status: resp.trip_status,
                         timestamp: resp.latest_location.timestamp
                     };
                     updateBusMarkerOnMap(data);
                     updateTelemetryCard(data);
-                } else if (resp && !resp.is_live) {
-                    // Remove if no longer live
-                    updateBusMarkerOnMap({ bus_id: resp.bus_id, status: 'OFFLINE' });
+                } else if (resp && (!resp.is_live || !['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT'].includes((resp.trip_status || '').toUpperCase()))) {
+                    // Remove if no longer on active trip
+                    updateBusMarkerOnMap({ bus_id: resp.bus_id, status: 'OFFLINE', trip_status: resp.trip_status || 'COMPLETED' });
+                    if (typeof window.onBusOffline === 'function') {
+                        window.onBusOffline(resp.bus_id);
+                    }
                 }
             }
         });
@@ -149,7 +153,8 @@ function fetchBusesApi(busId) {
             success: function(resp) {
                 if (Array.isArray(resp)) {
                     resp.forEach(b => {
-                        if (b.current_location && b.tracking_status === 'LIVE' && b.trip_status === 'IN_TRANSIT') {
+                        const tripSt = (b.trip_status || '').toUpperCase();
+                        if (b.current_location && b.tracking_status === 'LIVE' && ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT'].includes(tripSt)) {
                             const data = {
                                 bus_id: b.id,
                                 bus_number: b.bus_number,
@@ -160,6 +165,7 @@ function fetchBusesApi(busId) {
                                 speed: b.current_location.speed,
                                 heading: b.current_location.heading,
                                 status: b.tracking_status,
+                                trip_status: b.trip_status,
                                 timestamp: b.current_location.timestamp
                             };
                             updateBusMarkerOnMap(data);
@@ -190,6 +196,6 @@ function updateTelemetryCard(data) {
         if (data.heading !== undefined && data.heading !== null) {
             $('#telHeading').text(`${Math.round(data.heading)}°`);
         }
-        $('#telUpdated').text('Live 5s');
+        $('#telUpdated').text('Live 3s');
     }
 }

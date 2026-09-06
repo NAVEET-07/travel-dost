@@ -90,8 +90,11 @@ class Bus(models.Model):
     )
     TRIP_STATUS_CHOICES = (
         ('NOT_STARTED', 'Not Started'),
+        ('ACTIVE', 'Active'),
+        ('IN_PROGRESS', 'In Progress'),
         ('IN_TRANSIT', 'In Transit'),
         ('COMPLETED', 'Completed'),
+        ('CANCELLED', 'Cancelled'),
     )
     bus_number = models.CharField(max_length=50, unique=True, help_text="e.g. KA-25-F-101")
     bus_name = models.CharField(max_length=100, default="NWKRTC Bus")

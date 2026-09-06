@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, BasePermission
 from django.contrib.auth import authenticate, login, logout
+from django.db import transaction
 from django.utils import timezone
 
 from tracking.models import User, BusStop, Route, RouteStop, Bus, GPSDevice, BusLocation, Fare, BusTrackingSession, SearchHistory
@@ -32,10 +33,25 @@ class RegisterAPIView(APIView):
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
+            with transaction.atomic():
+                user = serializer.save()
+                # Strictly confirm write success in database before responding
+                persisted = User.objects.filter(id=user.id).exists()
+                if not persisted:
+                    return Response({
+                        "status": "error",
+                        "error": "Failed to persist registration to the database."
+                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
             return Response({
-                "message": "User registered successfully.",
-                "user": serializer.data
+                "status": "success",
+                "message": f"User {user.username} registered and persisted successfully.",
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "role": user.role
+                }
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -90,7 +106,7 @@ class BusViewSet(viewsets.ModelViewSet):
         status_param = self.request.query_params.get('status')
         live_only = self.request.query_params.get('live_only')
         if status_param == 'LIVE' or live_only in ['true', '1', 'True']:
-            qs = qs.filter(tracking_status='LIVE', trip_status='IN_TRANSIT')
+            qs = qs.filter(tracking_status='LIVE', trip_status__in=['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT'])
         return qs
 
     def get_permissions(self):
@@ -417,7 +433,7 @@ class BusTrackingStatusAPIView(APIView):
             bus = Bus.objects.select_related('route').get(pk=pk)
             loc = bus.get_current_location()
 
-            is_live = (bus.tracking_status == 'LIVE') and (bus.trip_status == 'IN_TRANSIT')
+            is_live = (bus.tracking_status == 'LIVE') and (bus.trip_status in ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT'])
 
             route_stops_data = []
             current_stop_data = None
@@ -484,9 +500,41 @@ class BusTrackingStatusAPIView(APIView):
                     traveled_stops = route_stops_data[:current_idx + 1]
                     remaining_stops = route_stops_data[current_idx + 1:]
 
+            # Query actual traveled breadcrumbs recorded for this active trip session
+            recent_locations = list(
+                bus.locations.filter(is_active=True).order_by('timestamp')
+            )
+            latest_session = bus.tracking_sessions.filter(status='ACTIVE').order_by('-started_at').first()
+            if latest_session and latest_session.started_at:
+                recent_locations = [l for l in recent_locations if l.timestamp >= latest_session.started_at]
+            elif recent_locations:
+                recent_locations = recent_locations[-150:]
+
+            traveled_breadcrumbs = [[round(l.latitude, 6), round(l.longitude, 6)] for l in recent_locations]
+            if loc and loc.latitude and loc.longitude:
+                curr_pt = [round(loc.latitude, 6), round(loc.longitude, 6)]
+                if not traveled_breadcrumbs or traveled_breadcrumbs[-1] != curr_pt:
+                    traveled_breadcrumbs.append(curr_pt)
+
             road_geometry = get_or_generate_road_geometry(bus.route) if bus.route else []
 
-            # Split road geometry into traveled and remaining paths
+            # Determine traveled road points: prioritize actual GPS breadcrumbs
+            if len(traveled_breadcrumbs) >= 2:
+                traveled_road_points = traveled_breadcrumbs
+            elif road_geometry and loc and loc.latitude and loc.longitude:
+                min_geom_dist = float('inf')
+                split_geom_idx = 0
+                for g_idx, pt in enumerate(road_geometry):
+                    g_dist = haversine_distance(loc.latitude, loc.longitude, pt[0], pt[1])
+                    if g_dist < min_geom_dist:
+                        min_geom_dist = g_dist
+                        split_geom_idx = g_idx
+                traveled_road_points = road_geometry[:split_geom_idx + 1]
+                traveled_road_points.append([loc.latitude, loc.longitude])
+            elif loc and loc.latitude and loc.longitude:
+                traveled_road_points = [[loc.latitude, loc.longitude]]
+
+            # Determine remaining road points from bus location forward
             if road_geometry and loc and loc.latitude and loc.longitude:
                 min_geom_dist = float('inf')
                 split_geom_idx = 0
@@ -495,9 +543,6 @@ class BusTrackingStatusAPIView(APIView):
                     if g_dist < min_geom_dist:
                         min_geom_dist = g_dist
                         split_geom_idx = g_idx
-
-                traveled_road_points = road_geometry[:split_geom_idx + 1]
-                traveled_road_points.append([loc.latitude, loc.longitude])
                 remaining_road_points = [[loc.latitude, loc.longitude]] + road_geometry[split_geom_idx:]
             elif road_geometry:
                 remaining_road_points = road_geometry
@@ -529,6 +574,7 @@ class BusTrackingStatusAPIView(APIView):
                 "remaining_stops": remaining_stops,
                 "road_geometry": road_geometry,
                 "traveled_road_points": traveled_road_points,
+                "traveled_breadcrumbs": traveled_breadcrumbs,
                 "remaining_road_points": remaining_road_points
             })
         except Bus.DoesNotExist:
@@ -659,7 +705,7 @@ class DriverTripStartAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        bus_no = request.data.get('bus_no') or request.data.get('bus_number') or request.query_params.get('bus_no')
+        bus_no = request.data.get('bus_no') or request.data.get('bus_number') or request.data.get('bus_id') or request.data.get('id') or request.query_params.get('bus_no') or request.query_params.get('bus_id')
         route_id = request.data.get('route_id') or request.query_params.get('route_id')
 
         bus = resolve_bus_by_no_or_id(bus_no)
@@ -671,10 +717,14 @@ class DriverTripStartAPIView(APIView):
             if r_obj:
                 bus.route = r_obj
 
-        bus.trip_status = 'IN_TRANSIT'
+        bus.trip_status = 'ACTIVE'
         bus.tracking_status = 'LIVE'
         bus.last_updated = timezone.now()
         bus.save()
+
+        # Start a dedicated tracking session for breadcrumb segregation
+        BusTrackingSession.objects.filter(bus=bus, status='ACTIVE').update(status='COMPLETED', ended_at=timezone.now())
+        BusTrackingSession.objects.create(bus=bus, status='ACTIVE')
 
         # Broadcast trip start to WebSockets
         try:
@@ -689,6 +739,7 @@ class DriverTripStartAPIView(APIView):
                     'bus_name': bus.bus_name,
                     'bus_type': bus.get_bus_type_display(),
                     'status': 'LIVE',
+                    'trip_status': 'ACTIVE',
                     'route_name': bus.route.route_name if bus.route else 'Unassigned'
                 }
                 async_to_sync(channel_layer.group_send)(f'bus_{bus.id}', payload)
@@ -710,7 +761,7 @@ class DriverTripUpdateLocationAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        bus_no = request.data.get('bus_no') or request.data.get('bus_number') or request.query_params.get('bus_no')
+        bus_no = request.data.get('bus_no') or request.data.get('bus_number') or request.data.get('bus_id') or request.data.get('id') or request.query_params.get('bus_no') or request.query_params.get('bus_id')
         lat = request.data.get('lat') or request.data.get('latitude')
         lon = request.data.get('lon') or request.data.get('lng') or request.data.get('longitude')
         speed = request.data.get('speed', 0.0)
@@ -724,9 +775,18 @@ class DriverTripUpdateLocationAPIView(APIView):
             return Response({"status": "error", "error": f"Bus '{bus_no}' not found."}, status=404)
 
         bus.tracking_status = 'LIVE'
-        bus.trip_status = 'IN_TRANSIT'
+        bus.trip_status = 'ACTIVE'
         bus.last_updated = timezone.now()
         bus.save(update_fields=['tracking_status', 'trip_status', 'last_updated'])
+
+        client_ts = request.data.get('timestamp')
+        loc_time = timezone.now()
+        if client_ts:
+            try:
+                from dateutil.parser import parse
+                loc_time = parse(client_ts)
+            except Exception:
+                pass
 
         loc = BusLocation.objects.create(
             bus=bus,
@@ -734,7 +794,7 @@ class DriverTripUpdateLocationAPIView(APIView):
             longitude=float(lon),
             speed=float(speed or 0.0),
             heading=float(heading or 0.0),
-            timestamp=timezone.now()
+            timestamp=loc_time
         )
 
         # Broadcast location update to WebSockets
@@ -754,6 +814,7 @@ class DriverTripUpdateLocationAPIView(APIView):
                     'speed': float(speed or 0.0),
                     'heading': float(heading or 0.0),
                     'status': 'LIVE',
+                    'trip_status': 'ACTIVE',
                     'timestamp': loc.timestamp.isoformat()
                 }
                 async_to_sync(channel_layer.group_send)(f'bus_{bus.id}', payload)
@@ -769,7 +830,8 @@ class DriverTripUpdateLocationAPIView(APIView):
             "current_lat": loc.latitude,
             "current_lon": loc.longitude,
             "speed_kmh": loc.speed,
-            "heading": loc.heading
+            "heading": loc.heading,
+            "timestamp": loc.timestamp.isoformat()
         })
 
 
@@ -777,7 +839,7 @@ class DriverTripEndAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        bus_no = request.data.get('bus_no') or request.data.get('bus_number') or request.query_params.get('bus_no')
+        bus_no = request.data.get('bus_no') or request.data.get('bus_number') or request.data.get('bus_id') or request.data.get('id') or request.query_params.get('bus_no') or request.query_params.get('bus_id')
 
         bus = resolve_bus_by_no_or_id(bus_no)
         if not bus:
@@ -786,7 +848,13 @@ class DriverTripEndAPIView(APIView):
         bus.trip_status = 'COMPLETED'
         bus.tracking_status = 'OFFLINE'
         bus.last_updated = timezone.now()
-        bus.save()
+        bus.save(update_fields=['trip_status', 'tracking_status', 'last_updated'])
+
+        # End active tracking sessions
+        BusTrackingSession.objects.filter(bus=bus, status='ACTIVE').update(
+            status='COMPLETED',
+            ended_at=timezone.now()
+        )
 
         # Broadcast trip end to WebSockets
         try:
@@ -805,6 +873,7 @@ class DriverTripEndAPIView(APIView):
                     'speed': 0.0,
                     'heading': 0.0,
                     'status': 'OFFLINE',
+                    'trip_status': 'COMPLETED',
                     'timestamp': timezone.now().isoformat()
                 }
                 async_to_sync(channel_layer.group_send)(f'bus_{bus.id}', payload)
@@ -835,6 +904,7 @@ class PassengerBusLiveStatusAPIView(APIView):
                 "bus_no": str(bus_no or ""),
                 "is_live": False,
                 "status": "OFFLINE",
+                "trip_status": "NOT_STARTED",
                 "current_lat": None,
                 "current_lon": None,
                 "speed_kmh": 0.0,
@@ -845,17 +915,19 @@ class PassengerBusLiveStatusAPIView(APIView):
         loc = bus.get_current_location()
         seconds_ago = int((timezone.now() - loc.timestamp).total_seconds()) if loc and loc.timestamp else None
 
-        is_live = (bus.trip_status == 'IN_TRANSIT') and (loc is not None) and (seconds_ago is not None and seconds_ago <= 300)
-        status_str = "IN_TRANSIT" if is_live else "OFFLINE"
+        # STRICT: Only live if trip is actively ACTIVE, IN_PROGRESS, or IN_TRANSIT, bus is LIVE, and telemetry within 300s
+        is_live = (bus.trip_status in ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT']) and (bus.tracking_status == 'LIVE') and (loc is not None) and (seconds_ago is not None and seconds_ago <= 300)
+        status_str = "ACTIVE" if is_live else "OFFLINE"
 
         return Response({
             "bus_no": bus.bus_number,
             "is_live": is_live,
             "status": status_str,
-            "current_lat": float(loc.latitude) if (loc and is_live) else (float(loc.latitude) if loc else None),
-            "current_lon": float(loc.longitude) if (loc and is_live) else (float(loc.longitude) if loc else None),
-            "speed_kmh": float(loc.speed) if loc else 0.0,
-            "heading": float(loc.heading) if loc else 0.0,
+            "trip_status": bus.trip_status,
+            "current_lat": float(loc.latitude) if (loc and is_live) else None,
+            "current_lon": float(loc.longitude) if (loc and is_live) else None,
+            "speed_kmh": float(loc.speed) if (loc and is_live) else 0.0,
+            "heading": float(loc.heading) if (loc and is_live) else 0.0,
             "last_updated_seconds_ago": seconds_ago
         })
 

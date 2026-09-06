@@ -59,7 +59,7 @@ function createBusIcon(status = 'LIVE', busNumber = '', heading = 0) {
  * - Traveled Path: Solid Emerald Green (#10b981, weight 6)
  * - Remaining Path: Dashed Transit Blue (#2563eb, weight 5, dashArray: 6,8)
  */
-function renderTraveledAndRemainingRoute(busLatLng, routeStops, traveledRoadPoints, remainingRoadPoints) {
+function renderTraveledAndRemainingRoute(busLatLng, routeStops, traveledRoadPoints, remainingRoadPoints, breadcrumbsPoints) {
     if (!travelDostMap) return;
 
     // Clear old route polylines
@@ -74,19 +74,24 @@ function renderTraveledAndRemainingRoute(busLatLng, routeStops, traveledRoadPoin
 
     const bounds = [];
 
-    // 1. Draw Traveled Path (Solid Green)
-    if (traveledRoadPoints && traveledRoadPoints.length >= 2) {
-        traveledPolyline = L.polyline(traveledRoadPoints, {
+    // Prioritize high-accuracy breadcrumbs if available
+    const activeTraveledPoints = (breadcrumbsPoints && breadcrumbsPoints.length >= 2)
+        ? breadcrumbsPoints
+        : traveledRoadPoints;
+
+    // 1. Draw Traveled Path (Solid Emerald Green)
+    if (activeTraveledPoints && activeTraveledPoints.length >= 1) {
+        traveledPolyline = L.polyline(activeTraveledPoints, {
             color: '#10b981',
             weight: 6,
             opacity: 0.95,
             lineJoin: 'round',
             lineCap: 'round'
         }).addTo(travelDostMap);
-        traveledRoadPoints.forEach(p => bounds.push(p));
+        activeTraveledPoints.forEach(p => bounds.push(p));
     }
 
-    // 2. Draw Remaining Path (Dashed Blue)
+    // 2. Draw Remaining Path (Dashed Transit Blue)
     if (remainingRoadPoints && remainingRoadPoints.length >= 2) {
         remainingPolyline = L.polyline(remainingRoadPoints, {
             color: '#2563eb',
@@ -100,7 +105,7 @@ function renderTraveledAndRemainingRoute(busLatLng, routeStops, traveledRoadPoin
     }
 
     // Fallback: If no road points, connect stops directly
-    if ((!traveledRoadPoints || traveledRoadPoints.length < 2) && routeStops && routeStops.length > 0) {
+    if ((!activeTraveledPoints || activeTraveledPoints.length < 2) && routeStops && routeStops.length > 0) {
         plotRouteStopsOnly(routeStops);
     } else if (routeStops && routeStops.length > 0) {
         plotDetailedRouteStops(routeStops, busLatLng);
@@ -112,6 +117,37 @@ function renderTraveledAndRemainingRoute(busLatLng, routeStops, traveledRoadPoin
 
     if (bounds.length > 0) {
         travelDostMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+    }
+}
+
+/**
+ * Dynamically appends a coordinate to the active traveled breadcrumbs polyline in real-time
+ */
+function appendTraveledCoordinate(lat, lng) {
+    if (!travelDostMap || isNaN(lat) || isNaN(lng)) return;
+    const newPoint = L.latLng(lat, lng);
+    if (traveledPolyline) {
+        const pts = traveledPolyline.getLatLngs();
+        if (pts.length === 0 || pts[pts.length - 1].distanceTo(newPoint) > 1.0) {
+            traveledPolyline.addLatLng(newPoint);
+        }
+    } else {
+        traveledPolyline = L.polyline([newPoint], {
+            color: '#10b981',
+            weight: 6,
+            opacity: 0.95,
+            lineJoin: 'round',
+            lineCap: 'round'
+        }).addTo(travelDostMap);
+    }
+
+    // Update remaining path starting point if active
+    if (remainingPolyline) {
+        const remainingPts = remainingPolyline.getLatLngs();
+        if (remainingPts.length > 0) {
+            remainingPts[0] = newPoint;
+            remainingPolyline.setLatLngs(remainingPts);
+        }
     }
 }
 
@@ -193,7 +229,10 @@ function updatePassengerMarker(lat, lng) {
 
 /**
  * Real-Time Live Bus Marker Plotter
- * If status is OFFLINE, marker is immediately deleted from map.
+ * STRICT GHOST BUS POLICY:
+ * Only renders bus markers if the driver has actively clicked "Start Trip"
+ * and trip status is strictly set to ACTIVE, IN_PROGRESS, or IN_TRANSIT.
+ * If status is OFFLINE or trip is completed/cancelled, marker is immediately deleted from map.
  */
 function updateBusMarkerOnMap(busData) {
     if (!travelDostMap || !busData) return;
@@ -202,10 +241,15 @@ function updateBusMarkerOnMap(busData) {
     const lat = parseFloat(busData.latitude);
     const lng = parseFloat(busData.longitude);
     const status = busData.status || busData.tracking_status || 'LIVE';
+    const tripStatus = (busData.trip_status || '').toUpperCase();
     const busNum = busData.bus_number || '';
 
-    // If offline or invalid coordinates, remove marker completely
-    if (isNaN(lat) || isNaN(lng) || status === 'OFFLINE') {
+    // Check if trip is active
+    const isTripActive = !tripStatus || ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT'].includes(tripStatus);
+    const isOffline = status === 'OFFLINE' || tripStatus === 'COMPLETED' || tripStatus === 'CANCELLED' || tripStatus === 'SCHEDULED' || !isTripActive;
+
+    // If offline, inactive trip, or invalid coordinates, remove marker completely
+    if (isNaN(lat) || isNaN(lng) || isOffline) {
         if (busMarkersMap[busId]) {
             travelDostMap.removeLayer(busMarkersMap[busId]);
             delete busMarkersMap[busId];
@@ -223,7 +267,7 @@ function updateBusMarkerOnMap(busData) {
             </div>
             <p class="m-0 small"><strong>Route:</strong> ${busData.route_name || 'NWKRTC Service'}</p>
             <p class="m-0 small"><strong>Speed:</strong> ${speedStr} km/h</p>
-            <p class="m-0 small text-muted"><strong>Updated:</strong> ${busData.timestamp ? new Date(busData.timestamp).toLocaleTimeString() : 'Live 5s GPS'}</p>
+            <p class="m-0 small text-muted"><strong>Updated:</strong> ${busData.timestamp ? new Date(busData.timestamp).toLocaleTimeString() : 'Live 3s GPS'}</p>
         </div>
     `;
 
@@ -239,17 +283,6 @@ function updateBusMarkerOnMap(busData) {
         busMarkersMap[busId] = marker;
     }
 
-    // Dynamically update traveled polyline end and remaining polyline start if they exist
-    if (traveledPolyline && remainingPolyline) {
-        const traveledPts = traveledPolyline.getLatLngs();
-        if (traveledPts.length > 0) {
-            traveledPts[traveledPts.length - 1] = L.latLng(lat, lng);
-            traveledPolyline.setLatLngs(traveledPts);
-        }
-        const remainingPts = remainingPolyline.getLatLngs();
-        if (remainingPts.length > 0) {
-            remainingPts[0] = L.latLng(lat, lng);
-            remainingPolyline.setLatLngs(remainingPts);
-        }
-    }
+    // Dynamically append to traveled breadcrumbs polyline
+    appendTraveledCoordinate(lat, lng);
 }

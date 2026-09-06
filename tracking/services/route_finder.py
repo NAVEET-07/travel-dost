@@ -2,6 +2,7 @@ import re
 from difflib import SequenceMatcher
 from tracking.models import Route, BusStop, RouteStop, Fare, Bus
 from tracking.services.distance import haversine_distance
+from tracking.services.road_geometry import fetch_osrm_road_geometry
 
 ABBREVIATION_MAP = {
     r'\bbs\b': 'bus stand',
@@ -239,6 +240,9 @@ def find_best_routes(source_param, destination_param):
             all_route_rs = RouteStop.objects.filter(route=route).select_related('bus_stop').order_by('stop_order')
             all_stops_data = [{"id": rs.bus_stop.id, "name": rs.bus_stop.stop_name, "area": rs.bus_stop.area, "lat": rs.bus_stop.latitude, "lng": rs.bus_stop.longitude, "stop_order": rs.stop_order} for rs in all_route_rs]
 
+            journey_coords = [[float(st.latitude), float(st.longitude)] for st in stops_list]
+            road_geom = fetch_osrm_road_geometry(journey_coords)
+
             results.append({
                 "type": "DIRECT",
                 "transfers": 0,
@@ -254,6 +258,7 @@ def find_best_routes(source_param, destination_param):
                 "total_buses_count": active_buses.count(),
                 "buses": buses_data,
                 "all_route_stops": all_stops_data,
+                "road_geometry": road_geom,
                 "transfer_point": None,
                 "segment_1": {
                     "route_name": route.route_name,
@@ -362,6 +367,10 @@ def find_best_routes(source_param, destination_param):
 
                         score = (1 * 100) + (cbt_rank * 10) + (total_stops * 2) + total_dist
 
+                        journey_stops = leg1_stops + leg2_stops[1:]
+                        journey_coords = [[float(st.latitude), float(st.longitude)] for st in journey_stops]
+                        road_geom = fetch_osrm_road_geometry(journey_coords)
+
                         results.append({
                             "type": "CONNECTING",
                             "transfers": 1,
@@ -376,6 +385,7 @@ def find_best_routes(source_param, destination_param):
                             "stop_count": total_stops,
                             "live_bus_count": len([b for b in buses_leg1 + buses_leg2 if b["tracking_status"] == "LIVE"]),
                             "total_buses_count": len(buses_leg1) + len(buses_leg2),
+                            "road_geometry": road_geom,
                             "segment_1": {
                                 "route_name": r_src.route_name,
                                 "board_at": source_stop.stop_name,
@@ -426,16 +436,19 @@ def find_best_routes(source_param, destination_param):
     # -------------------------------------------------------------
     if not results:
         hubs = BusStop.objects.filter(stop_name__icontains="cbt") | BusStop.objects.filter(stop_name__icontains="hosur") | BusStop.objects.filter(stop_name__icontains="jubilee")
-        hub_stop = hubs.first() or BusStop.objects.first()
+        hub_stop = hubs.exclude(id=source_stop.id).exclude(id=destination_stop.id).first() or BusStop.objects.exclude(id=source_stop.id).exclude(id=destination_stop.id).first()
 
         if hub_stop:
-            r_src = Route.objects.filter(route_stops__bus_stop=source_stop).first() or Route.objects.first()
-            r_dst = Route.objects.filter(route_stops__bus_stop=destination_stop).first() or Route.objects.first()
+            r_src = Route.objects.filter(route_stops__bus_stop=source_stop, is_active=True).first() or Route.objects.first()
+            r_dst = Route.objects.filter(route_stops__bus_stop=destination_stop, is_active=True).first() or Route.objects.first()
 
             if r_src and r_dst:
                 dist = round(haversine_distance(source_stop.latitude, source_stop.longitude, destination_stop.latitude, destination_stop.longitude), 2)
-                stops_src = [rs.bus_stop for rs in RouteStop.objects.filter(route=r_src).select_related('bus_stop')]
-                stops_dst = [rs.bus_stop for rs in RouteStop.objects.filter(route=r_dst).select_related('bus_stop')]
+                leg1_stops = [source_stop, hub_stop]
+                leg2_stops = [hub_stop, destination_stop]
+                journey_stops = [source_stop, hub_stop, destination_stop]
+                journey_coords = [[float(st.latitude), float(st.longitude)] for st in journey_stops]
+                road_geom = fetch_osrm_road_geometry(journey_coords)
 
                 buses_src = [{"id": b.id, "bus_number": b.bus_number, "bus_name": b.bus_name, "bus_type": b.get_bus_type_display(), "tracking_status": b.tracking_status} for b in Bus.objects.filter(route=r_src, is_active=True)]
                 buses_dst = [{"id": b.id, "bus_number": b.bus_number, "bus_name": b.bus_name, "bus_type": b.get_bus_type_display(), "tracking_status": b.tracking_status} for b in Bus.objects.filter(route=r_dst, is_active=True)]
@@ -448,7 +461,7 @@ def find_best_routes(source_param, destination_param):
                 cbt_rank = 2
                 if is_cbt_stop(source_stop) or is_cbt_stop(destination_stop):
                     cbt_rank = 0
-                elif is_cbt_stop(hub_stop) or any(is_cbt_stop(st) for st in stops_src + stops_dst):
+                elif is_cbt_stop(hub_stop):
                     cbt_rank = 1
 
                 results.append({
@@ -462,22 +475,23 @@ def find_best_routes(source_param, destination_param):
                     "estimated_distance_km": max(1.5, dist),
                     "estimated_duration_mins": max(12, int(dist * 4.0)),
                     "estimated_fare": total_fare,
-                    "stop_count": len(stops_src) + len(stops_dst),
+                    "stop_count": 3,
                     "live_bus_count": len([b for b in buses_src + buses_dst if b["tracking_status"] == "LIVE"]),
                     "total_buses_count": len(buses_src) + len(buses_dst),
+                    "road_geometry": road_geom,
                     "segment_1": {
                         "route_name": r_src.route_name,
                         "board_at": source_stop.stop_name,
-                        "stops": [{"id": st.id, "name": st.stop_name, "area": st.area} for st in stops_src],
-                        "stops_str": " → ".join([st.stop_name for st in stops_src]),
+                        "stops": [{"id": st.id, "name": st.stop_name, "area": st.area} for st in leg1_stops],
+                        "stops_str": " → ".join([st.stop_name for st in leg1_stops]),
                         "alight_at": hub_stop.stop_name,
                         "fare": leg1_fare
                     },
                     "segment_2": {
                         "route_name": r_dst.route_name,
                         "board_at": hub_stop.stop_name,
-                        "stops": [{"id": st.id, "name": st.stop_name, "area": st.area} for st in stops_dst],
-                        "stops_str": " → ".join([st.stop_name for st in stops_dst]),
+                        "stops": [{"id": st.id, "name": st.stop_name, "area": st.area} for st in leg2_stops],
+                        "stops_str": " → ".join([st.stop_name for st in leg2_stops]),
                         "destination": destination_stop.stop_name,
                         "fare": leg2_fare
                     },
@@ -495,7 +509,7 @@ def find_best_routes(source_param, destination_param):
                             "route_name": r_src.route_name,
                             "from_stop": source_stop.stop_name,
                             "to_stop": hub_stop.stop_name,
-                            "stops": [{"id": st.id, "name": st.stop_name, "area": st.area, "lat": st.latitude, "lng": st.longitude} for st in stops_src],
+                            "stops": [{"id": st.id, "name": st.stop_name, "area": st.area, "lat": st.latitude, "lng": st.longitude} for st in leg1_stops],
                             "buses": buses_src,
                         },
                         {
@@ -504,7 +518,7 @@ def find_best_routes(source_param, destination_param):
                             "route_name": r_dst.route_name,
                             "from_stop": hub_stop.stop_name,
                             "to_stop": destination_stop.stop_name,
-                            "stops": [{"id": st.id, "name": st.stop_name, "area": st.area, "lat": st.latitude, "lng": st.longitude} for st in stops_dst],
+                            "stops": [{"id": st.id, "name": st.stop_name, "area": st.area, "lat": st.latitude, "lng": st.longitude} for st in leg2_stops],
                             "buses": buses_dst,
                         }
                     ]

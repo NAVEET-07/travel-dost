@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, BasePermission
 from django.contrib.auth import authenticate, login, logout
 from django.db import transaction
+from django.db.models import Count
 from django.utils import timezone
 
 from tracking.models import User, BusStop, Route, RouteStop, Bus, GPSDevice, BusLocation, Fare, BusTrackingSession, SearchHistory
@@ -589,25 +590,63 @@ class RouteGeometryAPIView(APIView):
             try:
                 route = Route.objects.get(pk=pk)
                 geometry = get_or_generate_road_geometry(route)
-                stops = [
-                    {
+                ordered_stops = list(route.get_ordered_stops())
+                total_distance = 0.0
+                if ordered_stops:
+                    total_distance = ordered_stops[-1].distance_from_start_km
+
+                # Calculate estimated travel time: ~25 km/h urban speed + 1 min dwell per stop
+                est_minutes = max(10, int(round((total_distance / 25.0) * 60 + len(ordered_stops) * 1.0))) if total_distance > 0 else len(ordered_stops) * 2
+
+                stops = []
+                for rs in ordered_stops:
+                    # Estimate minutes to this stop
+                    stop_dist = rs.distance_from_start_km
+                    stop_eta = max(0, int(round((stop_dist / 25.0) * 60 + (rs.stop_order - 1) * 1.0))) if stop_dist > 0 else 0
+                    stops.append({
                         "id": rs.bus_stop.id,
                         "name": rs.bus_stop.stop_name,
+                        "area": rs.bus_stop.area or "",
                         "lat": rs.bus_stop.latitude,
                         "lng": rs.bus_stop.longitude,
-                        "order": rs.stop_order
-                    }
-                    for rs in route.get_ordered_stops()
-                ]
+                        "order": rs.stop_order,
+                        "distance_km": round(rs.distance_from_start_km, 2),
+                        "eta_mins": stop_eta
+                    })
+
                 return Response({
                     "route_id": route.id,
                     "route_name": route.route_name,
+                    "start_point": route.start_point,
+                    "end_point": route.end_point,
+                    "total_distance_km": round(total_distance, 2),
+                    "estimated_duration_mins": est_minutes,
+                    "stops_count": len(stops),
                     "stops": stops,
                     "road_geometry": geometry
                 })
             except Route.DoesNotExist:
                 return Response({"error": "Route not found."}, status=404)
-        return Response({"message": "Send POST request with {'coordinates': [[lat, lon], ...]} to fetch OSRM road geometry."})
+
+        if request.GET.get('all') == 'true' or request.GET.get('format') == 'list':
+            routes = Route.objects.filter(is_active=True).annotate(
+                stops_cnt=Count('route_stops')
+            ).order_by('route_name')
+            return Response({
+                "count": routes.count(),
+                "routes": [
+                    {
+                        "id": r.id,
+                        "name": r.route_name,
+                        "start_point": r.start_point,
+                        "end_point": r.end_point,
+                        "stops_count": r.stops_cnt
+                    }
+                    for r in routes
+                ]
+            })
+
+        return Response({"message": "Send POST request with {'coordinates': [[lat, lon], ...]} to fetch OSRM road geometry or pass route ID in URL."})
 
     def post(self, request, pk=None):
         coordinates = request.data.get('coordinates', [])

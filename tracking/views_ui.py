@@ -124,24 +124,65 @@ def bus_detail_view(request, pk):
     return render(request, 'bus_detail.html', context)
 
 
-@login_required(login_url='login')
 def route_list_view(request):
     routes = Route.objects.filter(is_active=True).annotate(stops_cnt=Count('route_stops'))
     return render(request, 'routes.html', {'routes': routes})
 
 
-@login_required(login_url='login')
 def route_detail_view(request, pk):
     route = get_object_or_404(Route, pk=pk)
     route_stops = route.route_stops.select_related('bus_stop').order_by('stop_order')
     assigned_buses = route.buses.filter(is_active=True)
 
+    ordered_stops_list = list(route_stops)
+    total_dist = round(ordered_stops_list[-1].distance_from_start_km, 1) if ordered_stops_list else 0.0
+    est_mins = max(10, int(round((total_dist / 25.0) * 60 + len(ordered_stops_list) * 1.0))) if total_dist > 0 else len(ordered_stops_list) * 2
+
     context = {
         'route': route,
         'route_stops': route_stops,
         'assigned_buses': assigned_buses,
+        'total_distance': total_dist,
+        'est_duration': est_mins,
+        'stops_count': len(ordered_stops_list),
     }
     return render(request, 'route_detail.html', context)
+
+
+def transit_map_view(request):
+    routes = Route.objects.filter(is_active=True).annotate(
+        stops_cnt=Count('route_stops')
+    ).filter(stops_cnt__gt=0).order_by('route_name')
+
+    selected_route_id = request.GET.get('route_id')
+    selected_route = None
+
+    if selected_route_id and selected_route_id.isdigit():
+        selected_route = Route.objects.filter(id=int(selected_route_id), is_active=True).first()
+
+    if not selected_route:
+        # Default to first active route with stops
+        selected_route = routes.first()
+
+    route_stops = []
+    total_distance = 0.0
+    est_duration = 0
+    if selected_route:
+        route_stops = list(selected_route.route_stops.select_related('bus_stop').order_by('stop_order'))
+        if route_stops:
+            total_distance = round(route_stops[-1].distance_from_start_km, 1)
+        est_duration = max(10, int(round((total_distance / 25.0) * 60 + len(route_stops) * 1.0))) if total_distance > 0 else len(route_stops) * 2
+
+    context = {
+        'routes': routes,
+        'selected_route': selected_route,
+        'selected_route_id': selected_route.id if selected_route else None,
+        'route_stops': route_stops,
+        'total_distance': total_distance,
+        'est_duration': est_duration,
+        'stops_count': len(route_stops),
+    }
+    return render(request, 'transit_map.html', context)
 
 
 @login_required(login_url='login')

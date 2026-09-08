@@ -72,6 +72,11 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'transit-map' %}active{% endif %}" href="{% url 'transit-map' %}">
+                                <i class="fa-solid fa-map-location-dot me-1 text-info"></i> Transit Map
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'stops' %}active{% endif %}" href="{% url 'stops' %}">
                                 <i class="fa-solid fa-signs-post me-1"></i> Stops
                             </a>
@@ -106,6 +111,11 @@
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'routes' %}active{% endif %}" href="{% url 'routes' %}">
                                 <i class="fa-solid fa-route me-1"></i> Routes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'transit-map' %}active{% endif %}" href="{% url 'transit-map' %}">
+                                <i class="fa-solid fa-map-location-dot me-1 text-info"></i> Transit Map <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill ms-1" style="font-size: 0.65rem;">NEW</span>
                             </a>
                         </li>
                         <li class="nav-item">

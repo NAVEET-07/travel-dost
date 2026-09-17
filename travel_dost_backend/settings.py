@@ -53,10 +53,11 @@ try:
 except ImportError:
     pass
 
-# WhiteNoise runserver_nostatic
+# WhiteNoise runserver_nostatic (only in production or when not in DEBUG)
+# In development (DEBUG=True), let Django serve directly from static/ so changes take effect immediately
 try:
     import whitenoise
-    if 'django.contrib.staticfiles' in INSTALLED_APPS:
+    if not DEBUG and 'django.contrib.staticfiles' in INSTALLED_APPS:
         idx = INSTALLED_APPS.index('django.contrib.staticfiles')
         INSTALLED_APPS.insert(idx, 'whitenoise.runserver_nostatic')
 except (ImportError, ValueError):
@@ -163,4 +164,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+
+# OpenStreetMap Global Tile Configuration
+OSM_TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+OSM_TILE_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 

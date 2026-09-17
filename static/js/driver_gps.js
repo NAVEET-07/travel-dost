@@ -107,9 +107,12 @@ function initDriverMap() {
     if ($('#driverMap').length === 0) return;
 
     driverMap = L.map('driverMap').setView([15.36470, 75.12400], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    const osmTileUrl = window.osmTileUrl || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    const osmTileAttribution = window.osmTileAttribution || '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+    L.tileLayer(osmTileUrl, {
         maxZoom: 19,
-        attribution: '&copy; OpenStreetMap | Travel Dost'
+        attribution: osmTileAttribution
     }).addTo(driverMap);
 
     const busIcon = L.divIcon({

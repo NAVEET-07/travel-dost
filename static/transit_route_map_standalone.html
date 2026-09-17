@@ -682,11 +682,8 @@
         const markersLayerGroup = L.layerGroup();
         const markersMap = new Map();
 
-        const retina = window.devicePixelRatio > 1 ? '@2x' : '';
-        const tiles = {
-            positron: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}' + retina + '.png',
-            voyager: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}' + retina + '.png'
-        };
+        const osmTileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+        const osmTileAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
         function initMap() {
             map = L.map('map', {
@@ -697,10 +694,9 @@
                 zoomAnimation: true
             });
 
-            currentTileLayer = L.tileLayer(tiles[tileMode], {
-                maxZoom: 20,
-                subdomains: 'abcd',
-                attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
+            currentTileLayer = L.tileLayer(osmTileUrl, {
+                maxZoom: 19,
+                attribution: osmTileAttribution
             }).addTo(map);
 
             routeLayersGroup.addTo(map);
@@ -715,9 +711,11 @@
                 }
             });
             document.getElementById('btnToggleTile').addEventListener('click', () => {
-                tileMode = (tileMode === 'positron') ? 'voyager' : 'positron';
                 map.removeLayer(currentTileLayer);
-                currentTileLayer = L.tileLayer(tiles[tileMode], { maxZoom: 20, subdomains: 'abcd' }).addTo(map);
+                currentTileLayer = L.tileLayer(osmTileUrl, {
+                    maxZoom: 19,
+                    attribution: osmTileAttribution
+                }).addTo(map);
                 currentTileLayer.bringToBack();
             });
             document.getElementById('btnFlyStart').addEventListener('click', () => {

@@ -742,25 +742,11 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentRouteData = null;
     let antPathLayer = null;
 
-    // Tile Layer Definitions - High-end crisp light aesthetics
-    const retina = window.devicePixelRatio > 1 ? '@2x' : '';
-    const tileConfig = {
-        positron: {
-            url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}' + retina + '.png',
-            options: {
-                maxZoom: 20,
-                subdomains: 'abcd',
-                attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
-            }
-        },
-        voyager: {
-            url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}' + retina + '.png',
-            options: {
-                maxZoom: 20,
-                subdomains: 'abcd',
-                attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
-            }
-        }
+    // Tile Layer Definitions - Free OpenStreetMap tile server
+    const osmTileUrl = window.osmTileUrl || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    const osmTileOptions = {
+        maxZoom: 19,
+        attribution: window.osmTileAttribution || '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     };
 
     // 1. Initialize Leaflet Map
@@ -774,7 +760,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Set base tile
-        currentTileLayer = L.tileLayer(tileConfig[currentTileMode].url, tileConfig[currentTileMode].options).addTo(map);
+        currentTileLayer = L.tileLayer(osmTileUrl, osmTileOptions).addTo(map);
 
         routeLayersGroup.addTo(map);
         markersLayerGroup.addTo(map);
@@ -794,9 +780,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         document.getElementById('btnToggleTile')?.addEventListener('click', () => {
-            currentTileMode = (currentTileMode === 'positron') ? 'voyager' : 'positron';
             map.removeLayer(currentTileLayer);
-            currentTileLayer = L.tileLayer(tileConfig[currentTileMode].url, tileConfig[currentTileMode].options).addTo(map);
+            currentTileLayer = L.tileLayer(osmTileUrl, osmTileOptions).addTo(map);
             currentTileLayer.bringToBack();
         });
 

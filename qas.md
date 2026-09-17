@@ -83,7 +83,7 @@ Travel Dost uses **HTML5**, **Vanilla CSS3**, **JavaScript (ES6+)**, **jQuery 3.
 
 #### Q1.2: How does Leaflet.js render interactive maps on the client side, and how is it configured in Travel Dost?
 **Answer**:
-Leaflet.js is an open-source JavaScript mapping library. It attaches to an HTML `<div>` container (e.g. `<div id="map"></div>`) and fetches map tiles asynchronously from OpenStreetMap servers (`https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png`).
+Leaflet.js is an open-source JavaScript mapping library. It attaches to an HTML `<div>` container (e.g. `<div id="map"></div>`) and fetches map tiles asynchronously using CARTO Voyager / Positron tile servers backed by OpenStreetMap geospatial data (`https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png`).
 In Travel Dost, it is initialized with center coordinates corresponding to the Hubballi–Dharwad twin city region (`[15.36470, 75.12400]`) at zoom level 13.
 
 #### Q1.3: How are live bus markers dynamically moved on the Leaflet map without reloading or re-initializing the entire map object?

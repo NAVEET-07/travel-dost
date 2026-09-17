@@ -20,9 +20,12 @@ function initTravelDostMap(elementId, centerLat = 15.3647, centerLng = 75.1240, 
 
     travelDostMap = L.map(elementId).setView([centerLat, centerLng], zoomLevel);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    const osmTileUrl = window.osmTileUrl || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    const osmTileAttribution = window.osmTileAttribution || '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+    L.tileLayer(osmTileUrl, {
         maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Travel Dost'
+        attribution: osmTileAttribution
     }).addTo(travelDostMap);
 
     busStopMarkersGroup = L.layerGroup().addTo(travelDostMap);
@@ -204,6 +207,64 @@ function plotRouteStopsOnly(stopsArray) {
 
 function plotSegmentedRouteOnMap(stopsArray) {
     plotRouteStopsOnly(stopsArray);
+}
+
+/**
+ * Plot bus stops for Nearby Stops Locator with walking distance badges
+ */
+function plotBusStops(stopsArray) {
+    if (!travelDostMap || !busStopMarkersGroup || !stopsArray) return;
+    busStopMarkersGroup.clearLayers();
+
+    const bounds = [];
+    if (passengerMarker) {
+        bounds.push(passengerMarker.getLatLng());
+    }
+
+    stopsArray.forEach((stop, idx) => {
+        const lat = parseFloat(stop.latitude || stop.lat);
+        const lng = parseFloat(stop.longitude || stop.lng);
+        if (isNaN(lat) || isNaN(lng)) return;
+
+        bounds.push([lat, lng]);
+
+        const distLabel = stop.distance_km 
+            ? (stop.distance_km < 1.0 ? `${stop.distance_meters || Math.round(stop.distance_km * 1000)} m` : `${Number(stop.distance_km).toFixed(1)} km`)
+            : '';
+
+        const stopIcon = L.divIcon({
+            className: 'custom-stop-div-icon',
+            html: `
+                <div class="stop-marker-icon" style="background: #ffffff; color: #1e293b; border-color: #ef4444; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 9999px; border: 2px solid #ef4444; font-weight: 700; font-size: 0.75rem; white-space: nowrap;">
+                    <span style="background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.65rem;">${idx + 1}</span>
+                    <span>${stop.name || stop.stop_name}</span>
+                    ${distLabel ? `<span style="background: #f1f5f9; color: #64748b; font-size: 0.65rem; padding: 1px 6px; border-radius: 4px;">${distLabel}</span>` : ''}
+                </div>
+            `,
+            iconSize: [180, 30],
+            iconAnchor: [90, 15]
+        });
+
+        const marker = L.marker([lat, lng], { icon: stopIcon });
+        marker.bindPopup(`
+            <div class="p-2" style="min-width: 200px;">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge bg-danger rounded-pill">Stop #${idx + 1}</span>
+                    ${distLabel ? `<span class="badge bg-light text-secondary border">${distLabel} away</span>` : ''}
+                </div>
+                <strong class="d-block text-dark fs-6 mb-1">${stop.name || stop.stop_name}</strong>
+                <p class="small text-secondary m-0 mb-2">${stop.area || 'Hubballi–Dharwad Twin Cities'}</p>
+                <a href="/find-route/?source=${stop.id || ''}" class="btn btn-sm btn-outline-primary rounded-pill px-3 w-100 fw-semibold" style="font-size: 0.78rem;">
+                    Plan Bus from Here ➔
+                </a>
+            </div>
+        `);
+        busStopMarkersGroup.addLayer(marker);
+    });
+
+    if (bounds.length > 0) {
+        travelDostMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+    }
 }
 
 // Update Passenger GPS Marker

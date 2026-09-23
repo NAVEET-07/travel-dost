@@ -132,11 +132,514 @@
     border-color: rgba(255, 255, 255, 0.4);
 }
 
-.map-card-header {
-    background: #0f172a;
-    color: #ffffff;
-    border-radius: 16px 16px 0 0;
+/* ============================================================== */
+/* MAP VIEWPORT & MODERN TRANSIT SHELL                           */
+/* ============================================================== */
+.map-card-shell {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    background: #0b1329;
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.55), 0 0 25px rgba(56, 189, 248, 0.08);
+    transition: all 0.3s ease;
+}
+
+.map-card-header-sleek {
+    background: linear-gradient(135deg, #0b1329 0%, #0f172a 60%, #1e293b 100%);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
     padding: 12px 18px;
+    color: #ffffff;
+}
+
+#map {
+    height: 520px;
+    width: 100%;
+    z-index: 1;
+    background: #e2e8f0;
+}
+
+@media (max-width: 768px) {
+    #map {
+        height: 430px;
+    }
+}
+
+/* Base Tile Styling - crisp, saturated and vibrant */
+.leaflet-tile-pane {
+    filter: saturate(1.12) contrast(1.04);
+}
+
+/* ============================================================== */
+/* FLOATING ROUTE HUD & MAP OVERLAYS                              */
+/* ============================================================== */
+.map-floating-hud {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    right: 14px;
+    z-index: 1000;
+    background: rgba(15, 23, 42, 0.90);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: 16px;
+    padding: 10px 18px;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45);
+    pointer-events: none;
+    transition: all 0.3s ease;
+}
+
+.hud-route-tag {
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    padding: 3px 9px;
+    border-radius: 9999px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.hud-tag-direct {
+    background: rgba(16, 185, 129, 0.25);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.45);
+}
+.hud-tag-transfer {
+    background: rgba(245, 158, 11, 0.25);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.45);
+}
+
+.hud-route-names {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #ffffff;
+    max-width: 320px;
+}
+
+.hud-metric {
+    font-size: 0.78rem;
+    color: #cbd5e1;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+}
+.hud-metric strong {
+    color: #ffffff;
+    margin-left: 2px;
+}
+.hud-metric.hud-fare strong {
+    color: #34d399;
+    font-size: 0.92rem;
+}
+
+/* Floating Map Legend */
+.map-floating-legend {
+    position: absolute;
+    bottom: 14px;
+    left: 14px;
+    z-index: 999;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 12px;
+    padding: 6px 14px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #1e293b;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+    pointer-events: none;
+}
+
+.legend-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.legend-circle {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.legend-circle.start-circle {
+    background: #10b981;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 0 1px #047857;
+}
+.legend-circle.inter-circle {
+    background: #0284c7;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 0 1px #0369a1;
+}
+.legend-circle.dest-circle {
+    background: #ef4444;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 0 1px #b91c1c;
+}
+.legend-line {
+    width: 16px;
+    height: 4px;
+    border-radius: 2px;
+    background: #2563eb;
+    display: inline-block;
+}
+
+/* ============================================================== */
+/* LEAFLET CUSTOM TRANSIT PINS & STOP LABELS                      */
+/* ============================================================== */
+.custom-transit-divicon {
+    background: transparent !important;
+    border: none !important;
+    overflow: visible !important;
+}
+
+.transit-pin-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Start Stop Radar & Pin */
+.start-pin-wrapper {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.radar-pulse-ring {
+    position: absolute;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    pointer-events: none;
+}
+.radar-pulse-ring.start-radar {
+    background: rgba(16, 185, 129, 0.35);
+    animation: radarPulseStart 2.2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+}
+.radar-pulse-ring.start-radar.delayed {
+    animation-delay: 0.8s;
+}
+@keyframes radarPulseStart {
+    0% { transform: scale(0.6); opacity: 0.9; }
+    70% { transform: scale(2.3); opacity: 0; }
+    100% { transform: scale(2.3); opacity: 0; }
+}
+
+.pin-badge.start-badge {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: 3px solid #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 13px;
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.5);
+    z-index: 2;
+    transition: transform 0.2s ease;
+}
+.start-pin-wrapper:hover .start-badge {
+    transform: scale(1.15);
+}
+
+/* Destination Teardrop Pin */
+.dest-pin-wrapper {
+    width: 40px;
+    height: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+.dest-pin-head {
+    width: 36px;
+    height: 36px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+    border: 3px solid #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.45);
+    z-index: 2;
+    animation: floatDestPin 3s ease-in-out infinite;
+    transition: transform 0.2s ease;
+}
+.dest-pin-head i {
+    transform: rotate(45deg);
+    color: #ffffff;
+    font-size: 13px;
+}
+@keyframes floatDestPin {
+    0%, 100% { transform: translateY(0) rotate(-45deg); }
+    50% { transform: translateY(-4px) rotate(-45deg); }
+}
+
+/* Transfer Hub Marker */
+.transfer-pin-wrapper {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.radar-pulse-ring.transfer-radar {
+    background: rgba(245, 158, 11, 0.35);
+    animation: radarPulseStart 2.2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+}
+.pin-badge.transfer-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    border: 3px solid #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 12px;
+    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.45);
+    z-index: 2;
+}
+
+/* Floating Stop Name Pill Badges */
+.pin-floating-pill {
+    position: absolute;
+    left: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: #ffffff;
+    color: #0f172a;
+    border-radius: 9999px;
+    padding: 4px 12px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 10;
+    pointer-events: auto;
+}
+
+.pin-floating-pill:hover {
+    transform: translateY(-50%) scale(1.05);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+}
+
+.pin-floating-pill.start-pill {
+    border: 2px solid #10b981;
+    left: 50% !important;
+    top: auto !important;
+    bottom: calc(100% + 10px) !important;
+    transform: translateX(-50%) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+.start-pin-wrapper:hover .pin-floating-pill.start-pill {
+    transform: translateX(-50%) scale(1.06) !important;
+}
+.pin-floating-pill.start-pill::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: #10b981 transparent transparent transparent;
+}
+
+.pin-floating-pill.dest-pill {
+    border: 2px solid #ef4444;
+    left: 50% !important;
+    top: auto !important;
+    bottom: calc(100% + 10px) !important;
+    transform: translateX(-50%) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+.dest-pin-wrapper:hover .pin-floating-pill.dest-pill {
+    transform: translateX(-50%) scale(1.06) !important;
+}
+.pin-floating-pill.dest-pill::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: #ef4444 transparent transparent transparent;
+}
+
+.pin-floating-pill.transfer-pill {
+    border: 2px solid #f59e0b;
+    left: 50% !important;
+    top: auto !important;
+    bottom: calc(100% + 10px) !important;
+    transform: translateX(-50%) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+.transfer-pin-wrapper:hover .pin-floating-pill.transfer-pill {
+    transform: translateX(-50%) scale(1.06) !important;
+}
+.pin-floating-pill.transfer-pill::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: #f59e0b transparent transparent transparent;
+}
+
+.pill-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.pill-action {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: #f1f5f9;
+    color: #475569;
+    padding: 1px 6px;
+    border-radius: 9999px;
+    margin-left: 2px;
+}
+
+/* Intermediate Numbered Stops */
+.inter-pin-wrapper {
+    position: relative;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.inter-node-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2.5px solid #0284c7;
+    color: #0369a1;
+    font-size: 10px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 8px rgba(2, 132, 199, 0.25);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 2;
+}
+
+.inter-pin-wrapper:hover .inter-node-dot {
+    transform: scale(1.3);
+    background: #0284c7;
+    color: #ffffff;
+    box-shadow: 0 6px 16px rgba(2, 132, 199, 0.5);
+}
+
+.pin-floating-pill.inter-pill {
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(4px);
+    border: 1.5px solid #38bdf8;
+    color: #0f172a;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+}
+
+/* Staggered positioning so adjacent intermediate stop pills don't collide */
+.pill-side-right .inter-pill,
+.pill-stagger-top .inter-pill {
+    left: calc(100% + 8px);
+    right: auto;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.pill-side-right:hover .inter-pill,
+.pill-stagger-top:hover .inter-pill {
+    transform: translateY(-50%) scale(1.08);
+    z-index: 100;
+}
+
+.pill-side-left .inter-pill,
+.pill-stagger-bottom .inter-pill {
+    right: calc(100% + 8px);
+    left: auto;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.pill-side-left:hover .inter-pill,
+.pill-stagger-bottom:hover .inter-pill {
+    transform: translateY(-50%) scale(1.08);
+    z-index: 100;
+}
+
+/* Toggle stop labels OFF behavior */
+.hide-intermediate-labels .inter-pill {
+    display: none !important;
+}
+.hide-intermediate-labels .inter-pin-wrapper:hover .inter-pill {
+    display: inline-flex !important;
+    z-index: 1000;
+}
+
+/* Transit Leaflet Popups */
+.transit-leaflet-popup .leaflet-popup-content-wrapper {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 0;
+    overflow: hidden;
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.22);
+}
+.transit-leaflet-popup .leaflet-popup-content {
+    margin: 0;
+    line-height: 1.4;
+}
+.custom-transit-popup .popup-header {
+    padding: 8px 14px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+}
+.custom-transit-popup .popup-body {
+    padding: 10px 14px;
+}
+
+/* Directional Transit Dash Flow Animation */
+@keyframes transitDashFlow {
+    from {
+        stroke-dashoffset: 48px;
+    }
+    to {
+        stroke-dashoffset: 0px;
+    }
+}
+.animated-transit-flow path {
+    animation: transitDashFlow 1.6s linear infinite !important;
 }
 
 .filter-bar-wrapper {
@@ -275,21 +778,74 @@
 
         <!-- Route Results & Map Column -->
         <div class="col-lg-8">
-            <!-- Leaflet Map Container -->
-            <div class="transit-card overflow-hidden mb-4 p-0" id="mapCard">
-                <div class="map-card-header d-flex align-items-center justify-content-between">
+            <!-- Leaflet Map Container Shell -->
+            <div class="map-card-shell mb-4" id="mapCard">
+                <!-- Map Header Toolbar -->
+                <div class="map-card-header-sleek d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <div class="d-flex align-items-center gap-2">
-                        <i class="fa-solid fa-map-location-dot text-info"></i>
-                        <span class="fw-bold small">Interactive Road-Snapped Polyline Map</span>
+                        <span class="badge bg-primary bg-opacity-25 text-info border border-info border-opacity-25 px-2 py-1 rounded-pill">
+                            <i class="fa-solid fa-map-location-dot me-1"></i> Road-Snapped Transit Map
+                        </span>
+                        <span class="badge bg-success bg-opacity-20 text-success border border-success border-opacity-25 rounded-pill px-2 py-1 small" id="mapGeometryBadge">
+                            <i class="fa-solid fa-circle-check me-1"></i> OSRM Geometry
+                        </span>
                     </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <button class="btn btn-outline-light btn-sm rounded-pill px-2 py-0" id="btnFitMapBounds" style="font-size: 0.72rem;">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <!-- Stop Names Label Toggle -->
+                        <button type="button" class="btn btn-sm btn-outline-info rounded-pill px-2 py-1 fw-semibold active" id="btnToggleStopLabels" title="Toggle Stop Name Labels on Map" style="font-size: 0.74rem;">
+                            <i class="fa-solid fa-tags me-1"></i> <span id="labelToggleText">Stop Names: ON</span>
+                        </button>
+                        <!-- Tile Theme Switcher -->
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-dark border border-secondary border-opacity-50 rounded-pill px-2 py-1 dropdown-toggle text-light" type="button" id="mapThemeDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.74rem;">
+                                <i class="fa-solid fa-layer-group me-1 text-warning"></i> <span id="currentTileLabel">Transit Map</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow-lg border-secondary" aria-labelledby="mapThemeDropdown" style="font-size: 0.8rem; min-width: 190px;">
+                                <li><a class="dropdown-item active d-flex align-items-center gap-2" href="javascript:void(0)" data-tile="transit_hot"><i class="fa-solid fa-star text-warning"></i> Transit Map (Vibrant)</a></li>
+                                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tile="osm_clean"><i class="fa-solid fa-road text-info"></i> Clean Streets (OSM)</a></li>
+                                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tile="esri_topo"><i class="fa-solid fa-mountain-sun text-success"></i> Topo Terrain</a></li>
+                                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tile="satellite"><i class="fa-solid fa-satellite text-primary"></i> Satellite (Esri Imagery)</a></li>
+                                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tile="osm_standard"><i class="fa-solid fa-globe text-light"></i> Classic Standard</a></li>
+                            </ul>
+                        </div>
+                        <!-- Fit Route Bounds Button -->
+                        <button type="button" class="btn btn-sm btn-primary rounded-pill px-2 py-1 fw-semibold" id="btnFitMapBounds" title="Center & Fit Route" style="font-size: 0.74rem;">
                             <i class="fa-solid fa-compress me-1"></i> Fit Route
                         </button>
-                        <span class="badge bg-success small"><i class="fa-solid fa-check me-1"></i>OSRM Geometry</span>
                     </div>
                 </div>
-                <div id="map" style="height: 400px; width: 100%; border-radius: 0 0 16px 16px;"></div>
+
+                <!-- Relative Viewport for HUD and Leaflet Map -->
+                <div class="position-relative">
+                    <!-- Floating Route HUD Card on Map -->
+                    <div class="map-floating-hud d-none" id="mapRouteHud">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="hud-route-tag hud-tag-direct" id="hudRouteTag">⚡ DIRECT</span>
+                                <span class="hud-route-names text-truncate" id="hudRouteEndpoints">Route Ready</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="hud-metric"><i class="fa-solid fa-route text-primary me-1"></i><strong id="hudDistance">--</strong> km</span>
+                                <span class="hud-metric"><i class="fa-solid fa-clock text-info me-1"></i><strong id="hudDuration">--</strong> mins</span>
+                                <span class="hud-metric"><i class="fa-solid fa-bus text-success me-1"></i><strong id="hudStops">--</strong> stops</span>
+                                <span class="hud-metric hud-fare"><i class="fa-solid fa-indian-rupee-sign text-success me-1"></i><strong id="hudFare">--</strong></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Map Container -->
+                    <div id="map"></div>
+
+                    <!-- Floating Map Legend (Bottom-Left) -->
+                    <div class="map-floating-legend shadow-sm">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="legend-badge"><span class="legend-circle start-circle"></span> Point A</span>
+                            <span class="legend-badge"><span class="legend-circle inter-circle"></span> Stops</span>
+                            <span class="legend-badge"><span class="legend-circle dest-circle"></span> Point B</span>
+                            <span class="legend-badge"><span class="legend-line"></span> Path</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Filter Chips Bar (Visible when results are rendered) -->
@@ -340,9 +896,99 @@
 <script>
 let routeMap = null;
 let currentPolylineGroup = null;
+let currentBaseTileLayer = null;
+let currentTileKey = 'transit_hot';
+let showStopLabels = true;
 let liveTrackingInterval = null;
 let liveBusMarker = null;
 let currentFetchedRoutes = [];
+
+// High-Performance Zero-Watermark Public Map Tile Providers
+const mapTiles = {
+    transit_hot: {
+        name: 'Transit Map',
+        url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+        options: {
+            maxZoom: 19,
+            subdomains: 'abc',
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">HOT</a>'
+        }
+    },
+    osm_clean: {
+        name: 'Clean Streets',
+        url: 'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
+        options: {
+            maxZoom: 19,
+            subdomains: 'abc',
+            attribution: '&copy; OpenStreetMap France &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }
+    },
+    esri_topo: {
+        name: 'Esri Topo',
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+        options: {
+            maxZoom: 19,
+            attribution: 'Tiles &copy; Esri &mdash; Sources: GEBCO, NOAA, CHS, National Geographic, and Esri'
+        }
+    },
+    satellite: {
+        name: 'Satellite',
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        options: {
+            maxZoom: 19,
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and GIS User Community'
+        }
+    },
+    osm_standard: {
+        name: 'Standard OSM',
+        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        options: {
+            maxZoom: 19,
+            subdomains: 'abc',
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }
+    }
+};
+
+function switchMapTile(tileKey) {
+    if (!routeMap || !mapTiles[tileKey]) return;
+    if (currentBaseTileLayer) {
+        routeMap.removeLayer(currentBaseTileLayer);
+    }
+    const tileConfig = mapTiles[tileKey];
+    currentBaseTileLayer = L.tileLayer(tileConfig.url, tileConfig.options).addTo(routeMap);
+    currentBaseTileLayer.bringToBack();
+    currentTileKey = tileKey;
+
+    const labelEl = document.getElementById('currentTileLabel');
+    if (labelEl) labelEl.textContent = tileConfig.name;
+
+    document.querySelectorAll('[data-tile]').forEach(item => {
+        item.classList.toggle('active', item.dataset.tile === tileKey);
+    });
+}
+
+function toggleStopLabels() {
+    showStopLabels = !showStopLabels;
+    const mapContainer = document.getElementById('map');
+    const labelText = document.getElementById('labelToggleText');
+    const btn = document.getElementById('btnToggleStopLabels');
+    if (showStopLabels) {
+        mapContainer.classList.remove('hide-intermediate-labels');
+        if (labelText) labelText.textContent = 'Stop Names: ON';
+        if (btn) {
+            btn.classList.add('active', 'btn-outline-info');
+            btn.classList.remove('btn-outline-secondary');
+        }
+    } else {
+        mapContainer.classList.add('hide-intermediate-labels');
+        if (labelText) labelText.textContent = 'Stop Names: OFF';
+        if (btn) {
+            btn.classList.remove('active', 'btn-outline-info');
+            btn.classList.add('btn-outline-secondary');
+        }
+    }
+}
 
 function initRouteMap() {
     const mapElement = document.getElementById('map');
@@ -353,20 +999,28 @@ function initRouteMap() {
         routeMap = null;
     }
 
-    const osmTileUrl = window.osmTileUrl || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
-    const osmTileAttribution = window.osmTileAttribution || 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, METI';
+    routeMap = L.map('map', {
+        zoomControl: true,
+        scrollWheelZoom: true
+    }).setView([15.3647, 75.1240], 13);
 
-    routeMap = L.map('map').setView([15.3647, 75.1240], 12);
-    const tileOptions = {
-        maxZoom: 19,
-        attribution: osmTileAttribution
-    };
-    if (window.osmTileSubdomains) {
-        tileOptions.subdomains = window.osmTileSubdomains;
-    }
-    L.tileLayer(osmTileUrl, tileOptions).addTo(routeMap);
+    // Default to Vibrant Zero-Watermark Transit Map
+    switchMapTile('transit_hot');
 
     currentPolylineGroup = L.layerGroup().addTo(routeMap);
+
+    // Stop names toggle button
+    document.getElementById('btnToggleStopLabels')?.addEventListener('click', toggleStopLabels);
+
+    // Tile switcher dropdown items
+    document.querySelectorAll('[data-tile]').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const tile = this.dataset.tile;
+            if (tile) switchMapTile(tile);
+        });
+    });
+
     setTimeout(() => { routeMap.invalidateSize(); }, 250);
 }
 
@@ -375,10 +1029,125 @@ document.getElementById('btnFitMapBounds')?.addEventListener('click', function()
     if (currentPolylineGroup && currentPolylineGroup.getLayers().length > 0) {
         const group = L.featureGroup(currentPolylineGroup.getLayers());
         if (group.getBounds().isValid()) {
-            routeMap.fitBounds(group.getBounds(), { padding: [40, 40] });
+            routeMap.fitBounds(group.getBounds(), { padding: [50, 40] });
         }
     }
 });
+
+function updateMapRouteHud(route) {
+    const hud = document.getElementById('mapRouteHud');
+    if (!hud) return;
+    hud.classList.remove('d-none');
+
+    const endpointsEl = document.getElementById('hudRouteEndpoints');
+    const tagEl = document.getElementById('hudRouteTag');
+    const distEl = document.getElementById('hudDistance');
+    const durEl = document.getElementById('hudDuration');
+    const stopsEl = document.getElementById('hudStops');
+    const fareEl = document.getElementById('hudFare');
+
+    const leg1 = (route.legs && route.legs[0]) ? route.legs[0] : {};
+    const leg2 = (route.legs && route.legs[1]) ? route.legs[1] : null;
+    const fromStop = leg1.board_at || 'Origin';
+    const toStop = leg2 ? leg2.alight_at : (leg1.alight_at || 'Destination');
+
+    if (endpointsEl) endpointsEl.textContent = `${fromStop} ➔ ${toStop}`;
+    if (tagEl) {
+        if (route.transfers === 0) {
+            tagEl.className = 'hud-route-tag hud-tag-direct';
+            tagEl.innerHTML = '<i class="fa-solid fa-bolt me-1"></i> DIRECT';
+        } else {
+            tagEl.className = 'hud-route-tag hud-tag-transfer';
+            tagEl.innerHTML = '<i class="fa-solid fa-shuffle me-1"></i> 1-TRANSFER';
+        }
+    }
+
+    const dist = (route.estimated_distance_km || 0).toFixed(1);
+    const dur = route.estimated_duration_mins || Math.round((route.total_stops || 0) * 2.5);
+    const stopsCount = route.total_stops || route.stop_count || 0;
+    const fare = (route.estimated_fare || 0).toFixed(2);
+
+    if (distEl) distEl.textContent = dist;
+    if (durEl) durEl.textContent = dur;
+    if (stopsEl) stopsEl.textContent = stopsCount;
+    if (fareEl) fareEl.textContent = `₹${fare}`;
+}
+
+function addTransitPolylineLayers(geometryOrCoords, isGeoJSON, boundsLayers) {
+    if (isGeoJSON) {
+        // Glow Halo
+        const glowLayer = L.geoJSON(geometryOrCoords, {
+            style: {
+                color: '#38bdf8',
+                weight: 12,
+                opacity: 0.35,
+                lineCap: 'round',
+                lineJoin: 'round'
+            }
+        });
+        currentPolylineGroup.addLayer(glowLayer);
+        boundsLayers.push(glowLayer);
+
+        // Core Transit Line
+        const coreLayer = L.geoJSON(geometryOrCoords, {
+            style: {
+                color: '#1d4ed8',
+                weight: 6,
+                opacity: 0.95,
+                lineCap: 'round',
+                lineJoin: 'round'
+            }
+        });
+        currentPolylineGroup.addLayer(coreLayer);
+
+        // Animated Transit Dashes
+        const dashLayer = L.geoJSON(geometryOrCoords, {
+            style: {
+                color: '#ffffff',
+                weight: 2.5,
+                opacity: 0.85,
+                dashArray: '8, 16',
+                lineCap: 'round',
+                lineJoin: 'round',
+                className: 'animated-transit-flow'
+            }
+        });
+        currentPolylineGroup.addLayer(dashLayer);
+    } else {
+        // Glow Halo
+        const glowLayer = L.polyline(geometryOrCoords, {
+            color: '#38bdf8',
+            weight: 12,
+            opacity: 0.35,
+            lineCap: 'round',
+            lineJoin: 'round'
+        });
+        currentPolylineGroup.addLayer(glowLayer);
+        boundsLayers.push(glowLayer);
+
+        // Core Transit Line
+        const coreLayer = L.polyline(geometryOrCoords, {
+            color: '#1d4ed8',
+            weight: 6,
+            opacity: 0.95,
+            lineCap: 'round',
+            lineJoin: 'round'
+        });
+        currentPolylineGroup.addLayer(coreLayer);
+
+        // Animated Transit Dashes
+        const dashLayer = L.polyline(geometryOrCoords, {
+            color: '#ffffff',
+            weight: 2.5,
+            opacity: 0.85,
+            dashArray: '8, 16',
+            lineCap: 'round',
+            lineJoin: 'round',
+            className: 'animated-transit-flow'
+        });
+        currentPolylineGroup.addLayer(dashLayer);
+    }
+}
 
 async function startLiveTracking(busNo) {
     if (!routeMap) initRouteMap();
@@ -408,31 +1177,42 @@ async function startLiveTracking(busNo) {
             const lon = parseFloat(data.current_lon);
 
             const busDivIcon = L.divIcon({
-                className: 'custom-live-bus-divicon',
+                className: 'custom-transit-divicon',
                 html: `
-                    <div class="live-bus-marker-wrapper">
-                        <div class="radar-pulse-ring"></div>
-                        <div class="live-bus-badge shadow-lg">
-                            <i class="fa-solid fa-bus"></i> Bus ${data.bus_no}
+                    <div class="transit-pin-wrapper live-bus-pin-wrapper">
+                        <div class="radar-pulse-ring start-radar"></div>
+                        <div class="pin-badge shadow-lg" style="background: linear-gradient(135deg, #0284c7 0%, #1d4ed8 100%); width: 38px; height: 38px; border-radius: 50%; border: 3px solid #ffffff; display: flex; align-items: center; justify-content: center; color: #fff;">
+                            <i class="fa-solid fa-bus"></i>
+                        </div>
+                        <div class="pin-floating-pill shadow" style="border: 2px solid #0284c7; background: #0f172a; color: #ffffff;">
+                            <span class="pill-dot bg-info"></span>
+                            <span class="pill-name">Bus ${data.bus_no}</span>
+                            <span class="pill-action text-info">${data.speed_kmh || 0} km/h</span>
                         </div>
                     </div>
                 `,
-                iconSize: [60, 60],
-                iconAnchor: [30, 30]
+                iconSize: [220, 48],
+                iconAnchor: [19, 24]
             });
 
             const popupContent = `
-                <div class="p-2">
-                    <h6 class="fw-bold text-primary mb-1"><i class="fa-solid fa-bus me-1"></i>Bus ${data.bus_no}</h6>
-                    <div class="small mb-1">Status: <strong class="text-success">En Route (${data.status})</strong></div>
-                    <div class="small mb-1">Speed: <strong>${data.speed_kmh || 0} km/h</strong></div>
-                    <div class="extra-small text-muted">Updated ${data.last_updated_seconds_ago || 0}s ago</div>
+                <div class="custom-transit-popup">
+                    <div class="popup-header bg-primary text-white">
+                        <i class="fa-solid fa-bus me-1"></i> Live Bus Telemetry
+                        <span class="badge bg-white text-primary ms-auto">LIVE</span>
+                    </div>
+                    <div class="popup-body p-2">
+                        <h6 class="fw-bold mb-1 text-dark">Bus ${data.bus_no}</h6>
+                        <div class="small mb-1">Status: <strong class="text-success">En Route (${data.status})</strong></div>
+                        <div class="small mb-1">Speed: <strong>${data.speed_kmh || 0} km/h</strong></div>
+                        <div class="extra-small text-muted border-top pt-1 mt-1">Updated ${data.last_updated_seconds_ago || 0}s ago</div>
+                    </div>
                 </div>
             `;
 
             if (!liveBusMarker) {
-                liveBusMarker = L.marker([lat, lon], { icon: busDivIcon }).addTo(routeMap);
-                liveBusMarker.bindPopup(popupContent);
+                liveBusMarker = L.marker([lat, lon], { icon: busDivIcon, zIndexOffset: 2000 }).addTo(routeMap);
+                liveBusMarker.bindPopup(popupContent, { className: 'transit-leaflet-popup' });
             } else {
                 liveBusMarker.setIcon(busDivIcon);
                 liveBusMarker.setLatLng([lat, lon]);
@@ -465,6 +1245,9 @@ async function renderRouteOnMap(route, cardElement) {
     currentPolylineGroup.clearLayers();
     const boundsLayers = [];
 
+    // Update Floating HUD on the Map
+    updateMapRouteHud(route);
+
     // Collect continuous ordered stops across the journey without duplicate transfer points
     const journeyStops = [];
     const seenStopKeys = new Set();
@@ -496,15 +1279,7 @@ async function renderRouteOnMap(route, cardElement) {
 
     // 1. Check if backend already computed road_geometry
     if (route.road_geometry && Array.isArray(route.road_geometry) && route.road_geometry.length >= 2) {
-        const primaryRoadLayer = L.polyline(route.road_geometry, {
-            color: '#2563eb', // Transit Electric Blue
-            weight: 6,
-            opacity: 0.92,
-            lineCap: 'round',
-            lineJoin: 'round'
-        });
-        currentPolylineGroup.addLayer(primaryRoadLayer);
-        boundsLayers.push(primaryRoadLayer);
+        addTransitPolylineLayers(route.road_geometry, false, boundsLayers);
         renderedPrimary = true;
     }
 
@@ -520,17 +1295,7 @@ async function renderRouteOnMap(route, cardElement) {
             if (backendRes.ok) {
                 const backendData = await backendRes.json();
                 if (backendData.status === 'success' && backendData.geometry) {
-                    const roadLayer = L.geoJSON(backendData.geometry, {
-                        style: {
-                            color: '#2563eb',
-                            weight: 6,
-                            opacity: 0.92,
-                            lineCap: 'round',
-                            lineJoin: 'round'
-                        }
-                    });
-                    currentPolylineGroup.addLayer(roadLayer);
-                    boundsLayers.push(roadLayer);
+                    addTransitPolylineLayers(backendData.geometry, true, boundsLayers);
                     renderedPrimary = true;
                 }
             }
@@ -541,18 +1306,10 @@ async function renderRouteOnMap(route, cardElement) {
 
     // 3. Robust fallback: clean single polyline connecting ordered stops
     if (!renderedPrimary) {
-        const polylineFallback = L.polyline(journeyStops.map(s => [s.lat, s.lon]), {
-            color: '#2563eb',
-            weight: 6,
-            opacity: 0.92,
-            lineCap: 'round',
-            lineJoin: 'round'
-        });
-        currentPolylineGroup.addLayer(polylineFallback);
-        boundsLayers.push(polylineFallback);
+        addTransitPolylineLayers(journeyStops.map(s => [s.lat, s.lon]), false, boundsLayers);
     }
 
-    // Add clear, distinct markers for stops
+    // Add clear, distinct, gorgeous markers for stops with visible name badges
     journeyStops.forEach((coord, idx) => {
         const isOrigin = idx === 0;
         const isDestination = idx === journeyStops.length - 1;
@@ -560,46 +1317,158 @@ async function renderRouteOnMap(route, cardElement) {
 
         let marker = null;
         if (isOrigin) {
-            marker = L.circleMarker([coord.lat, coord.lon], {
-                radius: 10,
-                fillColor: '#10b981',
-                color: '#ffffff',
-                weight: 3,
-                fillOpacity: 1
-            }).bindPopup(`<div class="p-1"><strong class="text-success">🟢 Point A: ${coord.stop_name}</strong><br><small>Boarding Stop</small></div>`);
+            const startIcon = L.divIcon({
+                className: 'custom-transit-divicon',
+                html: `
+                    <div class="transit-pin-wrapper start-pin-wrapper">
+                        <div class="radar-pulse-ring start-radar"></div>
+                        <div class="radar-pulse-ring start-radar delayed"></div>
+                        <div class="pin-badge start-badge shadow">
+                            <i class="fa-solid fa-person-walking-luggage"></i>
+                        </div>
+                        <div class="pin-floating-pill start-pill shadow">
+                            <span class="pill-dot bg-success"></span>
+                            <span class="pill-title text-success fw-bold">Point A:</span>
+                            <span class="pill-name">${coord.stop_name}</span>
+                            <span class="pill-action">Board</span>
+                        </div>
+                    </div>
+                `,
+                iconSize: [40, 40],
+                iconAnchor: [20, 20]
+            });
+            marker = L.marker([coord.lat, coord.lon], { icon: startIcon, zIndexOffset: 1200 });
+            marker.bindPopup(`
+                <div class="custom-transit-popup">
+                    <div class="popup-header bg-success text-white">
+                        <i class="fa-solid fa-circle-dot me-1"></i> Point A (Boarding Stop)
+                        <span class="badge bg-white text-success ms-auto fw-bold">START</span>
+                    </div>
+                    <div class="popup-body p-2">
+                        <h6 class="fw-bold mb-1 text-dark">${coord.stop_name}</h6>
+                        <p class="text-secondary small mb-1">Board your bus here.</p>
+                        <div class="small text-muted border-top pt-1 mt-1">
+                            <i class="fa-solid fa-location-dot me-1 text-success"></i> Coordinates: ${coord.lat.toFixed(4)}, ${coord.lon.toFixed(4)}
+                        </div>
+                    </div>
+                </div>
+            `, { className: 'transit-leaflet-popup' });
         } else if (isDestination) {
-            marker = L.circleMarker([coord.lat, coord.lon], {
-                radius: 10,
-                fillColor: '#ef4444',
-                color: '#ffffff',
-                weight: 3,
-                fillOpacity: 1
-            }).bindPopup(`<div class="p-1"><strong class="text-danger">🔴 Point B: ${coord.stop_name}</strong><br><small>Alighting Stop</small></div>`);
+            const destIcon = L.divIcon({
+                className: 'custom-transit-divicon',
+                html: `
+                    <div class="transit-pin-wrapper dest-pin-wrapper">
+                        <div class="dest-pin-head shadow">
+                            <i class="fa-solid fa-flag-checkered"></i>
+                        </div>
+                        <div class="pin-floating-pill dest-pill shadow">
+                            <span class="pill-dot bg-danger"></span>
+                            <span class="pill-title text-danger fw-bold">Point B:</span>
+                            <span class="pill-name">${coord.stop_name}</span>
+                            <span class="pill-action">Alight</span>
+                        </div>
+                    </div>
+                `,
+                iconSize: [40, 48],
+                iconAnchor: [20, 44]
+            });
+            marker = L.marker([coord.lat, coord.lon], { icon: destIcon, zIndexOffset: 1200 });
+            marker.bindPopup(`
+                <div class="custom-transit-popup">
+                    <div class="popup-header bg-danger text-white">
+                        <i class="fa-solid fa-flag-checkered me-1"></i> Point B (Destination Stop)
+                        <span class="badge bg-white text-danger ms-auto fw-bold">ALIGHT</span>
+                    </div>
+                    <div class="popup-body p-2">
+                        <h6 class="fw-bold mb-1 text-dark">${coord.stop_name}</h6>
+                        <p class="text-secondary small mb-1">Final destination of your journey.</p>
+                        <div class="small text-muted border-top pt-1 mt-1">
+                            <i class="fa-solid fa-location-dot me-1 text-danger"></i> Coordinates: ${coord.lat.toFixed(4)}, ${coord.lon.toFixed(4)}
+                        </div>
+                    </div>
+                </div>
+            `, { className: 'transit-leaflet-popup' });
         } else if (isTransferHub) {
-            marker = L.circleMarker([coord.lat, coord.lon], {
-                radius: 9,
-                fillColor: '#f59e0b',
-                color: '#ffffff',
-                weight: 3,
-                fillOpacity: 1
-            }).bindPopup(`<div class="p-1"><strong class="text-warning">🔄 Transfer Hub: ${coord.stop_name}</strong><br><small>Switch Bus</small></div>`);
+            const transferIcon = L.divIcon({
+                className: 'custom-transit-divicon',
+                html: `
+                    <div class="transit-pin-wrapper transfer-pin-wrapper">
+                        <div class="radar-pulse-ring transfer-radar"></div>
+                        <div class="pin-badge transfer-badge shadow">
+                            <i class="fa-solid fa-shuffle"></i>
+                        </div>
+                        <div class="pin-floating-pill transfer-pill shadow">
+                            <span class="pill-dot bg-warning"></span>
+                            <span class="pill-title text-warning-emphasis fw-bold">Transfer Hub:</span>
+                            <span class="pill-name">${coord.stop_name}</span>
+                            <span class="pill-action">Switch Bus</span>
+                        </div>
+                    </div>
+                `,
+                iconSize: [38, 38],
+                iconAnchor: [19, 19]
+            });
+            marker = L.marker([coord.lat, coord.lon], { icon: transferIcon, zIndexOffset: 1100 });
+            marker.bindPopup(`
+                <div class="custom-transit-popup">
+                    <div class="popup-header bg-warning text-dark">
+                        <i class="fa-solid fa-shuffle me-1"></i> Transfer Interchange Hub
+                        <span class="badge bg-dark text-white ms-auto fw-bold">TRANSFER</span>
+                    </div>
+                    <div class="popup-body p-2">
+                        <h6 class="fw-bold mb-1 text-dark">${coord.stop_name}</h6>
+                        <p class="text-secondary small mb-1">Switch buses here for connecting leg.</p>
+                        <div class="small text-muted border-top pt-1 mt-1">
+                            <i class="fa-solid fa-location-dot me-1 text-warning"></i> Coordinates: ${coord.lat.toFixed(4)}, ${coord.lon.toFixed(4)}
+                        </div>
+                    </div>
+                </div>
+            `, { className: 'transit-leaflet-popup' });
         } else {
-            marker = L.circleMarker([coord.lat, coord.lon], {
-                radius: 5,
-                fillColor: '#38bdf8',
-                color: '#ffffff',
-                weight: 1.5,
-                fillOpacity: 0.9
-            }).bindPopup(`<div class="p-1"><strong>🚏 ${coord.stop_name}</strong><br><small>En Route Stop</small></div>`);
+            // Intermediate Stop with order number and visible stop name badge!
+            const isEven = idx % 2 === 0;
+            const interIcon = L.divIcon({
+                className: 'custom-transit-divicon',
+                html: `
+                    <div class="transit-pin-wrapper inter-pin-wrapper ${isEven ? 'pill-side-right' : 'pill-side-left'}">
+                        <div class="inter-node-dot shadow-sm" title="Stop #${idx}: ${coord.stop_name}">
+                            <span class="node-order-num">${idx}</span>
+                        </div>
+                        <div class="pin-floating-pill inter-pill shadow-sm" title="Stop #${idx}: ${coord.stop_name}">
+                            <i class="fa-solid fa-bus-simple me-1 text-primary" style="font-size: 0.65rem;"></i>
+                            <span class="pill-name">${coord.stop_name}</span>
+                        </div>
+                    </div>
+                `,
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
+            });
+            marker = L.marker([coord.lat, coord.lon], { icon: interIcon, zIndexOffset: 500 + idx });
+            marker.bindPopup(`
+                <div class="custom-transit-popup">
+                    <div class="popup-header bg-primary text-white">
+                        <i class="fa-solid fa-bus-simple me-1"></i> Bus Stop #${idx}
+                        <span class="badge bg-white text-primary ms-auto">EN ROUTE</span>
+                    </div>
+                    <div class="popup-body p-2">
+                        <h6 class="fw-bold mb-1 text-dark">${coord.stop_name}</h6>
+                        <p class="text-secondary small mb-1">Scheduled bus transit stop.</p>
+                        <div class="small text-muted border-top pt-1 mt-1">
+                            <i class="fa-solid fa-location-dot me-1 text-primary"></i> Coordinates: ${coord.lat.toFixed(4)}, ${coord.lon.toFixed(4)}
+                        </div>
+                    </div>
+                </div>
+            `, { className: 'transit-leaflet-popup' });
         }
 
         currentPolylineGroup.addLayer(marker);
+        boundsLayers.push(marker);
     });
 
     if (boundsLayers.length > 0) {
         const featureGroup = L.featureGroup(boundsLayers);
         if (featureGroup.getBounds().isValid()) {
-            routeMap.fitBounds(featureGroup.getBounds(), { padding: [40, 40] });
+            routeMap.fitBounds(featureGroup.getBounds(), { padding: [50, 40] });
         }
     }
 
@@ -723,6 +1592,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    function flyToStopOnMap(lat, lon, stopName) {
+        if (!routeMap) return;
+        routeMap.flyTo([lat, lon], 16, { duration: 1.0 });
+        if (currentPolylineGroup) {
+            currentPolylineGroup.eachLayer(layer => {
+                if (layer.getLatLng) {
+                    const ll = layer.getLatLng();
+                    if (Math.abs(ll.lat - lat) < 0.0001 && Math.abs(ll.lng - lon) < 0.0001) {
+                        layer.openPopup?.();
+                    }
+                }
+            });
+        }
+    }
+    window.flyToStopOnMap = flyToStopOnMap;
+
     // Render Routes UI
     function renderRoutesList(routes, sourceName, destName) {
         const container = document.getElementById('resultsContainer');
@@ -782,6 +1667,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
             }
 
+            let leg1StopsHtml = '';
+            if (leg1.path_coords && leg1.path_coords.length > 0) {
+                leg1StopsHtml = `
+                    <div class="d-flex flex-wrap gap-1 mt-1">
+                        ${leg1.path_coords.map((st, i) => `
+                            <span class="badge bg-white text-dark border px-2 py-1 rounded-pill cursor-pointer shadow-sm"
+                                  style="font-size: 0.72rem; transition: all 0.2s ease;"
+                                  onmouseover="this.classList.add('bg-primary-subtle', 'border-primary')"
+                                  onmouseout="this.classList.remove('bg-primary-subtle', 'border-primary')"
+                                  onclick="event.stopPropagation(); flyToStopOnMap(${st.lat}, ${st.lon !== undefined ? st.lon : st.lng}, '${(st.stop_name || '').replace(/'/g, "\\'")}')"
+                                  title="Inspect ${st.stop_name} on Map">
+                                <i class="fa-solid fa-map-pin text-primary me-1" style="font-size: 0.65rem;"></i>${st.stop_name}
+                            </span>
+                        `).join('')}
+                    </div>
+                `;
+            } else if (leg1.path_names && leg1.path_names.length > 0) {
+                leg1StopsHtml = leg1.path_names.join(' • ');
+            } else {
+                leg1StopsHtml = (leg1.board_at || '') + ' • ' + (leg1.alight_at || '');
+            }
+
             let timelineHtml = `
                 <div class="transit-stepper my-3">
                     <!-- Boarding Node -->
@@ -797,10 +1704,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <details class="mt-2 text-secondary small">
                             <summary class="cursor-pointer text-primary fw-semibold" style="font-size: 0.78rem;">
-                                <i class="fa-solid fa-chevron-down me-1"></i> ${leg1.stops_in_leg || (leg1.path_names ? leg1.path_names.length : 0)} intermediate stops
+                                <i class="fa-solid fa-chevron-down me-1"></i> ${leg1.stops_in_leg || (leg1.path_names ? leg1.path_names.length : 0)} intermediate stops (click to inspect on map)
                             </summary>
                             <div class="p-2 mt-1 bg-light rounded-3 border small text-secondary">
-                                ${leg1.path_names ? leg1.path_names.join(' • ') : leg1.board_at + ' • ' + leg1.alight_at}
+                                ${leg1StopsHtml}
                             </div>
                         </details>
                     </div>
@@ -814,6 +1721,28 @@ document.addEventListener('DOMContentLoaded', function() {
                             <i class="fa-solid fa-location-crosshairs me-1"></i> Track Bus ${leg2.bus_no}
                         </button>
                     `;
+                }
+
+                let leg2StopsHtml = '';
+                if (leg2.path_coords && leg2.path_coords.length > 0) {
+                    leg2StopsHtml = `
+                        <div class="d-flex flex-wrap gap-1 mt-1">
+                            ${leg2.path_coords.map((st, i) => `
+                                <span class="badge bg-white text-dark border px-2 py-1 rounded-pill cursor-pointer shadow-sm"
+                                      style="font-size: 0.72rem; transition: all 0.2s ease;"
+                                      onmouseover="this.classList.add('bg-primary-subtle', 'border-primary')"
+                                      onmouseout="this.classList.remove('bg-primary-subtle', 'border-primary')"
+                                      onclick="event.stopPropagation(); flyToStopOnMap(${st.lat}, ${st.lon !== undefined ? st.lon : st.lng}, '${(st.stop_name || '').replace(/'/g, "\\'")}')"
+                                      title="Inspect ${st.stop_name} on Map">
+                                    <i class="fa-solid fa-map-pin text-primary me-1" style="font-size: 0.65rem;"></i>${st.stop_name}
+                                </span>
+                            `).join('')}
+                        </div>
+                    `;
+                } else if (leg2.path_names && leg2.path_names.length > 0) {
+                    leg2StopsHtml = leg2.path_names.join(' • ');
+                } else {
+                    leg2StopsHtml = (leg2.board_at || '') + ' • ' + (leg2.alight_at || '');
                 }
 
                 timelineHtml += `
@@ -830,10 +1759,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <details class="mt-2 text-secondary small">
                             <summary class="cursor-pointer text-primary fw-semibold" style="font-size: 0.78rem;">
-                                <i class="fa-solid fa-chevron-down me-1"></i> ${leg2.stops_in_leg || (leg2.path_names ? leg2.path_names.length : 0)} intermediate stops
+                                <i class="fa-solid fa-chevron-down me-1"></i> ${leg2.stops_in_leg || (leg2.path_names ? leg2.path_names.length : 0)} intermediate stops (click to inspect on map)
                             </summary>
                             <div class="p-2 mt-1 bg-light rounded-3 border small text-secondary">
-                                ${leg2.path_names ? leg2.path_names.join(' • ') : leg2.board_at + ' • ' + leg2.alight_at}
+                                ${leg2StopsHtml}
                             </div>
                         </details>
                     </div>

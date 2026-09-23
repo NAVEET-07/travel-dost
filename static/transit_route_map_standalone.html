@@ -677,13 +677,14 @@
         };
 
         let map, currentTileLayer, currentRouteBounds;
-        let tileMode = 'positron';
+        const osmTileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+        const osmTileAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+        const esriTileUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+        const esriTileAttribution = 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, METI';
+        let tileMode = 'osm';
         const routeLayersGroup = L.layerGroup();
         const markersLayerGroup = L.layerGroup();
         const markersMap = new Map();
-
-        const osmTileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-        const osmTileAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
         function initMap() {
             map = L.map('map', {
@@ -694,9 +695,9 @@
                 zoomAnimation: true
             });
 
-            currentTileLayer = L.tileLayer(osmTileUrl, {
+            currentTileLayer = L.tileLayer(esriTileUrl, {
                 maxZoom: 19,
-                attribution: osmTileAttribution
+                attribution: esriTileAttribution
             }).addTo(map);
 
             routeLayersGroup.addTo(map);
@@ -712,9 +713,11 @@
             });
             document.getElementById('btnToggleTile').addEventListener('click', () => {
                 map.removeLayer(currentTileLayer);
-                currentTileLayer = L.tileLayer(osmTileUrl, {
+                tileMode = (tileMode === 'street') ? 'topo' : 'street';
+                const nextUrl = (tileMode === 'street') ? esriTileUrl : 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}';
+                currentTileLayer = L.tileLayer(nextUrl, {
                     maxZoom: 19,
-                    attribution: osmTileAttribution
+                    attribution: esriTileAttribution
                 }).addTo(map);
                 currentTileLayer.bringToBack();
             });

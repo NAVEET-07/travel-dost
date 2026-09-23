@@ -364,13 +364,13 @@
 document.addEventListener('DOMContentLoaded', function() {
     const routeId = "{{ route.id }}";
     let map = null;
-    let currentTileLayer = null;
-    let tileMode = 'positron';
+    const streetTileUrl = window.esriStreetTileUrl || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+    const topoTileUrl = window.esriTopoTileUrl || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}';
+    const mapAttribution = 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, METI';
+
+    let tileMode = 'street';
     let markersMap = new Map();
     let routeBounds = null;
-
-    const osmTileUrl = window.osmTileUrl || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-    const osmTileAttribution = window.osmTileAttribution || '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
     // Initialize Map
     map = L.map('routeDetailMap', {
@@ -381,9 +381,9 @@ document.addEventListener('DOMContentLoaded', function() {
         zoomAnimation: true
     });
 
-    currentTileLayer = L.tileLayer(osmTileUrl, {
+    currentTileLayer = L.tileLayer(streetTileUrl, {
         maxZoom: 19,
-        attribution: osmTileAttribution
+        attribution: mapAttribution
     }).addTo(map);
 
     // Zoom and bounds buttons
@@ -395,11 +395,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     document.getElementById('detailToggleTile')?.addEventListener('click', () => {
-        // Toggle refresh tile
+        // Toggle tile between Esri World Street and Esri World Topo
         map.removeLayer(currentTileLayer);
-        currentTileLayer = L.tileLayer(osmTileUrl, {
+        tileMode = (tileMode === 'street') ? 'topo' : 'street';
+        const nextUrl = (tileMode === 'street') ? streetTileUrl : topoTileUrl;
+        currentTileLayer = L.tileLayer(nextUrl, {
             maxZoom: 19,
-            attribution: osmTileAttribution
+            attribution: mapAttribution
         }).addTo(map);
         currentTileLayer.bringToBack();
     });

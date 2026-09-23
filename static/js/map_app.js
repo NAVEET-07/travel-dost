@@ -20,13 +20,17 @@ function initTravelDostMap(elementId, centerLat = 15.3647, centerLng = 75.1240, 
 
     travelDostMap = L.map(elementId).setView([centerLat, centerLng], zoomLevel);
 
-    const osmTileUrl = window.osmTileUrl || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-    const osmTileAttribution = window.osmTileAttribution || '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
-
-    L.tileLayer(osmTileUrl, {
+    const osmTileUrl = window.osmTileUrl || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+    const osmTileAttribution = window.osmTileAttribution || 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, METI';
+    const tileOptions = {
         maxZoom: 19,
         attribution: osmTileAttribution
-    }).addTo(travelDostMap);
+    };
+    if (window.osmTileSubdomains) {
+        tileOptions.subdomains = window.osmTileSubdomains;
+    }
+
+    L.tileLayer(osmTileUrl, tileOptions).addTo(travelDostMap);
 
     busStopMarkersGroup = L.layerGroup().addTo(travelDostMap);
 

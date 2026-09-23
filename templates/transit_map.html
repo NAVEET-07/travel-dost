@@ -742,11 +742,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentRouteData = null;
     let antPathLayer = null;
 
-    // Tile Layer Definitions - Free OpenStreetMap tile server
-    const osmTileUrl = window.osmTileUrl || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-    const osmTileOptions = {
+    // Tile Layer Definitions - Esri World Street & World Topo (Zero 403 blocks, zero watermark, no API key required)
+    const streetTileUrl = window.esriStreetTileUrl || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+    const topoTileUrl = window.esriTopoTileUrl || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}';
+    let currentTileMode = 'street';
+    const mapTileOptions = {
         maxZoom: 19,
-        attribution: window.osmTileAttribution || '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, METI'
     };
 
     // 1. Initialize Leaflet Map
@@ -760,7 +762,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Set base tile
-        currentTileLayer = L.tileLayer(osmTileUrl, osmTileOptions).addTo(map);
+        currentTileLayer = L.tileLayer(streetTileUrl, mapTileOptions).addTo(map);
 
         routeLayersGroup.addTo(map);
         markersLayerGroup.addTo(map);
@@ -781,7 +783,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         document.getElementById('btnToggleTile')?.addEventListener('click', () => {
             map.removeLayer(currentTileLayer);
-            currentTileLayer = L.tileLayer(osmTileUrl, osmTileOptions).addTo(map);
+            currentTileMode = (currentTileMode === 'street') ? 'topo' : 'street';
+            const nextUrl = (currentTileMode === 'street') ? streetTileUrl : topoTileUrl;
+            currentTileLayer = L.tileLayer(nextUrl, mapTileOptions).addTo(map);
             currentTileLayer.bringToBack();
         });
 

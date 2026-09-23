@@ -107,13 +107,17 @@ function initDriverMap() {
     if ($('#driverMap').length === 0) return;
 
     driverMap = L.map('driverMap').setView([15.36470, 75.12400], 13);
-    const osmTileUrl = window.osmTileUrl || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-    const osmTileAttribution = window.osmTileAttribution || '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+    const osmTileUrl = window.osmTileUrl || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+    const osmTileAttribution = window.osmTileAttribution || 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, METI';
 
-    L.tileLayer(osmTileUrl, {
+    const tileOptions = {
         maxZoom: 19,
         attribution: osmTileAttribution
-    }).addTo(driverMap);
+    };
+    if (window.osmTileSubdomains) {
+        tileOptions.subdomains = window.osmTileSubdomains;
+    }
+    L.tileLayer(osmTileUrl, tileOptions).addTo(driverMap);
 
     const busIcon = L.divIcon({
         className: 'custom-bus-icon',

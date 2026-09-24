@@ -735,7 +735,6 @@ body {
 document.addEventListener('DOMContentLoaded', function() {
     let map = null;
     let currentTileLayer = null;
-    let currentTileMode = 'positron'; // 'positron' | 'voyager'
     let routeLayersGroup = L.layerGroup();
     let markersLayerGroup = L.layerGroup();
     let markersMap = new Map();
@@ -766,6 +765,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         routeLayersGroup.addTo(map);
         markersLayerGroup.addTo(map);
+
+        // Staggered invalidation passes to guarantee no blank/gray canvas
+        setTimeout(() => { if (map) map.invalidateSize(true); }, 80);
+        setTimeout(() => { if (map) map.invalidateSize(true); }, 250);
+        setTimeout(() => { if (map) map.invalidateSize(true); }, 600);
 
         // Bind Custom Zoom & Control Buttons
         document.getElementById('btnZoomIn')?.addEventListener('click', () => map.zoomIn());

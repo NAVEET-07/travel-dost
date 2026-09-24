@@ -18,21 +18,26 @@ function initTravelDostMap(elementId, centerLat = 15.3647, centerLng = 75.1240, 
         approachingPolyline = null;
     }
 
-    travelDostMap = L.map(elementId).setView([centerLat, centerLng], zoomLevel);
+    travelDostMap = L.map(elementId, {
+        fadeAnimation: true,
+        zoomAnimation: true
+    }).setView([centerLat, centerLng], zoomLevel);
 
-    const osmTileUrl = window.osmTileUrl || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
-    const osmTileAttribution = window.osmTileAttribution || 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, METI';
+    const defaultTileUrl = window.osmTileUrl || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+    const defaultAttribution = window.osmTileAttribution || 'Tiles &copy; Esri &mdash; Sources: Esri, DeLorme, NAVTEQ, USGS, METI';
     const tileOptions = {
         maxZoom: 19,
-        attribution: osmTileAttribution
+        attribution: defaultAttribution
     };
-    if (window.osmTileSubdomains) {
-        tileOptions.subdomains = window.osmTileSubdomains;
-    }
 
-    L.tileLayer(osmTileUrl, tileOptions).addTo(travelDostMap);
+    L.tileLayer(defaultTileUrl, tileOptions).addTo(travelDostMap);
 
     busStopMarkersGroup = L.layerGroup().addTo(travelDostMap);
+
+    // Staggered invalidation passes to guarantee no blank/gray canvas
+    setTimeout(() => { if (travelDostMap) travelDostMap.invalidateSize(true); }, 80);
+    setTimeout(() => { if (travelDostMap) travelDostMap.invalidateSize(true); }, 250);
+    setTimeout(() => { if (travelDostMap) travelDostMap.invalidateSize(true); }, 600);
 
     return travelDostMap;
 }

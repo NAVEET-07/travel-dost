@@ -364,6 +364,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const routeId = "{{ route.id }}";
     let map = null;
+    let currentTileLayer = null;
     const streetTileUrl = window.esriStreetTileUrl || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
     const topoTileUrl = window.esriTopoTileUrl || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}';
     const mapAttribution = 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, METI';
@@ -385,6 +386,11 @@ document.addEventListener('DOMContentLoaded', function() {
         maxZoom: 19,
         attribution: mapAttribution
     }).addTo(map);
+
+    // Staggered invalidation passes to guarantee no blank/gray canvas
+    setTimeout(() => { if (map) map.invalidateSize(true); }, 80);
+    setTimeout(() => { if (map) map.invalidateSize(true); }, 250);
+    setTimeout(() => { if (map) map.invalidateSize(true); }, 600);
 
     // Zoom and bounds buttons
     document.getElementById('detailZoomIn')?.addEventListener('click', () => map.zoomIn());

@@ -1293,14 +1293,12 @@
                         <!-- Tile Theme Switcher -->
                         <div class="dropdown">
                             <button class="btn btn-sm btn-dark border border-secondary border-opacity-50 rounded-pill px-2 py-1 dropdown-toggle text-light" type="button" id="mapThemeDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.74rem;">
-                                <i class="fa-solid fa-layer-group me-1 text-warning"></i> <span id="currentTileLabel">Transit Map</span>
+                                <i class="fa-solid fa-layer-group me-1 text-warning"></i> <span id="currentTileLabel">Esri Streets</span>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow-lg border-secondary" aria-labelledby="mapThemeDropdown" style="font-size: 0.8rem; min-width: 190px;">
-                                <li><a class="dropdown-item active d-flex align-items-center gap-2" href="javascript:void(0)" data-tile="transit_hot"><i class="fa-solid fa-star text-warning"></i> Transit Map (Vibrant)</a></li>
-                                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tile="osm_clean"><i class="fa-solid fa-road text-info"></i> Clean Streets (OSM)</a></li>
+                                <li><a class="dropdown-item active d-flex align-items-center gap-2" href="javascript:void(0)" data-tile="esri_street"><i class="fa-solid fa-road text-info"></i> Esri Streets (Clean)</a></li>
                                 <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tile="esri_topo"><i class="fa-solid fa-mountain-sun text-success"></i> Topo Terrain</a></li>
-                                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tile="satellite"><i class="fa-solid fa-satellite text-primary"></i> Satellite (Esri Imagery)</a></li>
-                                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tile="osm_standard"><i class="fa-solid fa-globe text-light"></i> Classic Standard</a></li>
+                                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tile="satellite"><i class="fa-solid fa-satellite text-warning"></i> Satellite Imagery</a></li>
                             </ul>
                         </div>
                         <!-- Fit Route Bounds Button -->
@@ -1502,17 +1500,15 @@
                         <i class="fa-solid fa-tags me-1"></i> <span id="trackingLabelToggleText">Stops: ON</span>
                     </button>
 
-                    <!-- Tile Switcher (CartoDB Voyager as Primary Default) -->
+                    <!-- Tile Switcher (Esri Streets Clean as Primary Default - Zero 403 blocks) -->
                     <div class="dropdown">
                         <button class="btn btn-sm btn-dark border border-secondary border-opacity-50 rounded-pill px-2 py-1 dropdown-toggle text-light" type="button" id="trackingMapThemeDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.74rem;">
-                            <i class="fa-solid fa-layer-group me-1 text-warning"></i> <span id="trackingTileLabel">Voyager Streets</span>
+                            <i class="fa-solid fa-layer-group me-1 text-warning"></i> <span id="trackingTileLabel">Esri Streets</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow-lg border-secondary" style="font-size: 0.8rem; min-width: 190px;">
-                            <li><a class="dropdown-item active d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="carto_voyager"><i class="fa-solid fa-star text-warning"></i> Voyager Streets (Fast)</a></li>
-                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="osm_standard"><i class="fa-solid fa-road text-info"></i> OpenStreetMap</a></li>
-                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="esri_street"><i class="fa-solid fa-map text-success"></i> Esri Streets</a></li>
+                            <li><a class="dropdown-item active d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="esri_street"><i class="fa-solid fa-road text-info"></i> Esri Streets (Clean)</a></li>
                             <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="esri_topo"><i class="fa-solid fa-mountain-sun text-secondary"></i> Topo Terrain</a></li>
-                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="satellite"><i class="fa-solid fa-satellite text-primary"></i> Satellite Imagery</a></li>
+                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="satellite"><i class="fa-solid fa-satellite text-warning"></i> Satellite Imagery</a></li>
                         </ul>
                     </div>
 
@@ -1680,31 +1676,14 @@ let currentPolylineGroup = null;
 let currentTransitPathGroup = null;
 let activeRenderingRouteKey = null;
 let currentBaseTileLayer = null;
-let currentTileKey = 'carto_voyager';
+let currentTileKey = 'esri_street';
 let showStopLabels = true;
 let liveTrackingInterval = null;
 let liveBusMarker = null;
 let currentFetchedRoutes = [];
 
-// High-Performance Zero-Watermark Public Map Tile Providers
+// High-Performance Zero-Watermark 100% Free Public Map Tile Providers (Zero 403 blocks, No API Key Required)
 const mapTiles = {
-    carto_voyager: {
-        name: 'Voyager Streets',
-        url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-        options: {
-            maxZoom: 20,
-            subdomains: 'abcd',
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-        }
-    },
-    osm_standard: {
-        name: 'OpenStreetMap',
-        url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-        options: {
-            maxZoom: 19,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }
-    },
     esri_street: {
         name: 'Esri Streets',
         url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
@@ -1722,30 +1701,65 @@ const mapTiles = {
         }
     },
     satellite: {
-        name: 'Satellite',
+        name: 'Satellite Imagery',
         url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
         options: {
             maxZoom: 19,
             attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and GIS User Community'
         }
+    },
+    osm_standard: {
+        name: 'Esri Streets',
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+        options: {
+            maxZoom: 19,
+            attribution: 'Tiles &copy; Esri &mdash; Sources: Esri, DeLorme, NAVTEQ, USGS, METI'
+        }
+    },
+    transit_hot: {
+        name: 'Esri Streets',
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+        options: {
+            maxZoom: 19,
+            attribution: 'Tiles &copy; Esri &mdash; Sources: Esri, DeLorme, NAVTEQ, USGS, METI'
+        }
+    },
+    osm_clean: {
+        name: 'Esri Streets',
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+        options: {
+            maxZoom: 19,
+            attribution: 'Tiles &copy; Esri &mdash; Sources: Esri, DeLorme, NAVTEQ, USGS, METI'
+        }
+    },
+    carto_voyager: {
+        name: 'Esri Streets',
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+        options: {
+            maxZoom: 19,
+            attribution: 'Tiles &copy; Esri &mdash; Sources: Esri, DeLorme, NAVTEQ, USGS, METI'
+        }
     }
 };
 
 function switchMapTile(tileKey) {
-    if (!routeMap || !mapTiles[tileKey]) return;
+    if (!routeMap) return;
+    const resolvedKey = (tileKey && mapTiles[tileKey]) ? tileKey : 'esri_street';
+    const tileConfig = mapTiles[resolvedKey] || mapTiles['esri_street'];
+    if (!tileConfig) return;
+
     if (currentBaseTileLayer) {
         routeMap.removeLayer(currentBaseTileLayer);
     }
-    const tileConfig = mapTiles[tileKey];
     currentBaseTileLayer = L.tileLayer(tileConfig.url, tileConfig.options).addTo(routeMap);
     currentBaseTileLayer.bringToBack();
-    currentTileKey = tileKey;
+    currentTileKey = resolvedKey;
 
     const labelEl = document.getElementById('currentTileLabel');
     if (labelEl) labelEl.textContent = tileConfig.name;
 
     document.querySelectorAll('[data-tile]').forEach(item => {
-        item.classList.toggle('active', item.dataset.tile === tileKey);
+        item.classList.toggle('active', item.dataset.tile === resolvedKey);
     });
 }
 
@@ -1782,11 +1796,13 @@ function initRouteMap() {
 
     routeMap = L.map('map', {
         zoomControl: true,
-        scrollWheelZoom: true
+        scrollWheelZoom: true,
+        fadeAnimation: true,
+        zoomAnimation: true
     }).setView([15.3647, 75.1240], 13);
 
-    // Default to Vibrant Zero-Watermark Transit Map
-    switchMapTile('transit_hot');
+    // Default to clean zero-watermark, zero-block Esri Streets
+    switchMapTile('esri_street');
 
     currentTransitPathGroup = L.layerGroup().addTo(routeMap);
     currentPolylineGroup = L.layerGroup().addTo(routeMap);
@@ -1803,7 +1819,10 @@ function initRouteMap() {
         });
     });
 
-    setTimeout(() => { routeMap.invalidateSize(); }, 250);
+    // Staggered invalidation passes to guarantee no blank/gray canvas
+    setTimeout(() => { if (routeMap) routeMap.invalidateSize(true); }, 60);
+    setTimeout(() => { if (routeMap) routeMap.invalidateSize(true); }, 250);
+    setTimeout(() => { if (routeMap) routeMap.invalidateSize(true); }, 600);
 }
 
 // Fit map bounds button
@@ -2968,8 +2987,8 @@ document.addEventListener('DOMContentLoaded', function() {
             zoomAnimation: true
         }).setView([15.3647, 75.1240], 14);
 
-        // High-Performance Tile Layer (CartoDB Voyager as default)
-        setSplitMapTile('carto_voyager');
+        // High-Performance Tile Layer (Esri Streets Clean as default - Zero 403 blocks)
+        setSplitMapTile('esri_street');
 
         // Dynamic Polyline Layers: Traveled (faded gray) vs Remaining (vibrant emerald)
         splitTraveledPolyline = L.polyline([], {
@@ -3005,11 +3024,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function setSplitMapTile(tileKey) {
-        if (!splitMap || !mapTiles[tileKey]) return;
+        if (!splitMap) return;
+        const resolvedKey = (tileKey && mapTiles[tileKey]) ? tileKey : 'esri_street';
+        const cfg = mapTiles[resolvedKey] || mapTiles['esri_street'];
+        if (!cfg) return;
+
         if (trackingTileLayer) {
             splitMap.removeLayer(trackingTileLayer);
         }
-        const cfg = mapTiles[tileKey];
         trackingTileLayer = L.tileLayer(cfg.url, cfg.options).addTo(splitMap);
         trackingTileLayer.bringToBack();
 
@@ -3017,7 +3039,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (label) label.textContent = cfg.name;
 
         document.querySelectorAll('[data-tracking-tile]').forEach(item => {
-            item.classList.toggle('active', item.dataset.trackingTile === tileKey);
+            item.classList.toggle('active', item.dataset.trackingTile === resolvedKey);
         });
     }
 

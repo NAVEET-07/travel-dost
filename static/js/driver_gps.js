@@ -106,18 +106,23 @@ $(document.body).ready(function() {
 function initDriverMap() {
     if ($('#driverMap').length === 0) return;
 
-    driverMap = L.map('driverMap').setView([15.36470, 75.12400], 13);
+    driverMap = L.map('driverMap', {
+        fadeAnimation: true,
+        zoomAnimation: true
+    }).setView([15.36470, 75.12400], 13);
     const osmTileUrl = window.osmTileUrl || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
-    const osmTileAttribution = window.osmTileAttribution || 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, METI';
+    const osmTileAttribution = window.osmTileAttribution || 'Tiles &copy; Esri &mdash; Sources: Esri, DeLorme, NAVTEQ, USGS, METI';
 
     const tileOptions = {
         maxZoom: 19,
         attribution: osmTileAttribution
     };
-    if (window.osmTileSubdomains) {
-        tileOptions.subdomains = window.osmTileSubdomains;
-    }
     L.tileLayer(osmTileUrl, tileOptions).addTo(driverMap);
+
+    // Staggered invalidation passes to guarantee no blank/gray canvas
+    setTimeout(() => { if (driverMap) driverMap.invalidateSize(true); }, 80);
+    setTimeout(() => { if (driverMap) driverMap.invalidateSize(true); }, 250);
+    setTimeout(() => { if (driverMap) driverMap.invalidateSize(true); }, 600);
 
     const busIcon = L.divIcon({
         className: 'custom-bus-icon',

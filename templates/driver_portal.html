@@ -139,15 +139,61 @@
             </div>
         </div>
 
-        <!-- Live Bus Map Preview for Driver -->
+        <!-- Live Bus Map Preview & Ordered Stops for Driver -->
         <div class="col-lg-6 col-md-8">
-            <div class="transit-card p-4 h-100">
+            <div class="transit-card p-4 mb-4">
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <h5 class="fw-bold m-0 text-dark"><i class="fa-solid fa-map-location-dot text-primary me-2"></i>GPS Route Snapping</h5>
                     <span class="badge bg-success small"><span class="live-dot me-1"></span> Stream Ready</span>
                 </div>
-                <div id="driverMap" style="height: 420px; width: 100%; border-radius: 14px;" class="shadow-sm"></div>
+                <div id="driverMap" style="height: 380px; width: 100%; border-radius: 14px;" class="shadow-sm"></div>
             </div>
+
+            <!-- Scheduled Ordered Route Stops (Problem 3) -->
+            {% if assigned_bus and assigned_bus.route and route_stops %}
+            <div class="transit-card p-4">
+                <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                    <div>
+                        <h5 class="fw-bold m-0 text-dark">
+                            <i class="fa-solid fa-list-ol text-primary me-2"></i>Scheduled Route Stops
+                        </h5>
+                        <p class="text-secondary small m-0 mt-1">
+                            {{ assigned_bus.route.route_name }} • <strong>{{ total_stops }} Stops</strong> ({{ total_distance_km }} km)
+                        </p>
+                    </div>
+                    <span class="badge bg-primary rounded-pill px-3 py-1">In Order</span>
+                </div>
+
+                <div class="route-stops-driver-stepper" style="max-height: 420px; overflow-y: auto; padding-right: 4px;">
+                    {% for rs in route_stops %}
+                    <div class="driver-stop-item d-flex align-items-center justify-content-between p-2 mb-2 rounded-3 border bg-light shadow-sm"
+                         style="cursor: pointer; transition: all 0.2s ease;"
+                         onmouseover="this.classList.add('bg-primary-subtle', 'border-primary')"
+                         onmouseout="this.classList.remove('bg-primary-subtle', 'border-primary')"
+                         onclick="centerDriverMapOnStop({{ rs.bus_stop.latitude }}, {{ rs.bus_stop.longitude }}, '{{ rs.bus_stop.stop_name|escapejs }}')"
+                         title="Click to view stop on preview map">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="badge {% if forloop.first %}bg-success{% elif forloop.last %}bg-danger{% else %}bg-primary{% endif %} rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 28px; height: 28px; font-size: 0.8rem;">
+                                {{ rs.stop_order }}
+                            </span>
+                            <div>
+                                <strong class="d-block text-dark small" style="font-size: 0.86rem;">{{ rs.bus_stop.stop_name }}</strong>
+                                <small class="text-secondary" style="font-size: 0.74rem;">{{ rs.bus_stop.area|default:"Hubballi-Dharwad" }}</small>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-white text-secondary border small">{{ rs.distance_from_start_km|default:"0.0" }} km</span>
+                            {% if forloop.first %}
+                                <span class="badge bg-success-subtle text-success border border-success border-opacity-25 d-block mt-1 extra-small">ORIGIN</span>
+                            {% elif forloop.last %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger border-opacity-25 d-block mt-1 extra-small">TERMINUS</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -155,13 +201,14 @@
 
 {% block extra_js %}
 <script>
+    window.routeStops = {{ route_stops_json|default:"[]"|safe }};
     window.routeWaypoints = [
-        {% if assigned_bus and assigned_bus.route %}
-            {% for rs in assigned_bus.route.get_ordered_stops %}
+        {% if assigned_bus and assigned_bus.route and route_stops %}
+            {% for rs in route_stops %}
                 { lat: {{ rs.bus_stop.latitude }}, lng: {{ rs.bus_stop.longitude }}, name: "{{ rs.bus_stop.stop_name|escapejs }}", speed: 35.0, heading: 90 }{% if not forloop.last %},{% endif %}
             {% endfor %}
         {% endif %}
     ];
 </script>
-<script src="/static/js/driver_gps.js?v=3.0"></script>
+<script src="/static/js/driver_gps.js?v=3.1"></script>
 {% endblock %}

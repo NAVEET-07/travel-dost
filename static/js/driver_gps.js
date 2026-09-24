@@ -140,7 +140,79 @@ function initDriverMap() {
         lineCap: 'round',
         lineJoin: 'round'
     }).addTo(driverMap);
+
+    // Render ordered route stops and scheduled route path (Problem 3)
+    if (window.routeStops && window.routeStops.length > 0) {
+        const stopLatLngs = [];
+        const boundsMarkers = [];
+
+        window.routeStops.forEach((stop, idx) => {
+            const lat = parseFloat(stop.lat);
+            const lng = parseFloat(stop.lon || stop.lng);
+            if (isNaN(lat) || isNaN(lng)) return;
+
+            stopLatLngs.push([lat, lng]);
+            const isFirst = idx === 0;
+            const isLast = idx === window.routeStops.length - 1;
+
+            const stopDivIcon = L.divIcon({
+                className: 'driver-stop-divicon',
+                html: `
+                    <div style="background: ${isFirst ? '#10b981' : (isLast ? '#ef4444' : '#0284c7')}; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 11px; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.35);">
+                        ${stop.stop_order || (idx + 1)}
+                    </div>
+                `,
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
+            });
+
+            const stopMarker = L.marker([lat, lng], { icon: stopDivIcon }).addTo(driverMap)
+                .bindPopup(`
+                    <div style="padding: 4px;">
+                        <span class="badge ${isFirst ? 'bg-success' : (isLast ? 'bg-danger' : 'bg-primary')} mb-1">
+                            ${isFirst ? 'START STOP' : (isLast ? 'DESTINATION' : 'STOP #' + (stop.stop_order || (idx + 1)))}
+                        </span>
+                        <h6 style="margin: 0; font-weight: bold; color: #1e293b;">${stop.stop_name}</h6>
+                        <small class="text-muted">${stop.area || ''} • ${(stop.distance_from_start_km || 0).toFixed(1)} km</small>
+                    </div>
+                `);
+
+            boundsMarkers.push(stopMarker);
+        });
+
+        if (stopLatLngs.length >= 2) {
+            // Draw planned scheduled route polyline in blue
+            L.polyline(stopLatLngs, {
+                color: '#2563eb',
+                weight: 4,
+                opacity: 0.8,
+                dashArray: '5, 8',
+                lineCap: 'round',
+                lineJoin: 'round'
+            }).addTo(driverMap);
+        }
+
+        if (boundsMarkers.length > 0) {
+            const group = L.featureGroup(boundsMarkers);
+            if (group.getBounds().isValid()) {
+                driverMap.fitBounds(group.getBounds(), { padding: [35, 35] });
+            }
+        }
+    }
 }
+
+window.centerDriverMapOnStop = function(lat, lng, name) {
+    if (!driverMap) return;
+    driverMap.setView([lat, lng], 16, { animate: true });
+    driverMap.eachLayer(function(layer) {
+        if (layer.getLatLng) {
+            const ll = layer.getLatLng();
+            if (Math.abs(ll.lat - lat) < 0.0001 && Math.abs(ll.lng - lng) < 0.0001) {
+                layer.openPopup();
+            }
+        }
+    });
+};
 
 function initDriverSocket(busId, callback) {
     const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';

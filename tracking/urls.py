@@ -51,6 +51,8 @@ urlpatterns = [
     path('api/auth/logout/', views_api.LogoutAPIView.as_view(), name='api-logout'),
     path('api/stops/autocomplete/', views_api.StopsAutocompleteAPIView.as_view(), name='api-stops-autocomplete'),
     path('api/stops/autocomplete', views_api.StopsAutocompleteAPIView.as_view()),
+    path('api/stops/search/', views_api.StopsAutocompleteAPIView.as_view(), name='api-stops-search'),
+    path('api/stops/search', views_api.StopsAutocompleteAPIView.as_view()),
     path('api/stops/names/', views_api.StopsAutocompleteAPIView.as_view(), name='api-stops-names'),
     path('api/stops/names', views_api.StopsAutocompleteAPIView.as_view()),
     path('api/routes/search/', views_api.RouteSearchAPIView.as_view(), name='api-routes-search'),

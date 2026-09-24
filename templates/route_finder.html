@@ -658,6 +658,115 @@
     background: transparent;
     border: none;
 }
+
+/* Custom Autocomplete Typeahead Dropdown */
+.stop-suggestions-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 1060;
+    background: #0b1329;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    border-radius: 14px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 20px rgba(56, 189, 248, 0.15);
+    max-height: 240px;
+    overflow-y: auto;
+    display: none;
+}
+.stop-suggestions-dropdown.show {
+    display: block;
+}
+.stop-suggestion-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    color: #f8fafc;
+    transition: all 0.15s ease;
+}
+.stop-suggestion-item:last-child {
+    border-bottom: none;
+}
+.stop-suggestion-item:hover,
+.stop-suggestion-item.active {
+    background: rgba(56, 189, 248, 0.2);
+    color: #38bdf8;
+}
+.stop-suggestion-item .suggestion-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+.stop-suggestion-item .suggestion-area {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    background: rgba(30, 41, 59, 0.85);
+    padding: 2px 8px;
+    border-radius: 9999px;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+/* Live Bus Proximity Banner on Route Card */
+.live-bus-proximity-banner {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(245, 158, 11, 0.12) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.live-bus-proximity-badge {
+    background: #10b981;
+    color: #ffffff;
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 9999px;
+    letter-spacing: 0.04em;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.live-radar-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #ffffff;
+    display: inline-block;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
+    animation: radarBlink 1.4s infinite alternate;
+}
+@keyframes radarBlink {
+    0% { transform: scale(0.8); opacity: 0.7; }
+    100% { transform: scale(1.3); opacity: 1; }
+}
+.live-bus-distance-tag {
+    background: rgba(245, 158, 11, 0.25);
+    border: 1px solid rgba(245, 158, 11, 0.5);
+    color: #fbbf24;
+    font-weight: 700;
+    font-size: 0.78rem;
+    padding: 3px 10px;
+    border-radius: 9999px;
+}
+.custom-transit-tooltip {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border: 1px solid #f59e0b !important;
+    color: #ffffff !important;
+    border-radius: 8px !important;
+    font-size: 0.76rem !important;
+    font-weight: 600 !important;
+    padding: 4px 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
 </style>
 {% endblock %}
 
@@ -709,12 +818,11 @@
                                 <i class="fa-solid fa-crosshairs text-danger me-1"></i> Use GPS
                             </button>
                         </div>
-                        <input type="text" class="form-control mb-1 fw-medium" id="sourceTextInput" list="sourceInputList" placeholder="Type stop e.g. CBT, Airport, Hosur..." value="{% if selected_source %}{% for s in stops %}{% if s.id == selected_source %}{{ s.stop_name }}{% endif %}{% endfor %}{% endif %}" autocomplete="off">
-                        <datalist id="sourceInputList">
-                            {% for stop in stops %}
-                                <option value="{{ stop.stop_name }}">{{ stop.area }}</option>
-                            {% endfor %}
-                        </datalist>
+                        <input type="hidden" id="sourceStopId" name="source_stop_id" value="{% if selected_source %}{{ selected_source }}{% endif %}">
+                        <div class="position-relative mb-1">
+                            <input type="text" class="form-control fw-medium" id="sourceTextInput" placeholder="Type stop e.g. CBT, Airport, Gurudev Nagar..." value="{% if selected_source %}{% for s in stops %}{% if s.id == selected_source %}{{ s.stop_name }}{% endif %}{% endfor %}{% endif %}" autocomplete="off">
+                            <div class="stop-suggestions-dropdown" id="sourceSuggestions"></div>
+                        </div>
                         <select class="form-select form-select-sm text-secondary" id="sourceSelect">
                             <option value="">-- Or Select from list --</option>
                             {% for stop in stops %}
@@ -745,12 +853,11 @@
                         <label class="form-label fw-bold small text-uppercase mb-1">
                             <i class="fa-solid fa-location-dot text-danger me-1"></i> POINT B: DESTINATION STOP
                         </label>
-                        <input type="text" class="form-control mb-1 fw-medium" id="destTextInput" list="destInputList" placeholder="Type destination stop..." value="{% if selected_dest %}{% for s in stops %}{% if s.id == selected_dest %}{{ s.stop_name }}{% endif %}{% endfor %}{% endif %}" autocomplete="off">
-                        <datalist id="destInputList">
-                            {% for stop in stops %}
-                                <option value="{{ stop.stop_name }}">{{ stop.area }}</option>
-                            {% endfor %}
-                        </datalist>
+                        <input type="hidden" id="destStopId" name="dest_stop_id" value="{% if selected_dest %}{{ selected_dest }}{% endif %}">
+                        <div class="position-relative mb-1">
+                            <input type="text" class="form-control fw-medium" id="destTextInput" placeholder="Type destination stop..." value="{% if selected_dest %}{% for s in stops %}{% if s.id == selected_dest %}{{ s.stop_name }}{% endif %}{% endfor %}{% endif %}" autocomplete="off">
+                            <div class="stop-suggestions-dropdown" id="destSuggestions"></div>
+                        </div>
                         <select class="form-select form-select-sm text-secondary" id="destSelect">
                             <option value="">-- Or Select from list --</option>
                             {% for stop in stops %}
@@ -896,6 +1003,8 @@
 <script>
 let routeMap = null;
 let currentPolylineGroup = null;
+let currentTransitPathGroup = null;
+let activeRenderingRouteKey = null;
 let currentBaseTileLayer = null;
 let currentTileKey = 'transit_hot';
 let showStopLabels = true;
@@ -1007,6 +1116,7 @@ function initRouteMap() {
     // Default to Vibrant Zero-Watermark Transit Map
     switchMapTile('transit_hot');
 
+    currentTransitPathGroup = L.layerGroup().addTo(routeMap);
     currentPolylineGroup = L.layerGroup().addTo(routeMap);
 
     // Stop names toggle button
@@ -1073,7 +1183,10 @@ function updateMapRouteHud(route) {
     if (fareEl) fareEl.textContent = `₹${fare}`;
 }
 
-function addTransitPolylineLayers(geometryOrCoords, isGeoJSON, boundsLayers) {
+function addTransitPolylineLayers(geometryOrCoords, isGeoJSON) {
+    if (!currentTransitPathGroup) return;
+    currentTransitPathGroup.clearLayers();
+
     if (isGeoJSON) {
         // Glow Halo
         const glowLayer = L.geoJSON(geometryOrCoords, {
@@ -1085,8 +1198,7 @@ function addTransitPolylineLayers(geometryOrCoords, isGeoJSON, boundsLayers) {
                 lineJoin: 'round'
             }
         });
-        currentPolylineGroup.addLayer(glowLayer);
-        boundsLayers.push(glowLayer);
+        currentTransitPathGroup.addLayer(glowLayer);
 
         // Core Transit Line
         const coreLayer = L.geoJSON(geometryOrCoords, {
@@ -1098,7 +1210,7 @@ function addTransitPolylineLayers(geometryOrCoords, isGeoJSON, boundsLayers) {
                 lineJoin: 'round'
             }
         });
-        currentPolylineGroup.addLayer(coreLayer);
+        currentTransitPathGroup.addLayer(coreLayer);
 
         // Animated Transit Dashes
         const dashLayer = L.geoJSON(geometryOrCoords, {
@@ -1112,7 +1224,7 @@ function addTransitPolylineLayers(geometryOrCoords, isGeoJSON, boundsLayers) {
                 className: 'animated-transit-flow'
             }
         });
-        currentPolylineGroup.addLayer(dashLayer);
+        currentTransitPathGroup.addLayer(dashLayer);
     } else {
         // Glow Halo
         const glowLayer = L.polyline(geometryOrCoords, {
@@ -1122,8 +1234,7 @@ function addTransitPolylineLayers(geometryOrCoords, isGeoJSON, boundsLayers) {
             lineCap: 'round',
             lineJoin: 'round'
         });
-        currentPolylineGroup.addLayer(glowLayer);
-        boundsLayers.push(glowLayer);
+        currentTransitPathGroup.addLayer(glowLayer);
 
         // Core Transit Line
         const coreLayer = L.polyline(geometryOrCoords, {
@@ -1133,7 +1244,7 @@ function addTransitPolylineLayers(geometryOrCoords, isGeoJSON, boundsLayers) {
             lineCap: 'round',
             lineJoin: 'round'
         });
-        currentPolylineGroup.addLayer(coreLayer);
+        currentTransitPathGroup.addLayer(coreLayer);
 
         // Animated Transit Dashes
         const dashLayer = L.polyline(geometryOrCoords, {
@@ -1145,7 +1256,7 @@ function addTransitPolylineLayers(geometryOrCoords, isGeoJSON, boundsLayers) {
             lineJoin: 'round',
             className: 'animated-transit-flow'
         });
-        currentPolylineGroup.addLayer(dashLayer);
+        currentTransitPathGroup.addLayer(dashLayer);
     }
 }
 
@@ -1235,6 +1346,9 @@ async function renderRouteOnMap(route, cardElement) {
     }
     if (!routeMap) return;
 
+    const thisRouteKey = (route.route_id || '') + '_' + (route.route_name || '') + '_' + (route.transfers || 0);
+    activeRenderingRouteKey = thisRouteKey;
+
     document.querySelectorAll('.route-card-premium').forEach(c => {
         c.classList.remove('active');
     });
@@ -1242,7 +1356,8 @@ async function renderRouteOnMap(route, cardElement) {
         cardElement.classList.add('active');
     }
 
-    currentPolylineGroup.clearLayers();
+    if (currentPolylineGroup) currentPolylineGroup.clearLayers();
+    if (currentTransitPathGroup) currentTransitPathGroup.clearLayers();
     const boundsLayers = [];
 
     // Update Floating HUD on the Map
@@ -1274,39 +1389,30 @@ async function renderRouteOnMap(route, cardElement) {
 
     if (journeyStops.length < 2) return;
 
-    // Strictly ONE primary route polyline
-    let renderedPrimary = false;
+    const legLatLons = journeyStops.map(s => [s.lat, s.lon]);
 
-    // 1. Check if backend already computed road_geometry
-    if (route.road_geometry && Array.isArray(route.road_geometry) && route.road_geometry.length >= 2) {
-        addTransitPolylineLayers(route.road_geometry, false, boundsLayers);
-        renderedPrimary = true;
-    }
+    // 1. Instantly render polyline connecting journey stops (0ms lag, camera focused strictly on journey)
+    if (route._snapped_geometry) {
+        addTransitPolylineLayers(route._snapped_geometry, true);
+    } else {
+        addTransitPolylineLayers(legLatLons, false);
 
-    // 2. If not pre-computed, request road geometry ONCE from backend for whole journey
-    if (!renderedPrimary) {
-        try {
-            const legLatLons = journeyStops.map(s => [s.lat, s.lon]);
-            const backendRes = await fetch('/api/routes/road-geometry/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ coordinates: legLatLons })
-            });
-            if (backendRes.ok) {
-                const backendData = await backendRes.json();
-                if (backendData.status === 'success' && backendData.geometry) {
-                    addTransitPolylineLayers(backendData.geometry, true, boundsLayers);
-                    renderedPrimary = true;
+        // 2. Asynchronously fetch consecutive road-following geometry strictly for these journey stops
+        fetch('/api/routes/road-geometry/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ coordinates: legLatLons })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success' && data.geometry && data.geometry.coordinates && data.geometry.coordinates.length >= 2) {
+                route._snapped_geometry = data.geometry;
+                if (activeRenderingRouteKey === thisRouteKey) {
+                    addTransitPolylineLayers(data.geometry, true);
                 }
             }
-        } catch (e) {
-            console.warn('Backend road geometry fallback failed:', e);
-        }
-    }
-
-    // 3. Robust fallback: clean single polyline connecting ordered stops
-    if (!renderedPrimary) {
-        addTransitPolylineLayers(journeyStops.map(s => [s.lat, s.lon]), false, boundsLayers);
+        })
+        .catch(err => console.debug('Road snapping background fetch:', err));
     }
 
     // Add clear, distinct, gorgeous markers for stops with visible name badges
@@ -1465,6 +1571,84 @@ async function renderRouteOnMap(route, cardElement) {
         boundsLayers.push(marker);
     });
 
+    // Problem 2: If live bus telemetry is available, render Live Bus marker and Dashed Connector Line to Boarding Stop
+    const liveBus = route.primary_live_bus || (route.has_live_bus && route.legs && route.legs[0] && route.legs[0].live_bus_coords ? {
+        bus_no: route.legs[0].bus_no,
+        lat: route.legs[0].live_bus_coords[0],
+        lon: route.legs[0].live_bus_coords[1],
+        distance_to_source_text: route.distance_to_source_text,
+        distance_to_source_km: route.distance_to_source_km,
+        current_location_desc: route.current_location_desc
+    } : null);
+
+    if (liveBus && liveBus.lat !== null && liveBus.lat !== undefined && liveBus.lon !== null && liveBus.lon !== undefined && journeyStops.length > 0) {
+        const busLat = parseFloat(liveBus.lat);
+        const busLon = parseFloat(liveBus.lon);
+        const startStop = journeyStops[0];
+
+        if (!isNaN(busLat) && !isNaN(busLon)) {
+            // 1. Draw distinct Dashed Connector Line from Live Bus to Boarding Stop
+            const connectorLine = L.polyline([[busLat, busLon], [startStop.lat, startStop.lon]], {
+                color: '#f59e0b',
+                weight: 3.5,
+                opacity: 0.95,
+                dashArray: '7, 9',
+                lineCap: 'round',
+                lineJoin: 'round'
+            });
+
+            const distLabel = liveBus.distance_to_source_text || (liveBus.distance_to_source_km ? `${liveBus.distance_to_source_km} km away` : 'Approaching');
+            connectorLine.bindTooltip(`🚌 Live Bus ${liveBus.bus_no || ''}: ${distLabel} from boarding stop (${startStop.stop_name})`, {
+                sticky: true,
+                className: 'custom-transit-tooltip'
+            });
+
+            currentPolylineGroup.addLayer(connectorLine);
+            boundsLayers.push(connectorLine);
+
+            // 2. Draw Live Bus Marker with amber radar pulse
+            const liveBusDivIcon = L.divIcon({
+                className: 'custom-transit-divicon',
+                html: `
+                    <div class="transit-pin-wrapper live-bus-pin-wrapper">
+                        <div class="radar-pulse-ring transfer-radar"></div>
+                        <div class="pin-badge shadow-lg" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); width: 38px; height: 38px; border-radius: 50%; border: 3px solid #ffffff; display: flex; align-items: center; justify-content: center; color: #fff;">
+                            <i class="fa-solid fa-bus"></i>
+                        </div>
+                        <div class="pin-floating-pill shadow" style="border: 2px solid #f59e0b; background: #0f172a; color: #ffffff;">
+                            <span class="pill-dot bg-warning"></span>
+                            <span class="pill-name">Live Bus ${liveBus.bus_no || ''}</span>
+                            <span class="pill-action text-warning">${distLabel}</span>
+                        </div>
+                    </div>
+                `,
+                iconSize: [200, 48],
+                iconAnchor: [19, 24]
+            });
+
+            const liveMarker = L.marker([busLat, busLon], { icon: liveBusDivIcon, zIndexOffset: 2500 });
+            liveMarker.bindPopup(`
+                <div class="custom-transit-popup">
+                    <div class="popup-header bg-warning text-dark fw-bold">
+                        <i class="fa-solid fa-satellite-dish me-1"></i> Live Bus Telemetry
+                        <span class="badge bg-dark text-white ms-auto">LIVE</span>
+                    </div>
+                    <div class="popup-body p-2">
+                        <h6 class="fw-bold mb-1 text-dark">Bus ${liveBus.bus_no || ''}</h6>
+                        <div class="small mb-1 text-secondary">
+                            Distance to Boarding Stop: <strong class="text-warning-emphasis">${distLabel}</strong>
+                        </div>
+                        ${liveBus.current_location_desc ? `<div class="small text-muted mb-1"><i class="fa-solid fa-location-crosshairs me-1 text-warning"></i>${liveBus.current_location_desc}</div>` : ''}
+                        ${liveBus.speed ? `<div class="small text-muted">Speed: <strong>${Math.round(liveBus.speed)} km/h</strong></div>` : ''}
+                    </div>
+                </div>
+            `, { className: 'transit-leaflet-popup' });
+
+            currentPolylineGroup.addLayer(liveMarker);
+            boundsLayers.push(liveMarker);
+        }
+    }
+
     if (boundsLayers.length > 0) {
         const featureGroup = L.featureGroup(boundsLayers);
         if (featureGroup.getBounds().isValid()) {
@@ -1478,71 +1662,173 @@ async function renderRouteOnMap(route, cardElement) {
 document.addEventListener('DOMContentLoaded', function() {
     initRouteMap();
 
-    // Fetch stop autocomplete list
-    fetch('/api/stops/autocomplete/')
-        .then(res => res.json())
-        .then(data => {
-            if (data && data.stops && data.stops.length > 0) {
-                const optionsHtml = data.stops.map(stop => `<option value="${stop}">`).join('');
-                const srcList = document.getElementById('sourceInputList');
-                const dstList = document.getElementById('destInputList');
-                if (srcList) srcList.innerHTML = optionsHtml;
-                if (dstList) dstList.innerHTML = optionsHtml;
-            }
-        })
-        .catch(err => console.error('Error fetching stop autocomplete data:', err));
-
     const sourceInput = document.getElementById('sourceTextInput');
     const sourceSelect = document.getElementById('sourceSelect');
     const destInput = document.getElementById('destTextInput');
     const destSelect = document.getElementById('destSelect');
 
-    // Sync input <-> select for Source
-    if (sourceInput && sourceSelect) {
-        sourceInput.addEventListener('input', function() {
-            const val = this.value.toLowerCase().trim();
-            if (!val) return;
-            Array.from(sourceSelect.options).forEach(opt => {
-                if (opt.text.toLowerCase().includes(val)) {
-                    sourceSelect.value = opt.value;
+    // Debounced Typeahead Autocomplete Handler (Problem 1)
+    function setupStopAutocomplete(inputId, hiddenId, selectId, dropdownId) {
+        const input = document.getElementById(inputId);
+        const hidden = document.getElementById(hiddenId);
+        const select = document.getElementById(selectId);
+        const dropdown = document.getElementById(dropdownId);
+        if (!input || !dropdown) return;
+
+        let debounceTimer = null;
+        let selectedIndex = -1;
+        let currentStops = [];
+
+        function closeDropdown() {
+            dropdown.classList.remove('show');
+            dropdown.innerHTML = '';
+            selectedIndex = -1;
+            currentStops = [];
+        }
+
+        function highlightMatch(text, query) {
+            if (!query) return text;
+            const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')})`, 'gi');
+            return text.replace(regex, '<span class="text-info fw-bold text-decoration-underline">$1</span>');
+        }
+
+        function renderResults(stops, query) {
+            currentStops = stops;
+            selectedIndex = -1;
+            if (!stops || stops.length === 0) {
+                dropdown.innerHTML = `<div class="p-3 text-secondary small text-center"><i class="fa-solid fa-circle-question me-1"></i> No matching bus stops found</div>`;
+                dropdown.classList.add('show');
+                return;
+            }
+
+            dropdown.innerHTML = stops.map((stop, idx) => `
+                <div class="stop-suggestion-item" data-index="${idx}" data-id="${stop.id}" data-name="${stop.stop_name}">
+                    <span class="suggestion-name">
+                        <i class="fa-solid fa-location-dot text-info me-2 small"></i>
+                        <span>${highlightMatch(stop.stop_name, query)}</span>
+                    </span>
+                    <span class="suggestion-area">${stop.area || 'Hubballi-Dharwad'}</span>
+                </div>
+            `).join('');
+
+            dropdown.querySelectorAll('.stop-suggestion-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const stopId = this.dataset.id;
+                    const stopName = this.dataset.name;
+                    selectStop(stopId, stopName);
+                });
+            });
+
+            dropdown.classList.add('show');
+        }
+
+        function selectStop(stopId, stopName) {
+            input.value = stopName;
+            if (hidden) hidden.value = stopId;
+            if (select) select.value = stopId;
+            closeDropdown();
+        }
+
+        input.addEventListener('input', function() {
+            const query = this.value.trim();
+            if (hidden) hidden.value = '';
+
+            clearTimeout(debounceTimer);
+            if (!query) {
+                closeDropdown();
+                if (select) select.value = '';
+                return;
+            }
+
+            debounceTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch(`/api/stops/search/?q=${encodeURIComponent(query)}`);
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    renderResults(data.stops || [], query);
+                } catch (err) {
+                    console.error('Stop search autocomplete error:', err);
+                }
+            }, 150);
+        });
+
+        input.addEventListener('keydown', function(e) {
+            const items = dropdown.querySelectorAll('.stop-suggestion-item');
+            if (!dropdown.classList.contains('show') || items.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = (selectedIndex + 1) % items.length;
+                updateActiveItem(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+                updateActiveItem(items);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedIndex >= 0 && selectedIndex < items.length) {
+                    items[selectedIndex].click();
+                } else if (items.length > 0) {
+                    items[0].click();
+                }
+            } else if (e.key === 'Escape') {
+                closeDropdown();
+            }
+        });
+
+        function updateActiveItem(items) {
+            items.forEach((item, idx) => {
+                if (idx === selectedIndex) {
+                    item.classList.add('active');
+                    item.scrollIntoView({ block: 'nearest' });
+                } else {
+                    item.classList.remove('active');
                 }
             });
-        });
-        sourceSelect.addEventListener('change', function() {
-            if (this.value) {
-                const text = this.options[this.selectedIndex].text.split('(')[0].trim();
-                sourceInput.value = text;
+        }
+
+        if (select) {
+            select.addEventListener('change', function() {
+                if (this.value) {
+                    const selectedOpt = this.options[this.selectedIndex];
+                    const text = selectedOpt.text.split('(')[0].trim();
+                    input.value = text;
+                    if (hidden) hidden.value = this.value;
+                } else {
+                    input.value = '';
+                    if (hidden) hidden.value = '';
+                }
+                closeDropdown();
+            });
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+                closeDropdown();
             }
         });
     }
 
-    // Sync input <-> select for Destination
-    if (destInput && destSelect) {
-        destInput.addEventListener('input', function() {
-            const val = this.value.toLowerCase().trim();
-            if (!val) return;
-            Array.from(destSelect.options).forEach(opt => {
-                if (opt.text.toLowerCase().includes(val)) {
-                    destSelect.value = opt.value;
-                }
-            });
-        });
-        destSelect.addEventListener('change', function() {
-            if (this.value) {
-                const text = this.options[this.selectedIndex].text.split('(')[0].trim();
-                destInput.value = text;
-            }
-        });
-    }
+    setupStopAutocomplete('sourceTextInput', 'sourceStopId', 'sourceSelect', 'sourceSuggestions');
+    setupStopAutocomplete('destTextInput', 'destStopId', 'destSelect', 'destSuggestions');
 
     // Swap Point A & Point B
     document.getElementById('btnSwapRouteFinder')?.addEventListener('click', function() {
+        const sourceHidden = document.getElementById('sourceStopId');
+        const destHidden = document.getElementById('destStopId');
+
         const tempText = sourceInput.value;
         const tempSelect = sourceSelect.value;
+        const tempHidden = sourceHidden ? sourceHidden.value : '';
+
         sourceInput.value = destInput.value;
         sourceSelect.value = destSelect.value;
+        if (sourceHidden && destHidden) sourceHidden.value = destHidden.value;
+
         destInput.value = tempText;
         destSelect.value = tempSelect;
+        if (destHidden) destHidden.value = tempHidden;
     });
 
     // Reset Search
@@ -1551,6 +1837,8 @@ document.addEventListener('DOMContentLoaded', function() {
         sourceSelect.value = '';
         destInput.value = '';
         destSelect.value = '';
+        if (document.getElementById('sourceStopId')) document.getElementById('sourceStopId').value = '';
+        if (document.getElementById('destStopId')) document.getElementById('destStopId').value = '';
     });
 
     // Quick stop chips
@@ -1560,10 +1848,20 @@ document.addEventListener('DOMContentLoaded', function() {
             const val = this.dataset.val;
             if (target === 'source') {
                 sourceInput.value = val;
-                sourceInput.dispatchEvent(new Event('input'));
+                Array.from(sourceSelect.options).forEach(opt => {
+                    if (opt.text.toLowerCase().includes(val.toLowerCase())) {
+                        sourceSelect.value = opt.value;
+                        if (document.getElementById('sourceStopId')) document.getElementById('sourceStopId').value = opt.value;
+                    }
+                });
             } else {
                 destInput.value = val;
-                destInput.dispatchEvent(new Event('input'));
+                Array.from(destSelect.options).forEach(opt => {
+                    if (opt.text.toLowerCase().includes(val.toLowerCase())) {
+                        destSelect.value = opt.value;
+                        if (document.getElementById('destStopId')) document.getElementById('destStopId').value = opt.value;
+                    }
+                });
             }
         });
     });
@@ -1641,13 +1939,46 @@ document.addEventListener('DOMContentLoaded', function() {
             const isDirect = route.transfers === 0;
             card.className = `route-card-premium p-4 mb-3 ${isDirect ? 'direct-route' : 'transfer-route'} ${index === 0 ? 'active' : ''}`;
 
-            const badgeHtml = isDirect 
+            let badgeHtml = isDirect 
                 ? `<span class="badge-transit badge-direct"><i class="fa-solid fa-bolt"></i> DIRECT BUS</span>`
                 : `<span class="badge-transit badge-transfer"><i class="fa-solid fa-shuffle"></i> 1 TRANSFER</span>`;
 
             let cbtBadgeHtml = '';
             if (route.cbt_priority_rank === 0 || route.cbt_priority_rank === 1) {
                 cbtBadgeHtml = `<span class="badge-transit badge-brts"><i class="fa-solid fa-star text-warning"></i> CBT PRIORITY</span>`;
+            }
+
+            // Live Bus badge & proximity banner (Problem 2)
+            const cardLiveBus = route.primary_live_bus || (route.has_live_bus ? {
+                bus_no: (route.legs && route.legs[0]) ? route.legs[0].bus_no : 'Active',
+                distance_to_source_text: route.distance_to_source_text,
+                current_location_desc: route.current_location_desc
+            } : null);
+
+            let liveTrackingBadgeHtml = '';
+            let liveBannerHtml = '';
+            if (cardLiveBus) {
+                liveTrackingBadgeHtml = `<span class="badge-transit" style="background: rgba(16, 185, 129, 0.2); color: #059669; border: 1px solid rgba(16, 185, 129, 0.4);"><i class="fa-solid fa-satellite-dish"></i> LIVE TRACKING</span>`;
+                const distDesc = cardLiveBus.distance_to_source_text || 'Approaching';
+                liveBannerHtml = `
+                    <div class="live-bus-proximity-banner">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="live-bus-proximity-badge">
+                                <span class="live-radar-dot"></span> LIVE BUS
+                            </span>
+                            <span class="text-dark fw-bold small">
+                                <i class="fa-solid fa-bus text-primary me-1"></i> ${cardLiveBus.bus_no ? 'Bus ' + cardLiveBus.bus_no : 'En Route'}
+                            </span>
+                            <span class="live-bus-distance-tag">
+                                <i class="fa-solid fa-location-arrow me-1"></i> ${distDesc} from boarding stop
+                            </span>
+                        </div>
+                        <div class="small d-flex align-items-center gap-2">
+                            ${cardLiveBus.current_location_desc ? `<span class="text-secondary"><i class="fa-solid fa-map-pin text-danger me-1"></i>${cardLiveBus.current_location_desc}</span>` : ''}
+                            ${cardLiveBus.speed ? `<span class="badge bg-secondary bg-opacity-25 text-dark">${Math.round(cardLiveBus.speed)} km/h</span>` : ''}
+                        </div>
+                    </div>
+                `;
             }
 
             const totalStops = route.total_stops || 0;
@@ -1787,6 +2118,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         ${badgeHtml}
                         ${cbtBadgeHtml}
+                        ${liveTrackingBadgeHtml}
                     </div>
                     <div class="d-flex align-items-center gap-3">
                         <span class="badge bg-light text-secondary border px-2 py-1 small">
@@ -1800,6 +2132,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </span>
                     </div>
                 </div>
+                ${liveBannerHtml}
                 ${timelineHtml}
             `;
 
@@ -1839,8 +2172,13 @@ document.addEventListener('DOMContentLoaded', function() {
     async function executeSearch(e) {
         if (e) e.preventDefault();
 
-        const src = (sourceInput ? sourceInput.value.trim() : '') || (sourceSelect ? sourceSelect.value.trim() : '');
-        const dst = (destInput ? destInput.value.trim() : '') || (destSelect ? destSelect.value.trim() : '');
+        const srcId = document.getElementById('sourceStopId')?.value.trim();
+        const dstId = document.getElementById('destStopId')?.value.trim();
+        const srcText = sourceInput ? sourceInput.value.trim() : '';
+        const dstText = destInput ? destInput.value.trim() : '';
+
+        const src = srcText || srcId || (sourceSelect ? sourceSelect.value.trim() : '');
+        const dst = dstText || dstId || (destSelect ? destSelect.value.trim() : '');
 
         if (!src || !dst) {
             alert('Please provide both Point A (Boarding) and Point B (Destination) stops.');

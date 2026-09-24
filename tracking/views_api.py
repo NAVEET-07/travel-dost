@@ -209,8 +209,83 @@ class StopsAutocompleteAPIView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        stops = list(BusStop.objects.filter(is_active=True).values_list('stop_name', flat=True).distinct().order_by('stop_name'))
-        return Response({"stops": stops})
+        q = request.query_params.get('q', '').strip()
+        if q:
+            prefix_qs = BusStop.objects.filter(is_active=True, stop_name__istartswith=q).order_by('stop_name')[:15]
+            prefix_ids = list(prefix_qs.values_list('id', flat=True))
+            
+            contains_qs = BusStop.objects.filter(is_active=True, stop_name__icontains=q).exclude(id__in=prefix_ids).order_by('stop_name')[:15]
+            contains_ids = prefix_ids + list(contains_qs.values_list('id', flat=True))
+            
+            area_qs = BusStop.objects.filter(is_active=True, area__icontains=q).exclude(id__in=contains_ids).order_by('stop_name')[:10]
+            
+            matched_stops = list(prefix_qs) + list(contains_qs) + list(area_qs)
+            
+            # Fuzzy typo tolerance fallback (e.g. 'Gurdev' -> 'Gurudev Nagar')
+            if len(matched_stops) < 10 and len(q) >= 3:
+                import difflib
+                existing_ids = {s.id for s in matched_stops}
+                all_active = list(BusStop.objects.filter(is_active=True).exclude(id__in=existing_ids))
+                q_lower = q.lower()
+                q_clean = q_lower.replace('u', '').replace('a', '')
+                
+                fuzzy_scored = []
+                for s in all_active:
+                    name_lower = s.stop_name.lower()
+                    name_clean = name_lower.replace('u', '').replace('a', '')
+                    words = name_lower.split()
+                    
+                    # Check ratio on whole name or individual words
+                    word_ratios = [difflib.SequenceMatcher(None, q_lower, w).ratio() for w in words]
+                    best_word_ratio = max(word_ratios) if word_ratios else 0.0
+                    
+                    if q_clean and q_clean in name_clean:
+                        score = 0.85
+                    elif best_word_ratio >= 0.65:
+                        score = best_word_ratio
+                    else:
+                        score = difflib.SequenceMatcher(None, q_lower, name_lower).ratio()
+                        
+                    if score >= 0.65:
+                        fuzzy_scored.append((score, s))
+                        
+                fuzzy_scored.sort(key=lambda x: -x[0])
+                for _, s in fuzzy_scored[:10 - len(matched_stops)]:
+                    matched_stops.append(s)
+            
+            results = [{
+                "id": s.id,
+                "name": s.stop_name,
+                "stop_name": s.stop_name,
+                "area": s.area,
+                "latitude": float(s.latitude),
+                "longitude": float(s.longitude)
+            } for s in matched_stops]
+            
+            stop_names = [s.stop_name for s in matched_stops]
+            return Response({
+                "query": q,
+                "total": len(results),
+                "stops": results,
+                "results": results,
+                "stop_names": stop_names
+            })
+        
+        all_stops = BusStop.objects.filter(is_active=True).order_by('stop_name')
+        stop_names = list(all_stops.values_list('stop_name', flat=True).distinct())
+        results = [{
+            "id": s.id,
+            "name": s.stop_name,
+            "stop_name": s.stop_name,
+            "area": s.area,
+            "latitude": float(s.latitude),
+            "longitude": float(s.longitude)
+        } for s in all_stops[:100]]
+        
+        return Response({
+            "stops": stop_names,
+            "results": results
+        })
 
 
 class RouteSearchAPIView(APIView):
@@ -263,8 +338,17 @@ class RouteSearchAPIView(APIView):
                     "lon": float(st.get("lng", st.get("lon", 0.0)) or 0.0),
                     "lng": float(st.get("lng", st.get("lon", 0.0)) or 0.0)
                 } for st in stops_list]
+                r_buses = r.get("buses", [])
+                live_r_buses = [b for b in r_buses if b.get("tracking_status") == "LIVE"]
+                chosen_bus = live_r_buses[0] if live_r_buses else (r_buses[0] if r_buses else {})
+                chosen_bus_no = chosen_bus.get("bus_number") or r.get("route_name", "Direct")
                 legs_data.append({
-                    "bus_no": r.get("buses", [{}])[0].get("bus_number") if r.get("buses") else r.get("route_name", "Direct"),
+                    "bus_no": chosen_bus_no,
+                    "is_live": chosen_bus.get("tracking_status") == "LIVE",
+                    "distance_to_source_km": chosen_bus.get("distance_to_source_km"),
+                    "distance_to_source_text": chosen_bus.get("distance_to_source_text"),
+                    "current_location_desc": chosen_bus.get("current_location_desc"),
+                    "current_location": chosen_bus.get("current_location"),
                     "board_at": seg1.get("board_at", results.get("source", {}).get("name", "")),
                     "alight_at": seg1.get("alight_at", results.get("destination", {}).get("name", "")),
                     "stops_in_leg": len(stops_list),
@@ -281,9 +365,17 @@ class RouteSearchAPIView(APIView):
                         "lon": float(st.get("lng", st.get("lon", 0.0)) or 0.0),
                         "lng": float(st.get("lng", st.get("lon", 0.0)) or 0.0)
                     } for st in leg_stops]
-                    leg_bus_no = leg.get("buses", [{}])[0].get("bus_number") if leg.get("buses") else leg.get("route_name", f"Leg {idx+1}")
+                    leg_buses = leg.get("buses", [])
+                    live_leg_buses = [b for b in leg_buses if b.get("tracking_status") == "LIVE"]
+                    chosen_leg_bus = live_leg_buses[0] if live_leg_buses else (leg_buses[0] if leg_buses else {})
+                    leg_bus_no = chosen_leg_bus.get("bus_number") or leg.get("route_name", f"Leg {idx+1}")
                     legs_data.append({
                         "bus_no": leg_bus_no,
+                        "is_live": chosen_leg_bus.get("tracking_status") == "LIVE",
+                        "distance_to_source_km": chosen_leg_bus.get("distance_to_source_km"),
+                        "distance_to_source_text": chosen_leg_bus.get("distance_to_source_text"),
+                        "current_location_desc": chosen_leg_bus.get("current_location_desc"),
+                        "current_location": chosen_leg_bus.get("current_location"),
                         "board_at": leg.get("from_stop", ""),
                         "alight_at": leg.get("to_stop", ""),
                         "stops_in_leg": len(leg_stops),
@@ -295,12 +387,21 @@ class RouteSearchAPIView(APIView):
             transfer_label = "Direct" if transfers == 0 else (f"{transfers} Transfer" if transfers == 1 else f"{transfers} Transfers")
             total_stops = r.get("stop_count", sum(len(l.get("stops", [])) for l in raw_legs))
 
+            p_live = r.get("primary_live_bus") or {}
             route_item = dict(r)
             route_item.update({
                 "transfers": transfers,
                 "transfer_label": transfer_label,
                 "total_stops": total_stops,
-                "legs": legs_data
+                "legs": legs_data,
+                "has_live_bus": r.get("live_bus_count", 0) > 0 or bool(r.get("primary_live_bus")),
+                "live_bus_count": r.get("live_bus_count", 0),
+                "primary_live_bus": r.get("primary_live_bus"),
+                "distance_to_source_km": p_live.get("distance_to_source_km"),
+                "distance_to_source_text": p_live.get("distance_to_source_text"),
+                "current_location_desc": p_live.get("current_location_desc"),
+                "source_coords": [float(source_stop.latitude), float(source_stop.longitude)] if source_stop else None,
+                "dest_coords": [float(dest_stop.latitude), float(dest_stop.longitude)] if dest_stop else None,
             })
             top_routes.append(route_item)
 
@@ -507,7 +608,11 @@ class BusTrackingStatusAPIView(APIView):
             )
             latest_session = bus.tracking_sessions.filter(status='ACTIVE').order_by('-started_at').first()
             if latest_session and latest_session.started_at:
-                recent_locations = [l for l in recent_locations if l.timestamp >= latest_session.started_at]
+                session_locs = [l for l in recent_locations if l.timestamp >= latest_session.started_at]
+                if session_locs:
+                    recent_locations = session_locs
+                elif recent_locations:
+                    recent_locations = recent_locations[-150:]
             elif recent_locations:
                 recent_locations = recent_locations[-150:]
 
@@ -676,45 +781,10 @@ class RouteGeometryAPIView(APIView):
         # Constraint 1: Convert [lat, lon] to {lon},{lat} format for OSRM URL
         coord_strs = [f"{lon:.6f},{lat:.6f}" for lat, lon in formatted_coords]
 
-        chunk_size = 20
-        all_geojson_coords = []
+        from tracking.services.road_geometry import fetch_consecutive_stops_road_geometry
 
-        import urllib.request, json
-
-        for i in range(0, len(coord_strs) - 1, chunk_size - 1):
-            chunk = coord_strs[i:i + chunk_size]
-            if len(chunk) < 2:
-                continue
-
-            url = f"https://router.project-osrm.org/route/v1/driving/{';'.join(chunk)}?overview=full&geometries=geojson"
-
-            try:
-                req = urllib.request.Request(url, headers={'User-Agent': 'TravelDost/1.0'})
-                with urllib.request.urlopen(req, timeout=5) as response:
-                    if response.status == 200:
-                        data = json.loads(response.read().decode('utf-8'))
-                        if data.get('code') == 'Ok' and data.get('routes'):
-                            coords = data['routes'][0]['geometry']['coordinates']
-                            if all_geojson_coords and coords:
-                                all_geojson_coords.extend(coords[1:])
-                            else:
-                                all_geojson_coords.extend(coords)
-                            continue
-            except Exception:
-                pass
-
-            # Fallback for chunk
-            sub_coords = formatted_coords[i:i + chunk_size]
-            fallback_geojson = [[lon, lat] for lat, lon in sub_coords]
-            if all_geojson_coords and fallback_geojson:
-                all_geojson_coords.extend(fallback_geojson[1:])
-            else:
-                all_geojson_coords.extend(fallback_geojson)
-
-        if not all_geojson_coords:
-            all_geojson_coords = [[lon, lat] for lat, lon in formatted_coords]
-
-        road_lat_lng = [[c[1], c[0]] for c in all_geojson_coords]
+        road_lat_lng = fetch_consecutive_stops_road_geometry(formatted_coords)
+        all_geojson_coords = [[pt[1], pt[0]] for pt in road_lat_lng]
 
         return Response({
             "status": "success",

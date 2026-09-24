@@ -6,10 +6,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def generate_haversine_waypoints(p1, p2, num_steps=5):
+# In-memory LRU-style segment cache for stop-to-stop road geometries
+_SEGMENT_CACHE = {}
+
+def generate_haversine_waypoints(p1, p2, num_steps=6):
     """Fallback generator for intermediate waypoints between two points."""
-    lat1, lon1 = p1
-    lat2, lon2 = p2
+    lat1, lon1 = float(p1[0]), float(p1[1])
+    lat2, lon2 = float(p2[0]), float(p2[1])
     points = []
     for i in range(num_steps + 1):
         ratio = i / float(num_steps)
@@ -18,67 +21,86 @@ def generate_haversine_waypoints(p1, p2, num_steps=5):
         points.append([round(lat, 6), round(lon, 6)])
     return points
 
-def fetch_osrm_road_geometry(stop_coordinates):
-    """
-    Fetch road-aligned geometry from OSRM public API given a list of [lat, lng] stop coordinates.
-    OSRM expects lon,lat;lon,lat format.
-    Returns a list of [lat, lng] points following actual roads.
-    """
-    if len(stop_coordinates) < 2:
-        return stop_coordinates
 
-    # Format waypoints for OSRM API (lng,lat)
-    coord_strs = [f"{lng:.6f},{lat:.6f}" for lat, lng in stop_coordinates]
+def fetch_single_segment_osrm(p1, p2):
+    """
+    Fetch exact road-aligned geometry between two consecutive stops using OSRM.
+    Uses segment caching to avoid redundant HTTP requests.
+    """
+    lat1, lon1 = round(float(p1[0]), 5), round(float(p1[1]), 5)
+    lat2, lon2 = round(float(p2[0]), 5), round(float(p2[1]), 5)
+
+    if lat1 == lat2 and lon1 == lon2:
+        return [[lat1, lon1]]
+
+    cache_key = (lat1, lon1, lat2, lon2)
+    if cache_key in _SEGMENT_CACHE:
+        return _SEGMENT_CACHE[cache_key]
+
+    url = f"https://router.project-osrm.org/route/v1/driving/{lon1:.6f},{lat1:.6f};{lon2:.6f},{lat2:.6f}?overview=full&geometries=geojson"
+
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'TravelDost/1.0'})
+        with urllib.request.urlopen(req, timeout=3.5) as response:
+            if response.status == 200:
+                data = json.loads(response.read().decode('utf-8'))
+                if data.get('code') == 'Ok' and data.get('routes'):
+                    geojson_coords = data['routes'][0]['geometry']['coordinates']
+                    # OSRM gives [lng, lat], convert to [lat, lng]
+                    pts = [[coord[1], coord[0]] for coord in geojson_coords]
+                    if len(pts) >= 2:
+                        _SEGMENT_CACHE[cache_key] = pts
+                        return pts
+    except Exception as e:
+        logger.debug(f"OSRM consecutive segment failed for {cache_key}: {e}")
+
+    # Fallback to smooth linear waypoints for this consecutive segment
+    fallback_pts = generate_haversine_waypoints([lat1, lon1], [lat2, lon2], num_steps=6)
+    _SEGMENT_CACHE[cache_key] = fallback_pts
+    return fallback_pts
+
+
+def fetch_consecutive_stops_road_geometry(stop_coordinates):
+    """
+    Constructs complete route geometry by obtaining road-following geometry
+    consecutively for every pair of consecutive stops: STOP[i] -> STOP[i+1].
     
-    # OSRM limits URL length, so chunk if there are many stops (>25)
-    chunk_size = 20
+    This strictly prevents multi-waypoint loop artifacts (e.g. entering airport
+    interiors unnecessarily, U-turn detours) and cleanly joins segments without
+    duplicate seam coordinates.
+    """
+    if not stop_coordinates or len(stop_coordinates) < 2:
+        return stop_coordinates or []
+
     all_road_points = []
-    
-    for i in range(0, len(coord_strs) - 1, chunk_size - 1):
-        chunk = coord_strs[i:i + chunk_size]
-        if len(chunk) < 2:
-            continue
-            
-        url = f"https://router.project-osrm.org/route/v1/driving/{';'.join(chunk)}?overview=full&geometries=geojson"
-        
-        try:
-            req = urllib.request.Request(url, headers={'User-Agent': 'TravelDost/1.0'})
-            with urllib.request.urlopen(req, timeout=5) as response:
-                if response.status == 200:
-                    data = json.loads(response.read().decode('utf-8'))
-                    if data.get('code') == 'Ok' and data.get('routes'):
-                        geojson_coords = data['routes'][0]['geometry']['coordinates']
-                        # OSRM GeoJSON gives [lng, lat], convert to [lat, lng]
-                        chunk_points = [[coord[1], coord[0]] for coord in geojson_coords]
-                        if all_road_points and chunk_points:
-                            all_road_points.extend(chunk_points[1:])
-                        else:
-                            all_road_points.extend(chunk_points)
-                        continue
-        except Exception as e:
-            logger.warning(f"OSRM request failed: {e}")
 
-            
-        # Fallback for this chunk if OSRM call failed
-        sub_coords = stop_coordinates[i:i + chunk_size]
-        chunk_points = []
-        for j in range(len(sub_coords) - 1):
-            pts = generate_haversine_waypoints(sub_coords[j], sub_coords[j+1])
-            if chunk_points and pts:
-                chunk_points.extend(pts[1:])
-            else:
-                chunk_points.extend(pts)
-        if all_road_points and chunk_points:
-            all_road_points.extend(chunk_points[1:])
+    for i in range(len(stop_coordinates) - 1):
+        p1 = stop_coordinates[i]
+        p2 = stop_coordinates[i + 1]
+
+        segment_points = fetch_single_segment_osrm(p1, p2)
+
+        if not all_road_points:
+            all_road_points.extend(segment_points)
         else:
-            all_road_points.extend(chunk_points)
+            # Skip the first coordinate of subsequent segments to avoid duplicate seam points
+            all_road_points.extend(segment_points[1:])
 
     return all_road_points if all_road_points else stop_coordinates
 
 
+def fetch_osrm_road_geometry(stop_coordinates):
+    """
+    Public entry point for road geometry generation.
+    Enforces consecutive stop-to-stop road tracing according to Problem 4 requirements.
+    """
+    return fetch_consecutive_stops_road_geometry(stop_coordinates)
+
+
 def get_or_generate_road_geometry(route, force_refresh=False):
     """
-    Retrieves cached road geometry from route.shape_geometry or fetches road geometry from OSRM.
+    Retrieves cached road geometry from route.shape_geometry or calculates
+    consecutive stop-to-stop road geometry.
     """
     if not force_refresh and route.shape_geometry and len(route.shape_geometry) >= 2:
         return route.shape_geometry
@@ -87,10 +109,9 @@ def get_or_generate_road_geometry(route, force_refresh=False):
     if len(ordered_stops) < 2:
         return []
 
-    stop_coords = [[rs.bus_stop.latitude, rs.bus_stop.longitude] for rs in ordered_stops]
+    stop_coords = [[float(rs.bus_stop.latitude), float(rs.bus_stop.longitude)] for rs in ordered_stops]
     
-    # Try fetching OSRM road geometry
-    road_points = fetch_osrm_road_geometry(stop_coords)
+    road_points = fetch_consecutive_stops_road_geometry(stop_coords)
     
     if road_points and len(road_points) >= 2:
         route.shape_geometry = road_points

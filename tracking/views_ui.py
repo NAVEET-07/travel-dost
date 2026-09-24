@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
 from django.contrib import messages
+import json
 
 from tracking.models import User, BusStop, Route, RouteStop, Bus, GPSDevice, BusLocation, Fare, BusTrackingSession, SearchHistory
 from tracking.decorators import admin_required, driver_required, user_required
@@ -218,9 +219,38 @@ def driver_portal_view(request):
     if not assigned_bus:
         assigned_bus = driver_buses.filter(driver=request.user).first() or driver_buses.first()
 
+    route_stops = []
+    route_stops_data = []
+    total_stops = 0
+    total_distance_km = 0.0
+
+    if assigned_bus and assigned_bus.route:
+        route_stops = list(assigned_bus.route.route_stops.select_related('bus_stop').order_by('stop_order'))
+        total_stops = len(route_stops)
+        if route_stops:
+            total_distance_km = round(route_stops[-1].distance_from_start_km or 0.0, 1)
+
+        route_stops_data = [
+            {
+                'stop_order': rs.stop_order,
+                'stop_name': rs.bus_stop.stop_name,
+                'area': rs.bus_stop.area or '',
+                'lat': float(rs.bus_stop.latitude),
+                'lon': float(rs.bus_stop.longitude),
+                'lng': float(rs.bus_stop.longitude),
+                'distance_from_start_km': float(rs.distance_from_start_km or 0.0),
+            }
+            for rs in route_stops
+        ]
+
     context = {
         'assigned_bus': assigned_bus,
         'driver_buses': driver_buses,
+        'route_stops': route_stops,
+        'route_stops_data': route_stops_data,
+        'route_stops_json': json.dumps(route_stops_data),
+        'total_stops': total_stops,
+        'total_distance_km': total_distance_km,
     }
     return render(request, 'driver_portal.html', context)
 

@@ -123,6 +123,57 @@
 .extra-small {
     font-size: 0.75rem;
 }
+
+/* Voice Trip Announcer Widget */
+.announcer-card {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    color: #ffffff;
+}
+
+.voice-wave {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    height: 14px;
+}
+.voice-wave span {
+    width: 3px;
+    height: 100%;
+    background: #38bdf8;
+    border-radius: 3px;
+    animation: waveBounce 1.2s ease-in-out infinite;
+}
+.voice-wave span:nth-child(2) { animation-delay: 0.2s; }
+.voice-wave span:nth-child(3) { animation-delay: 0.4s; }
+.voice-wave span:nth-child(4) { animation-delay: 0.6s; }
+
+@keyframes waveBounce {
+    0%, 100% { transform: scaleY(0.3); }
+    50% { transform: scaleY(1); }
+}
+
+.announcer-toast {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    max-width: 500px;
+    width: 90%;
+    border-radius: 16px;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(16px);
+    border: 1px solid #38bdf8;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    animation: slideDownToast 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes slideDownToast {
+    from { opacity: 0; transform: translate(-50%, -20px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+}
 </style>
 {% endblock %}
 
@@ -255,8 +306,98 @@
 
         <!-- Sidebar Bus Details & Traveled vs Remaining Stop Sequence -->
         <div class="col-lg-4 col-xl-3">
+            <!-- Voice Trip Announcer Card -->
+            <div class="announcer-card p-3 mb-3 shadow-lg" id="announcerWidget">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="bg-primary text-white p-2 rounded-3 shadow-sm d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <i class="fa-solid fa-bullhorn fa-sm"></i>
+                        </span>
+                        <div>
+                            <h6 class="fw-bold m-0 text-white" style="font-size: 0.95rem;">Trip Announcer</h6>
+                            <span class="extra-small text-info">Proximity & Voice Assistant</span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <button class="btn btn-outline-light btn-sm rounded-circle p-1" id="btnToggleVoiceMute" title="Mute/Unmute Speech" style="width: 28px; height: 28px;">
+                            <i class="fa-solid fa-volume-high" id="muteIcon" style="font-size: 0.75rem;"></i>
+                        </button>
+                        <span class="badge bg-secondary extra-small" id="announcerStateBadge">STANDBY</span>
+                    </div>
+                </div>
+
+                <!-- Active Spoken Announcement Card -->
+                <div class="p-2 mb-2 rounded-3 bg-black bg-opacity-40 border border-secondary border-opacity-25" id="announcerLiveAlertBox" style="min-height: 52px;">
+                    <div class="d-flex align-items-center justify-content-between text-warning extra-small fw-bold mb-1">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="voice-wave d-none" id="announcerVoiceWave">
+                                <span></span><span></span><span></span><span></span>
+                            </span>
+                            <span id="announcerAlertLabel">Voice Engine Ready</span>
+                        </div>
+                        <span class="text-secondary extra-small" id="announcerAlertTime">Just now</span>
+                    </div>
+                    <div class="text-white extra-small" id="announcerAlertText" style="line-height: 1.35;">
+                        Select boarding & destination stops to activate proximity voice alerts.
+                    </div>
+                </div>
+
+                <!-- Stop Configuration Selectors -->
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <label class="extra-small text-secondary fw-semibold mb-1">BOARDING STOP</label>
+                        <select class="form-select form-select-sm bg-slate-900 text-white border-secondary border-opacity-50 py-1 extra-small" id="announcerPickupSelect">
+                            <option value="">Select Pickup</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="extra-small text-secondary fw-semibold mb-1">DESTINATION</label>
+                        <select class="form-select form-select-sm bg-slate-900 text-white border-secondary border-opacity-50 py-1 extra-small" id="announcerDestSelect">
+                            <option value="">Select Destination</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Action Controls -->
+                <div class="d-flex gap-2 mb-2">
+                    <button class="btn btn-primary btn-sm flex-grow-1 extra-small fw-bold py-1" id="btnActivateAnnouncer">
+                        <i class="fa-solid fa-play me-1"></i> Start Journey
+                    </button>
+                    <button class="btn btn-outline-info btn-sm extra-small py-1" id="btnTestVoiceSpeech" title="Test Web Speech API Audio Synthesis">
+                        <i class="fa-solid fa-microphone-lines me-1"></i> Test
+                    </button>
+                    <button class="btn btn-outline-warning btn-sm extra-small py-1" id="btnSimulateAnnouncer" title="Simulate 5-Stage Lifecycle Demo">
+                        <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Demo
+                    </button>
+                </div>
+
+                <!-- Live Geofence Proximity Metrics -->
+                <div class="row g-1 text-center extra-small text-secondary pt-2 border-top border-secondary border-opacity-25" id="announcerMetricsRow">
+                    <div class="col-4">
+                        <div class="bg-black bg-opacity-30 p-1 rounded">
+                            <span class="d-block text-white fw-bold font-monospace" id="metricDistPickup">--</span>
+                            <span style="font-size: 0.6rem; letter-spacing: 0.04em;">TO PICKUP</span>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-black bg-opacity-30 p-1 rounded">
+                            <span class="d-block text-warning fw-bold font-monospace" id="metricNextStop">--</span>
+                            <span style="font-size: 0.6rem; letter-spacing: 0.04em;">NEXT STOP</span>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-black bg-opacity-30 p-1 rounded">
+                            <span class="d-block text-info fw-bold font-monospace" id="metricStopsLeft">--</span>
+                            <span style="font-size: 0.6rem; letter-spacing: 0.04em;">STOPS LEFT</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trip Trajectory Card -->
             <div class="transit-card p-4 h-100 d-flex flex-column">
                 <div class="d-flex align-items-center justify-content-between mb-3">
+
                     <h5 class="fw-bold m-0 text-dark">
                         <i class="fa-solid fa-route text-primary me-2"></i>Trip Trajectory
                     </h5>
@@ -310,9 +451,143 @@
 {% block extra_js %}
 <script src="/static/js/map_app.js?v=3.0"></script>
 <script src="/static/js/websocket_tracking.js?v=3.0"></script>
+<script src="/static/js/trip_announcer.js?v=1.0"></script>
 <script>
 $(document.body).ready(function() {
     initTravelDostMap('map', 15.3647, 75.1240, 12);
+
+    let currentRouteStops = [];
+    let isVoiceMuted = false;
+    let simulationTimer = null;
+    window.tripAnnouncer = null;
+
+    function formatEventType(type) {
+        switch(type) {
+            case 'PRE_BOARDING_APPROACHING': return 'Bus Approaching (100-150m)';
+            case 'PRE_BOARDING_IMMINENT': return 'Bus Arriving (< 50m)';
+            case 'PRE_BOARDING_ARRIVED': return 'Bus at Boarding Stop';
+            case 'TRIP_STARTED': return 'Trip Started — Boarded';
+            case 'NEXT_STOP_ANNOUNCEMENT': return 'Next Stop Announced';
+            case 'APPROACHING_INTERMEDIATE_STOP': return 'Approaching Stop (< 100m)';
+            case 'COUNTDOWN_3_STOPS': return '3 Stops to Destination';
+            case 'COUNTDOWN_2_STOPS': return '2 Stops to Destination';
+            case 'COUNTDOWN_1_STOP': return 'Next Stop: Final Destination';
+            case 'DESTINATION_ARRIVED': return 'Arrived at Destination';
+            default: return 'Voice Announcement';
+        }
+    }
+
+    function updateAnnouncerStateBadge(state) {
+        const $badge = $('#announcerStateBadge');
+        switch(state) {
+            case 'WAITING_FOR_BUS':
+                $badge.text('WAITING').attr('class', 'badge bg-secondary extra-small');
+                break;
+            case 'BUS_ARRIVING':
+                $badge.text('ARRIVING').attr('class', 'badge bg-warning text-dark extra-small pulse-active');
+                break;
+            case 'BOARDED_TRIP_ACTIVE':
+                $badge.text('EN ROUTE').attr('class', 'badge bg-primary extra-small pulse-active');
+                break;
+            case 'APPROACHING_DESTINATION':
+                $badge.text('NEAR DEST').attr('class', 'badge bg-info text-dark extra-small pulse-active');
+                break;
+            case 'ARRIVED_DESTINATION':
+            case 'COMPLETED':
+                $badge.text('ARRIVED').attr('class', 'badge bg-success extra-small');
+                break;
+            default:
+                $badge.text('STANDBY').attr('class', 'badge bg-secondary extra-small');
+        }
+    }
+
+    function updateAnnouncerMetricsUI() {
+        if (!window.tripAnnouncer) return;
+        const snap = window.tripAnnouncer.getSnapshot();
+
+        if (snap.distanceToPickupMeters !== null) {
+            $('#metricDistPickup').text(snap.distanceToPickupMeters > 1000 
+                ? (snap.distanceToPickupMeters / 1000).toFixed(1) + 'km' 
+                : snap.distanceToPickupMeters + 'm');
+        } else {
+            $('#metricDistPickup').text('--');
+        }
+
+        if (snap.nextStop) {
+            $('#metricNextStop').text(snap.nextStop.length > 10 ? snap.nextStop.substring(0, 9) + '…' : snap.nextStop);
+        } else {
+            $('#metricNextStop').text('--');
+        }
+
+        $('#metricStopsLeft').text(snap.stopsRemaining !== undefined ? snap.stopsRemaining : '--');
+        updateAnnouncerStateBadge(snap.state);
+    }
+
+    function initTripAnnouncer(stops, pickupId, destId) {
+        if (!stops || stops.length === 0) return;
+
+        if (window.tripAnnouncer) {
+            window.tripAnnouncer.reset();
+        }
+
+        window.tripAnnouncer = new TripLifecycleAnnouncer({
+            routeStops: stops,
+            pickupStopId: pickupId,
+            destinationStopId: destId,
+            isMuted: isVoiceMuted
+        });
+
+        window.tripAnnouncer.on('stateChange', function(evt) {
+            updateAnnouncerStateBadge(evt.newState);
+            updateAnnouncerMetricsUI();
+        });
+
+        window.tripAnnouncer.on('announcement', function(evt) {
+            $('#announcerAlertLabel').text(formatEventType(evt.type));
+            $('#announcerAlertText').text(evt.text);
+            $('#announcerAlertTime').text(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+
+            // Voice wave animation
+            $('#announcerVoiceWave').removeClass('d-none');
+            setTimeout(function() {
+                $('#announcerVoiceWave').addClass('d-none');
+            }, 3500);
+
+            updateAnnouncerMetricsUI();
+        });
+
+        window.tripAnnouncer.on('muteToggled', function(evt) {
+            isVoiceMuted = evt.isMuted;
+            $('#muteIcon').attr('class', evt.isMuted ? 'fa-solid fa-volume-xmark text-danger' : 'fa-solid fa-volume-high text-success');
+        });
+
+        window.tripAnnouncer.on('completed', function(evt) {
+            $('#announcerStateBadge').text('ARRIVED').attr('class', 'badge bg-success extra-small pulse-active');
+            updateAnnouncerMetricsUI();
+        });
+
+        updateAnnouncerMetricsUI();
+    }
+
+    function populateAnnouncerSelects(stops) {
+        const $pickup = $('#announcerPickupSelect');
+        const $dest = $('#announcerDestSelect');
+        $pickup.empty();
+        $dest.empty();
+
+        if (!stops || stops.length === 0) return;
+
+        stops.forEach((st, idx) => {
+            const isFirst = idx === 0;
+            const isLast = idx === stops.length - 1;
+            $pickup.append(`<option value="${st.id}" ${isFirst ? 'selected' : ''}>#${idx + 1} ${st.name}</option>`);
+            $dest.append(`<option value="${st.id}" ${isLast ? 'selected' : ''}>#${idx + 1} ${st.name}</option>`);
+        });
+
+        if (stops.length >= 2) {
+            initTripAnnouncer(stops, stops[0].id, stops[stops.length - 1].id);
+        }
+    }
 
     function loadBusRouteDetails(busId) {
         if (!busId || busId === 'none' || busId === 'all') return;
@@ -361,8 +636,24 @@ $(document.body).ready(function() {
                 data.traveled_breadcrumbs
             );
 
-            // Render Trip Stepper in Sidebar
+            // Populate Trip Announcer Selectors
             if (data.route_stops && data.route_stops.length > 0) {
+                currentRouteStops = data.route_stops;
+                populateAnnouncerSelects(currentRouteStops);
+
+                // Ingest latest driver GPS if available
+                if (data.latest_location && window.tripAnnouncer) {
+                    window.tripAnnouncer.ingestDriverGps({
+                        latitude: data.latest_location.latitude,
+                        longitude: data.latest_location.longitude,
+                        speed: data.latest_location.speed || 0,
+                        heading: data.latest_location.heading || 0,
+                        timestamp: data.latest_location.timestamp || Date.now()
+                    });
+                    updateAnnouncerMetricsUI();
+                }
+
+                // Render Trip Stepper in Sidebar
                 let sidebarHtml = `
                     <div class="mb-3">
                         <strong class="d-block fs-6 text-primary">${data.route_name}</strong>
@@ -437,6 +728,18 @@ $(document.body).ready(function() {
         if (activeSelectedBus && String(data.bus_id) === String(activeSelectedBus)) {
             if (data.latitude && data.longitude) {
                 appendTraveledCoordinate(data.latitude, data.longitude);
+
+                // Feed driver GPS to Trip Lifecycle Announcer
+                if (window.tripAnnouncer) {
+                    window.tripAnnouncer.ingestDriverGps({
+                        latitude: data.latitude,
+                        longitude: data.longitude,
+                        speed: data.speed || 0,
+                        heading: data.heading || 0,
+                        timestamp: data.timestamp || Date.now()
+                    });
+                    updateAnnouncerMetricsUI();
+                }
             }
         }
     };
@@ -458,15 +761,153 @@ $(document.body).ready(function() {
         }
     };
 
+    // Passenger Location & Geofence Sync
     $('#btnPassengerLocation').on('click', function() {
         if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(function(pos) {
                 updatePassengerMarker(pos.coords.latitude, pos.coords.longitude);
+
+                // Feed passenger GPS to Trip Lifecycle Announcer
+                if (window.tripAnnouncer) {
+                    window.tripAnnouncer.ingestPassengerGps({
+                        latitude: pos.coords.latitude,
+                        longitude: pos.coords.longitude,
+                        speed: pos.coords.speed || 0,
+                        timestamp: pos.timestamp || Date.now()
+                    });
+                    updateAnnouncerMetricsUI();
+                }
             }, function(err) {
                 alert("Location permission denied.");
             });
         }
     });
+
+    // Button: Activate Announcer
+    $('#btnActivateAnnouncer').on('click', function() {
+        const pickupId = $('#announcerPickupSelect').val();
+        const destId = $('#announcerDestSelect').val();
+        if (!pickupId || !destId) {
+            alert("Please select boarding and destination stops.");
+            return;
+        }
+        if (pickupId === destId) {
+            alert("Boarding and destination stops must be different.");
+            return;
+        }
+
+        initTripAnnouncer(currentRouteStops, pickupId, destId);
+
+        if (window.tripAnnouncer && window.tripAnnouncer.destinationStop) {
+            window.tripAnnouncer.speak(`Journey monitoring activated. Tracking your trip to ${window.tripAnnouncer.destinationStop.name}.`);
+        }
+    });
+
+    // Button: Mute / Unmute Voice
+    $('#btnToggleVoiceMute').on('click', function() {
+        if (window.tripAnnouncer) {
+            window.tripAnnouncer.toggleMute();
+        } else {
+            isVoiceMuted = !isVoiceMuted;
+            $('#muteIcon').attr('class', isVoiceMuted ? 'fa-solid fa-volume-xmark text-danger' : 'fa-solid fa-volume-high text-success');
+        }
+    });
+
+    // Button: Test Speech Synthesis
+    $('#btnTestVoiceSpeech').on('click', function() {
+        if (window.tripAnnouncer) {
+            window.tripAnnouncer.speak("Travel Dost voice announcer is active and ready.");
+        } else {
+            const tempAnnouncer = new TripLifecycleAnnouncer();
+            tempAnnouncer.speak("Travel Dost voice announcer is active and ready.");
+        }
+    });
+
+    // Button: Simulate 5-Stage Demo Journey
+    $('#btnSimulateAnnouncer').on('click', function() {
+        if (!currentRouteStops || currentRouteStops.length < 2) {
+            alert("Please wait for bus route stops to load before starting demo.");
+            return;
+        }
+
+        if (simulationTimer) {
+            clearInterval(simulationTimer);
+            simulationTimer = null;
+            $('#btnSimulateAnnouncer').html('<i class="fa-solid fa-wand-magic-sparkles me-1"></i> Demo');
+            return;
+        }
+
+        const pickupId = $('#announcerPickupSelect').val() || currentRouteStops[0].id;
+        const destId = $('#announcerDestSelect').val() || currentRouteStops[currentRouteStops.length - 1].id;
+        initTripAnnouncer(currentRouteStops, pickupId, destId);
+
+        const pStop = window.tripAnnouncer.pickupStop;
+        const dStop = window.tripAnnouncer.destinationStop;
+        const pLat = parseFloat(pStop.lat);
+        const pLng = parseFloat(pStop.lng || pStop.lon);
+        const dLat = parseFloat(dStop.lat);
+        const dLng = parseFloat(dStop.lng || dStop.lon);
+
+        $('#btnSimulateAnnouncer').html('<i class="fa-solid fa-stop text-danger me-1"></i> Stop');
+
+        const stages = [
+            // Stage 1: Approaching (125m away)
+            {
+                label: "Stage 1: Approaching (125m)",
+                driver: { latitude: pLat + 0.00112, longitude: pLng, speed: 25.0 },
+                passenger: { latitude: pLat, longitude: pLng, speed: 0.0 }
+            },
+            // Stage 2: Imminent (40m away)
+            {
+                label: "Stage 2: Imminent (< 50m)",
+                driver: { latitude: pLat + 0.00036, longitude: pLng, speed: 14.0 },
+                passenger: { latitude: pLat, longitude: pLng, speed: 0.0 }
+            },
+            // Stage 3: Arrived at pickup (< 20m, 0 km/h)
+            {
+                label: "Stage 3: Arrived at Pickup (< 20m)",
+                driver: { latitude: pLat + 0.00008, longitude: pLng, speed: 1.0 },
+                passenger: { latitude: pLat, longitude: pLng, speed: 0.0 }
+            },
+            // Stage 4: Boarding sync (passenger & driver sync <= 30m, moves away > 10 km/h)
+            {
+                label: "Stage 4: Trip Started / Boarded",
+                driver: { latitude: pLat + 0.00035, longitude: pLng, speed: 22.0 },
+                passenger: { latitude: pLat + 0.00030, longitude: pLng, speed: 22.0 }
+            },
+            // Stage 5: En-route progression
+            {
+                label: "Stage 5: En-Route Progression",
+                driver: { latitude: (pLat + dLat) / 2, longitude: (pLng + dLng) / 2, speed: 30.0 },
+                passenger: { latitude: (pLat + dLat) / 2, longitude: (pLng + dLng) / 2, speed: 30.0 }
+            },
+            // Stage 6: Destination arrival (< 20m)
+            {
+                label: "Stage 6: Destination Arrival (< 20m)",
+                driver: { latitude: dLat + 0.00008, longitude: dLng, speed: 4.0 },
+                passenger: { latitude: dLat + 0.00008, longitude: dLng, speed: 4.0 }
+            }
+        ];
+
+        let sIdx = 0;
+        function runStage() {
+            if (sIdx >= stages.length) {
+                clearInterval(simulationTimer);
+                simulationTimer = null;
+                $('#btnSimulateAnnouncer').html('<i class="fa-solid fa-wand-magic-sparkles me-1"></i> Demo');
+                return;
+            }
+            const s = stages[sIdx];
+            window.tripAnnouncer.ingestPassengerGps(s.passenger);
+            window.tripAnnouncer.ingestDriverGps(s.driver);
+            updateAnnouncerMetricsUI();
+            sIdx++;
+        }
+
+        runStage();
+        simulationTimer = setInterval(runStage, 4000);
+    });
 });
 </script>
 {% endblock %}
+

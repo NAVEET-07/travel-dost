@@ -242,13 +242,13 @@ function initDriverSocket(busId, callback) {
 
 function startCountdownTicker() {
     if (countdownIntervalId) clearInterval(countdownIntervalId);
-    nextSyncCountdown = 3;
+    nextSyncCountdown = 2;
     updateCountdownUI();
 
     countdownIntervalId = setInterval(function() {
         nextSyncCountdown--;
         if (nextSyncCountdown <= 0) {
-            nextSyncCountdown = 3;
+            nextSyncCountdown = 2;
         }
         updateCountdownUI();
     }, 1000);
@@ -258,9 +258,14 @@ function updateCountdownUI() {
     $('#gpsCountdown').html(`<i class="fa-solid fa-satellite-dish me-1 text-warning"></i> Next GPS sync in <strong>${nextSyncCountdown}s</strong>`);
 }
 
+let lastGpsBroadcastTime = 0;
+const GPS_BROADCAST_INTERVAL_MS = 2000; // Strict 2-second interval
+
 function sendGpsPayload(lat, lng, speed, heading) {
+    const now = Date.now();
+    lastGpsBroadcastTime = now;
     packetsSentCount++;
-    nextSyncCountdown = 3;
+    nextSyncCountdown = 2;
     updateCountdownUI();
 
     const timestampIso = new Date().toISOString();
@@ -319,9 +324,17 @@ function sendGpsPayload(lat, lng, speed, heading) {
     }
 }
 
+let driverWatchPositionId = null;
+
 function startBrowserGpsTracking() {
     if ("geolocation" in navigator) {
-        // Immediate initial transmission
+        const geoOptions = {
+            enableHighAccuracy: true,
+            timeout: 2000,
+            maximumAge: 0
+        };
+
+        // 1. Immediate initial transmission
         navigator.geolocation.getCurrentPosition(
             function(position) {
                 processAndSendPosition(position);
@@ -330,22 +343,42 @@ function startBrowserGpsTracking() {
                 console.warn("Initial GPS error, switching to route waypoints simulation:", err);
                 startSimulationMode();
             },
-            { enableHighAccuracy: true, timeout: 2800, maximumAge: 0 }
+            geoOptions
         );
 
-        // Continuous high-accuracy transmission every 3,000 milliseconds (3 seconds)
+        // 2. High-frequency watchPosition throttled to strict 2000ms cadence
+        if (driverWatchPositionId !== null) {
+            navigator.geolocation.clearWatch(driverWatchPositionId);
+        }
+        driverWatchPositionId = navigator.geolocation.watchPosition(
+            function(position) {
+                const now = Date.now();
+                if (now - lastGpsBroadcastTime >= (GPS_BROADCAST_INTERVAL_MS - 150)) {
+                    processAndSendPosition(position);
+                }
+            },
+            function(err) {
+                console.warn("watchPosition GPS error:", err);
+            },
+            geoOptions
+        );
+
+        // 3. Strict 2-second heartbeat interval (guarantees pings every 2000ms even if static)
         if (geoIntervalId) clearInterval(geoIntervalId);
         geoIntervalId = setInterval(function() {
             navigator.geolocation.getCurrentPosition(
                 function(position) {
-                    processAndSendPosition(position);
+                    const now = Date.now();
+                    if (now - lastGpsBroadcastTime >= (GPS_BROADCAST_INTERVAL_MS - 200)) {
+                        processAndSendPosition(position);
+                    }
                 },
                 function(err) {
-                    console.warn("Interval 3s GPS poll error:", err);
+                    console.warn("Interval 2s GPS poll error:", err);
                 },
-                { enableHighAccuracy: true, timeout: 2800, maximumAge: 0 }
+                geoOptions
             );
-        }, 3000);
+        }, GPS_BROADCAST_INTERVAL_MS);
     } else {
         alert("Browser does not support Geolocation. Switching to route waypoints mode.");
         startSimulationMode();
@@ -369,12 +402,12 @@ function startSimulationMode() {
     const wpInitial = waypoints[0];
     sendGpsPayload(wpInitial.lat, wpInitial.lng, wpInitial.speed || 35.0, wpInitial.heading || 90);
 
-    // Broadcast route waypoint location update every 3 seconds (3000ms)
+    // Broadcast route waypoint location update every 2 seconds (2000ms)
     simIntervalId = setInterval(function() {
         simIndex = (simIndex + 1) % waypoints.length;
         const wp = waypoints[simIndex];
         sendGpsPayload(wp.lat, wp.lng, wp.speed || 35.0, wp.heading || 90);
-    }, 3000);
+    }, GPS_BROADCAST_INTERVAL_MS);
 }
 
 function stopTrip() {

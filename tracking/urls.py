@@ -79,6 +79,11 @@ urlpatterns = [
     path('api/bus/<str:bus_no>/live-status/', views_api.PassengerBusLiveStatusAPIView.as_view(), name='api-bus-live-status'),
     path('api/bus/<str:bus_no>/live-status', views_api.PassengerBusLiveStatusAPIView.as_view()),
 
+    # Event-Driven Trip Lifecycle & Proximity Engine Endpoint
+    path('api/trip/lifecycle/evaluate/', views_api.TripLifecycleEvaluateAPIView.as_view(), name='api-trip-lifecycle-evaluate'),
+    path('api/trip/lifecycle/evaluate', views_api.TripLifecycleEvaluateAPIView.as_view()),
+
     path('api/route-stops/<int:pk>/delete/', views_api.DeleteRouteStopAPIView.as_view(), name='api-delete-route-stop'),
     path('api/', include(router.urls)),
 ]
+

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Find Best Bus Route (Point A to Point B) — Travel Dost{% endblock %}
 
@@ -767,6 +768,393 @@
     padding: 4px 8px !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
 }
+/* ============================================================== */
+/* INTERACTIVE REAL-TIME SPLIT-SCREEN TRACKING DASHBOARD          */
+/* ============================================================== */
+.split-screen-tracking-view {
+    display: flex;
+    gap: 20px;
+    align-items: stretch;
+}
+
+.split-track-map-panel {
+    flex: 0 0 65%;
+    max-width: 65%;
+    position: relative;
+    border-radius: 22px;
+    overflow: hidden;
+    background: #0b1329;
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.65), 0 0 30px rgba(56, 189, 248, 0.10);
+    height: calc(100vh - 130px);
+    min-height: 620px;
+    transition: all 0.3s ease;
+}
+
+.split-track-sidebar-panel {
+    flex: 0 0 35%;
+    max-width: 35%;
+    height: calc(100vh - 130px);
+    min-height: 620px;
+    overflow-y: auto;
+    padding-right: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(56, 189, 248, 0.3) rgba(15, 23, 42, 0.5);
+}
+
+.split-track-sidebar-panel::-webkit-scrollbar {
+    width: 6px;
+}
+.split-track-sidebar-panel::-webkit-scrollbar-thumb {
+    background: rgba(56, 189, 248, 0.3);
+    border-radius: 6px;
+}
+
+@media (max-width: 991px) {
+    .split-screen-tracking-view {
+        flex-direction: column;
+    }
+    .split-track-map-panel {
+        flex: 0 0 100%;
+        max-width: 100%;
+        height: 520px;
+        min-height: 520px;
+    }
+    .split-track-sidebar-panel {
+        flex: 0 0 100%;
+        max-width: 100%;
+        height: auto;
+        min-height: 480px;
+        overflow-y: visible;
+    }
+}
+
+.split-map-floating-top {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    right: 14px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    pointer-events: none;
+}
+.split-map-floating-top > * {
+    pointer-events: auto;
+}
+
+.tracking-top-badge {
+    background: rgba(15, 23, 42, 0.90);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.live-dot-pulse {
+    width: 10px;
+    height: 10px;
+    background-color: #10b981;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    animation: livePulseGlow 1.5s infinite;
+}
+@keyframes livePulseGlow {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+/* User-Controlled Camera Recenter Button */
+.btn-recenter-floating {
+    position: absolute;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1000;
+    background: rgba(15, 23, 42, 0.92);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(56, 189, 248, 0.45);
+    color: #38bdf8;
+    border-radius: 50px;
+    padding: 8px 16px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.25s ease;
+}
+.btn-recenter-floating.locked {
+    background: rgba(16, 185, 129, 0.92);
+    border-color: #34d399;
+    color: #ffffff;
+}
+.btn-recenter-floating:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.65);
+}
+
+/* Cards on Right Sidebar */
+.tracking-side-card {
+    background: linear-gradient(165deg, #0b1329 0%, #0f172a 55%, #1e293b 100%);
+    border: 1px solid rgba(56, 189, 248, 0.22);
+    border-radius: 20px;
+    box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.55), 0 0 20px rgba(56, 189, 248, 0.05);
+    color: #f8fafc;
+    transition: all 0.25s ease;
+}
+.tracking-side-card:hover {
+    border-color: rgba(56, 189, 248, 0.38);
+}
+
+.bus-icon-circle {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(2, 132, 199, 0.2);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-pill {
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 12px;
+}
+.stat-label {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+    margin-bottom: 2px;
+}
+.stat-value {
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+/* Live Dynamic Announcer Speech Box */
+.announcement-speech-bubble {
+    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    border-left: 5px solid #38bdf8;
+    border-radius: 14px;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
+    transition: all 0.3s ease;
+}
+.speech-text {
+    font-size: 0.92rem;
+    line-height: 1.45;
+    color: #ffffff;
+}
+
+/* Animated Audio Wave Graphic */
+.audio-wave-bars {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    height: 18px;
+    vertical-align: middle;
+}
+.audio-wave-bar {
+    width: 3px;
+    height: 5px;
+    background: #64748b;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+}
+.audio-wave-bars.active .audio-wave-bar {
+    background: #38bdf8;
+    animation: wavePulseAnim 1.1s ease-in-out infinite;
+}
+.audio-wave-bars.active .audio-wave-bar:nth-child(1) { animation-delay: 0.0s; }
+.audio-wave-bars.active .audio-wave-bar:nth-child(2) { animation-delay: 0.15s; }
+.audio-wave-bars.active .audio-wave-bar:nth-child(3) { animation-delay: 0.30s; }
+.audio-wave-bars.active .audio-wave-bar:nth-child(4) { animation-delay: 0.45s; }
+.audio-wave-bars.active .audio-wave-bar:nth-child(5) { animation-delay: 0.60s; }
+
+@keyframes wavePulseAnim {
+    0%, 100% { height: 5px; background: #38bdf8; }
+    50% { height: 18px; background: #34d399; }
+}
+
+.announcer-pulse-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(56, 189, 248, 0.15);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.simulation-demo-box {
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px dashed rgba(56, 189, 248, 0.3);
+}
+
+/* Activity Log Stream */
+.activity-log-feed {
+    max-height: 200px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-right: 2px;
+}
+.activity-item {
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 10px;
+    padding: 7px 10px;
+    font-size: 0.78rem;
+    color: #e2e8f0;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    animation: fadeInActivity 0.3s ease;
+}
+@keyframes fadeInActivity {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.activity-time {
+    font-family: monospace;
+    font-size: 0.7rem;
+    color: #94a3b8;
+    white-space: nowrap;
+}
+.activity-badge-tag {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 9999px;
+    text-transform: uppercase;
+}
+.activity-badge-tag.info { background: rgba(56, 189, 248, 0.2); color: #38bdf8; }
+.activity-badge-tag.proximity { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+.activity-badge-tag.boarded { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+.activity-badge-tag.arrived { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+
+/* Progress Stepper */
+.tracking-stepper-list {
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 4px 8px;
+    scrollbar-width: thin;
+}
+.stepper-stop-item {
+    position: relative;
+    padding-left: 28px;
+    padding-bottom: 12px;
+}
+.stepper-stop-item::before {
+    content: '';
+    position: absolute;
+    left: 9px;
+    top: 18px;
+    bottom: 0;
+    width: 2px;
+    background: rgba(148, 163, 184, 0.25);
+}
+.stepper-stop-item:last-child::before {
+    display: none;
+}
+.stepper-stop-dot {
+    position: absolute;
+    left: 0;
+    top: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #1e293b;
+    border: 2px solid #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    color: #94a3b8;
+}
+.stepper-stop-item.passed .stepper-stop-dot {
+    background: #10b981;
+    border-color: #34d399;
+    color: #ffffff;
+}
+.stepper-stop-item.active .stepper-stop-dot {
+    background: #2563eb;
+    border-color: #60a5fa;
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(37, 99, 235, 0.8);
+}
+.stepper-stop-item.passed .stepper-stop-name {
+    color: #94a3b8;
+    text-decoration: line-through;
+}
+.stepper-stop-item.active .stepper-stop-name {
+    color: #ffffff;
+    font-weight: 700;
+}
+
+/* Passenger Marker Snap/Merge Animation */
+@keyframes passengerMergeSnap {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.6); box-shadow: 0 0 25px rgba(16, 185, 129, 0.95); opacity: 0.8; }
+    100% { transform: scale(0.1); opacity: 0; }
+}
+.passenger-merged-snap {
+    animation: passengerMergeSnap 1.1s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+}
+
+/* Explicit Map Container Dimensions & Tile Reliability */
+#splitTrackMap {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 620px !important;
+    background: #0f172a !important;
+    position: relative;
+    z-index: 1;
+}
+.leaflet-container {
+    background-color: #0f172a !important;
+}
+
+/* Smooth 2-Second Marker Interpolation (glides smoothly along roads without abrupt jumping) */
+.smooth-bus-marker, .smooth-bus-marker .custom-transit-divicon {
+    transition: transform 1.9s linear !important;
+}
+#splitBusPinWrapper {
+    transition: transform 1.9s linear !important;
+}
+#splitBusDisc {
+    transition: transform 0.6s ease-out !important;
+}
+
+/* Offline Modal & Toast Custom Styles */
+.modal-backdrop.show {
+    backdrop-filter: blur(6px);
+}
+.bus-offline-pulse {
+    animation: offlinePulse 2s infinite;
+}
+@keyframes offlinePulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.08); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+}
 </style>
 {% endblock %}
 
@@ -795,7 +1183,7 @@
     </div>
 </div>
 
-<div class="container px-lg-5 mb-5">
+<div class="container px-lg-5 mb-5" id="routeFinderSearchView">
     <div class="row g-4">
         <!-- Search Controls Column -->
         <div class="col-lg-4">
@@ -997,16 +1385,302 @@
         </div>
     </div>
 </div>
+
+<!-- Bus Offline / Not Live Alert Modal (Requirement 1 & Case A) -->
+<div class="modal fade" id="busOfflineModal" tabindex="-1" aria-labelledby="busOfflineModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-white shadow-lg" style="background: #0f172a; border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 22px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 35px rgba(239, 68, 68, 0.2) !important;">
+            <div class="modal-header border-bottom border-secondary border-opacity-25 pb-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bus-offline-pulse" style="width: 44px; height: 44px; border-radius: 12px; background: rgba(239, 68, 68, 0.18); border: 1px solid rgba(239, 68, 68, 0.35); display: flex; align-items: center; justify-content: center;">
+                        <i class="fa-solid fa-satellite-dish text-danger fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold m-0 text-white" id="busOfflineModalLabel">Live Tracking Unavailable</h5>
+                        <small class="text-secondary" id="offlineModalSubTitle">Real-Time Telemetry Pre-Flight Gate</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-4">
+                <!-- Explicit Required Notice Text -->
+                <div class="alert alert-warning border border-warning border-opacity-50 text-light bg-dark bg-opacity-75 p-3 rounded-3 mb-4 shadow-sm">
+                    <div class="d-flex align-items-start gap-3">
+                        <i class="fa-solid fa-triangle-exclamation text-warning mt-1 fa-lg flex-shrink-0"></i>
+                        <div>
+                            <p class="m-0 fw-bold" style="font-size: 0.95rem; line-height: 1.45;">
+                                This bus is currently not in live tracking. The driver has not started the trip yet. Please try again later.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bus Telemetry Details Card -->
+                <div class="p-3 rounded-3" style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);">
+                    <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom border-secondary border-opacity-25">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="p-1 rounded-circle bg-dark border border-secondary">
+                                <i class="fa-solid fa-bus text-info" style="font-size: 0.85rem;"></i>
+                            </div>
+                            <span class="fw-bold fs-6 text-white" id="offlineModalBusName">Bus #--</span>
+                        </div>
+                        <span class="badge bg-danger bg-opacity-20 text-danger border border-danger border-opacity-25 px-2 py-1" id="offlineModalStatusBadge">
+                            <i class="fa-solid fa-circle-xmark me-1"></i> OFFLINE
+                        </span>
+                    </div>
+                    <div class="row g-2 text-start small">
+                        <div class="col-6">
+                            <span class="text-secondary d-block" style="font-size: 0.72rem;">TRIP STATUS:</span>
+                            <strong class="text-warning" id="offlineModalTripStatus">NOT_STARTED</strong>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-secondary d-block" style="font-size: 0.72rem;">LAST GPS PING:</span>
+                            <strong class="text-danger" id="offlineModalLastPing"><i class="fa-solid fa-signal me-1"></i> No Broadcast (<10s)</strong>
+                        </div>
+                        <div class="col-12 mt-2 pt-2 border-top border-secondary border-opacity-25">
+                            <span class="text-secondary d-block" style="font-size: 0.72rem;">ASSIGNED ROUTE:</span>
+                            <span class="text-info text-truncate d-block fw-semibold" id="offlineModalRouteName">City Route</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-secondary border-opacity-25 pt-3 d-flex justify-content-between flex-wrap gap-2">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4 py-2" data-bs-dismiss="modal">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Back to Routes
+                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-info rounded-pill px-3 py-2 btn-sm fw-semibold" id="btnRetryLiveCheck">
+                        <i class="fa-solid fa-rotate-right me-1"></i> Check Again
+                    </button>
+                    <button type="button" class="btn btn-outline-warning rounded-pill px-3 py-2 btn-sm fw-semibold" id="btnPreviewOfflineRouteDemo" title="Explicit user override: test drive route simulation without a live driver">
+                        <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Preview Route Demo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Toast Notification for Quick Alerts -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1090;">
+    <div id="busOfflineToast" class="toast align-items-center text-white bg-dark border border-danger shadow-lg rounded-3" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body d-flex align-items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation text-danger fa-lg flex-shrink-0"></i>
+                <div>
+                    <strong class="d-block text-danger">Bus is Currently Offline</strong>
+                    <small id="busOfflineToastMsg">This bus is currently not in live tracking. The driver has not started the trip yet. Please try again later.</small>
+                </div>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+<!-- Interactive Real-Time Split-Screen Tracking View (Triggered strictly upon clicking "Track") -->
+<div class="container-fluid px-2 px-lg-4 mb-5 d-none" id="splitScreenTrackingDashboard">
+    <div class="split-screen-tracking-view">
+        <!-- LEFT PANEL (65% width): Interactive Map -->
+        <div class="split-track-map-panel" id="splitTrackMapCard">
+            <!-- Floating Top Toolbar -->
+            <div class="split-map-floating-top">
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-sm btn-dark border border-secondary border-opacity-50 rounded-pill px-3 py-1 shadow text-light" id="btnBackToRoutes" title="Exit tracking and return to routes list">
+                        <i class="fa-solid fa-arrow-left me-1 text-info"></i> Back to Routes
+                    </button>
+                    <div class="tracking-top-badge d-flex align-items-center gap-2 px-3 py-1 rounded-pill">
+                        <span class="live-dot-pulse"></span>
+                        <strong class="text-white small" id="topTrackingBusNo">Bus --</strong>
+                        <span class="text-secondary small d-none d-sm-inline">•</span>
+                        <span class="text-info small text-truncate d-none d-sm-inline" id="topTrackingRouteName">Route</span>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <!-- Stop Labels Toggle -->
+                    <button type="button" class="btn btn-sm btn-outline-info rounded-pill px-2 py-1 fw-semibold active" id="btnToggleTrackingStopLabels" title="Toggle Stop Name Labels" style="font-size: 0.74rem;">
+                        <i class="fa-solid fa-tags me-1"></i> <span id="trackingLabelToggleText">Stops: ON</span>
+                    </button>
+
+                    <!-- Tile Switcher (CartoDB Voyager as Primary Default) -->
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-dark border border-secondary border-opacity-50 rounded-pill px-2 py-1 dropdown-toggle text-light" type="button" id="trackingMapThemeDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.74rem;">
+                            <i class="fa-solid fa-layer-group me-1 text-warning"></i> <span id="trackingTileLabel">Voyager Streets</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow-lg border-secondary" style="font-size: 0.8rem; min-width: 190px;">
+                            <li><a class="dropdown-item active d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="carto_voyager"><i class="fa-solid fa-star text-warning"></i> Voyager Streets (Fast)</a></li>
+                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="osm_standard"><i class="fa-solid fa-road text-info"></i> OpenStreetMap</a></li>
+                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="esri_street"><i class="fa-solid fa-map text-success"></i> Esri Streets</a></li>
+                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="esri_topo"><i class="fa-solid fa-mountain-sun text-secondary"></i> Topo Terrain</a></li>
+                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="satellite"><i class="fa-solid fa-satellite text-primary"></i> Satellite Imagery</a></li>
+                        </ul>
+                    </div>
+
+                    <!-- Reset Camera / Fit Route -->
+                    <button type="button" class="btn btn-sm btn-outline-light rounded-pill px-2 py-1 fw-semibold" id="btnFitTrackingBounds" title="Fit Entire Route into View" style="font-size: 0.74rem;">
+                        <i class="fa-solid fa-expand"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Leaflet Map Container for Split Screen -->
+            <div id="splitTrackMap" style="width: 100%; height: 100%; min-height: 600px; background: #0f172a;"></div>
+
+            <!-- Floating Map Camera Recenter Button (User Controlled Camera Lock) -->
+            <button type="button" class="btn-recenter-floating locked shadow-lg" id="btnRecenterTrackingMap" title="Lock camera to bus location">
+                <i class="fa-solid fa-crosshairs text-info" id="recenterIcon"></i>
+                <span id="recenterText">Camera Locked</span>
+            </button>
+
+            <!-- Floating Map Legend (Bottom-Left) -->
+            <div class="map-floating-legend shadow-sm" style="bottom: 16px; left: 16px;">
+                <div class="d-flex align-items-center gap-2 flex-wrap" style="font-size: 0.7rem;">
+                    <span class="legend-badge"><span class="legend-line" style="background: #64748b; height: 3px;"></span> Traveled</span>
+                    <span class="legend-badge"><span class="legend-line" style="background: #10b981; height: 3px;"></span> Upcoming</span>
+                    <span class="legend-badge"><span class="legend-circle" style="background: #3b82f6;"></span> Passenger</span>
+                    <span class="legend-badge"><span class="legend-circle" style="background: #f59e0b;"></span> Live Bus</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL (35% width): Live Narration & Dynamic Cards -->
+        <div class="split-track-sidebar-panel">
+            <!-- 1. Bus Telemetry Top Card -->
+            <div class="tracking-side-card p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom border-secondary border-opacity-25">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="bus-icon-circle shadow-sm">
+                            <i class="fa-solid fa-bus text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold m-0 text-white" id="cardBusTitle">Bus #--</h6>
+                            <div class="small text-secondary" id="cardDriverName">Driver: Active Operator</div>
+                        </div>
+                    </div>
+                    <span class="badge bg-success bg-opacity-20 text-success border border-success border-opacity-25 rounded-pill px-2 py-1 small" id="cardGpsSignal">
+                        <i class="fa-solid fa-satellite-dish me-1"></i> Live 4G GPS
+                    </span>
+                </div>
+                <!-- Telemetry Stats Grid -->
+                <div class="row g-2 text-center">
+                    <div class="col-4">
+                        <div class="stat-pill p-2">
+                            <span class="stat-label">SPEED</span>
+                            <span class="stat-value text-info" id="cardSpeed">0 <small style="font-size: 0.6rem;">km/h</small></span>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-pill p-2">
+                            <span class="stat-label">ETA TO STOP</span>
+                            <span class="stat-value text-emerald" id="cardEta">-- <small style="font-size: 0.6rem;">min</small></span>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-pill p-2">
+                            <span class="stat-label">NEXT STOP</span>
+                            <span class="stat-value text-warning text-truncate d-block" id="cardNextStop" style="font-size: 0.78rem;">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Live Dynamic Announcer Card -->
+            <div class="tracking-side-card announcer-card p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="announcer-pulse-icon">
+                            <i class="fa-solid fa-volume-high text-info"></i>
+                        </span>
+                        <div>
+                            <span class="fw-bold text-white small text-uppercase letter-spacing-wide">Live Audio Announcer</span>
+                            <div class="audio-wave-bars ms-2" id="voiceWaveBars">
+                                <span class="audio-wave-bar"></span>
+                                <span class="audio-wave-bar"></span>
+                                <span class="audio-wave-bar"></span>
+                                <span class="audio-wave-bar"></span>
+                                <span class="audio-wave-bar"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Audio Controls -->
+                    <div class="d-flex align-items-center gap-1">
+                        <button type="button" class="btn btn-sm btn-dark border border-secondary border-opacity-50 rounded-pill px-2 py-1 text-light" id="btnToggleSpeechMute" title="Mute/Unmute Voice Announcements" style="font-size: 0.72rem;">
+                            <i class="fa-solid fa-volume-high text-info" id="muteIcon"></i> <span id="muteBtnLabel">Voice: ON</span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-dark border border-secondary border-opacity-50 rounded-pill px-2 py-1 text-info" id="btnTestAudioVoice" title="Test Web Speech Engine" style="font-size: 0.72rem;">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Speech Display Box with glowing highlight -->
+                <div class="announcement-speech-bubble p-3 my-2" id="speechBubble">
+                    <i class="fa-solid fa-quote-left text-info opacity-50 me-1"></i>
+                    <span class="speech-text fw-semibold" id="currentAnnouncementText">
+                        Tracking initiated for Bus #[Number]. Monitoring route to your stop.
+                    </span>
+                </div>
+
+                <!-- 1-Click Interactive Demo Simulation Bar -->
+                <div class="simulation-demo-box p-2 mt-2 rounded-3">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-1">
+                        <span class="small text-secondary" style="font-size: 0.72rem;">
+                            <i class="fa-solid fa-wand-magic-sparkles text-warning me-1"></i> Interactive Demo:
+                        </span>
+                        <div class="d-flex align-items-center gap-1">
+                            <button type="button" class="btn btn-xs btn-primary rounded-pill px-2 py-1 fw-bold" id="btnStartSimulation" style="font-size: 0.7rem;">
+                                <i class="fa-solid fa-play me-1"></i> Run Journey Demo
+                            </button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1 d-none" id="btnResetSimulation" style="font-size: 0.7rem;">
+                                <i class="fa-solid fa-rotate-left"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="progress mt-2 d-none" id="simulationProgressBarWrapper" style="height: 4px; background: rgba(255,255,255,0.1);">
+                        <div class="progress-bar bg-info progress-bar-striped progress-bar-animated" id="simulationProgressBar" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Interactive Activity Log -->
+            <div class="tracking-side-card p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom border-secondary border-opacity-25">
+                    <h6 class="fw-bold m-0 text-white small text-uppercase letter-spacing-wide">
+                        <i class="fa-solid fa-clock-rotate-left text-info me-1"></i> Activity & Proximity Log
+                    </h6>
+                    <span class="badge bg-secondary bg-opacity-25 text-light small rounded-pill" id="activityCountBadge">0 events</span>
+                </div>
+                <div class="activity-log-feed" id="trackingActivityFeed">
+                    <!-- Real-time timestamped event items rendered here -->
+                </div>
+            </div>
+
+            <!-- 4. Progress Stepper -->
+            <div class="tracking-side-card p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom border-secondary border-opacity-25">
+                    <h6 class="fw-bold m-0 text-white small text-uppercase letter-spacing-wide">
+                        <i class="fa-solid fa-route text-emerald me-1"></i> Route Progress Stepper
+                    </h6>
+                    <span class="badge bg-dark border border-secondary text-secondary small rounded-pill" id="stepperStopsRemaining">-- stops remaining</span>
+                </div>
+                <div class="tracking-stepper-list" id="trackingStepperList">
+                    <!-- Vertical stops checkpoints rendered dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/trip_announcer.js' %}?v=2.0"></script>
 <script>
 let routeMap = null;
 let currentPolylineGroup = null;
 let currentTransitPathGroup = null;
 let activeRenderingRouteKey = null;
 let currentBaseTileLayer = null;
-let currentTileKey = 'transit_hot';
+let currentTileKey = 'carto_voyager';
 let showStopLabels = true;
 let liveTrackingInterval = null;
 let liveBusMarker = null;
@@ -1014,22 +1688,29 @@ let currentFetchedRoutes = [];
 
 // High-Performance Zero-Watermark Public Map Tile Providers
 const mapTiles = {
-    transit_hot: {
-        name: 'Transit Map',
-        url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+    carto_voyager: {
+        name: 'Voyager Streets',
+        url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
         options: {
-            maxZoom: 19,
-            subdomains: 'abc',
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">HOT</a>'
+            maxZoom: 20,
+            subdomains: 'abcd',
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
         }
     },
-    osm_clean: {
-        name: 'Clean Streets',
-        url: 'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
+    osm_standard: {
+        name: 'OpenStreetMap',
+        url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
         options: {
             maxZoom: 19,
-            subdomains: 'abc',
-            attribution: '&copy; OpenStreetMap France &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }
+    },
+    esri_street: {
+        name: 'Esri Streets',
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+        options: {
+            maxZoom: 19,
+            attribution: 'Tiles &copy; Esri &mdash; Sources: Esri, DeLorme, NAVTEQ, USGS, METI'
         }
     },
     esri_topo: {
@@ -1046,15 +1727,6 @@ const mapTiles = {
         options: {
             maxZoom: 19,
             attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and GIS User Community'
-        }
-    },
-    osm_standard: {
-        name: 'Standard OSM',
-        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        options: {
-            maxZoom: 19,
-            subdomains: 'abc',
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }
     }
 };
@@ -1992,7 +2664,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let leg1TrackBtn = '';
             if (leg1.bus_no) {
                 leg1TrackBtn = `
-                    <button class="btn btn-sm btn-primary rounded-pill ms-2 px-3 py-1" style="font-size: 0.72rem;" onclick="event.stopPropagation(); startLiveTracking('${leg1.bus_no}')">
+                    <button class="btn btn-sm btn-primary rounded-pill ms-2 px-3 py-1 fw-bold" style="font-size: 0.72rem;" onclick="event.stopPropagation(); handleTrackClick('${leg1.bus_no}', ${index}, 0, this)">
                         <i class="fa-solid fa-location-crosshairs me-1"></i> Track Bus ${leg1.bus_no}
                     </button>
                 `;
@@ -2048,7 +2720,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 let leg2TrackBtn = '';
                 if (leg2.bus_no) {
                     leg2TrackBtn = `
-                        <button class="btn btn-sm btn-primary rounded-pill ms-2 px-3 py-1" style="font-size: 0.72rem;" onclick="event.stopPropagation(); startLiveTracking('${leg2.bus_no}')">
+                        <button class="btn btn-sm btn-primary rounded-pill ms-2 px-3 py-1 fw-bold" style="font-size: 0.72rem;" onclick="event.stopPropagation(); handleTrackClick('${leg2.bus_no}', ${index}, 1, this)">
                             <i class="fa-solid fa-location-crosshairs me-1"></i> Track Bus ${leg2.bus_no}
                         </button>
                     `;
@@ -2113,6 +2785,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
 
+            const primaryBusNumber = leg1.bus_no || (cardLiveBus ? cardLiveBus.bus_no : '');
+
             card.innerHTML = `
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -2130,6 +2804,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         <span class="badge bg-emerald-subtle text-success border border-success border-opacity-25 px-3 py-1 fs-6 fw-bold">
                             ₹${totalFare}
                         </span>
+                        <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1 fw-bold shadow-sm track-journey-btn" onclick="event.stopPropagation(); handleTrackClick('${primaryBusNumber}', ${index}, 0, this)" title="Start Real-Time Split-Screen Tracking">
+                            <i class="fa-solid fa-location-crosshairs me-1"></i> Track Bus
+                        </button>
                     </div>
                 </div>
                 ${liveBannerHtml}
@@ -2236,6 +2913,1126 @@ document.addEventListener('DOMContentLoaded', function() {
     if (sourceInput.value.trim() && destInput.value.trim()) {
         executeSearch();
     }
+
+    // ==============================================================
+    // SPLIT-SCREEN REAL-TIME TRACKING CONTROLLER
+    // ==============================================================
+    let splitMap = null;
+    let splitTraveledPolyline = null;
+    let splitRemainingPolyline = null;
+    let splitStopMarkersGroup = null;
+    let splitBusMarker = null;
+    let splitPassengerMarker = null;
+    let splitAnnouncer = null;
+    let splitGpsPollInterval = null;
+    let splitPassengerWatchId = null;
+    let isCameraLocked = true;
+    let currentTrackingRoute = null;
+    let currentTrackingLeg = null;
+    let currentRoadCoordinates = [];
+    let isSimulationRunning = false;
+    let simulationStepTimer = null;
+    let trackingTileLayer = null;
+    let trackingShowStopLabels = true;
+    let currentTrackingBusNumber = '24';
+    let simulationCurrentStep = 0;
+
+    function isValidLatLng(lat, lon) {
+        if (lat === null || lat === undefined || lon === null || lon === undefined) return false;
+        const nLat = parseFloat(lat);
+        const nLon = parseFloat(lon);
+        if (isNaN(nLat) || isNaN(nLon)) return false;
+        if (nLat < -90 || nLat > 90 || nLon < -180 || nLon > 180) return false;
+        if (Math.abs(nLat) < 0.001 && Math.abs(nLon) < 0.001) return false;
+        return true;
+    }
+
+    function initSplitTrackingMap() {
+        if (splitMap) {
+            splitMap.remove();
+            splitMap = null;
+        }
+
+        const mapEl = document.getElementById('splitTrackMap');
+        if (!mapEl) return;
+
+        // Guarantee explicit layout dimensions before L.map computes tile offsets
+        mapEl.style.width = '100%';
+        mapEl.style.height = '100%';
+        mapEl.style.minHeight = '620px';
+
+        splitMap = L.map('splitTrackMap', {
+            zoomControl: true,
+            scrollWheelZoom: true,
+            fadeAnimation: true,
+            zoomAnimation: true
+        }).setView([15.3647, 75.1240], 14);
+
+        // High-Performance Tile Layer (CartoDB Voyager as default)
+        setSplitMapTile('carto_voyager');
+
+        // Dynamic Polyline Layers: Traveled (faded gray) vs Remaining (vibrant emerald)
+        splitTraveledPolyline = L.polyline([], {
+            color: '#64748b',
+            weight: 6,
+            opacity: 0.85,
+            lineCap: 'round',
+            lineJoin: 'round'
+        }).addTo(splitMap);
+
+        splitRemainingPolyline = L.polyline([], {
+            color: '#10b981',
+            weight: 6,
+            opacity: 0.95,
+            lineCap: 'round',
+            lineJoin: 'round'
+        }).addTo(splitMap);
+
+        splitStopMarkersGroup = L.layerGroup().addTo(splitMap);
+
+        // User camera lock behavior: Manual drag or zoom breaks lock
+        splitMap.on('dragstart zoomstart', function() {
+            if (isCameraLocked) {
+                isCameraLocked = false;
+                updateRecenterBtnUI();
+            }
+        });
+
+        // Staggered invalidation passes to guarantee no blank/gray container
+        setTimeout(() => { if (splitMap) splitMap.invalidateSize(true); }, 80);
+        setTimeout(() => { if (splitMap) splitMap.invalidateSize(true); }, 250);
+        setTimeout(() => { if (splitMap) splitMap.invalidateSize(true); }, 500);
+    }
+
+    function setSplitMapTile(tileKey) {
+        if (!splitMap || !mapTiles[tileKey]) return;
+        if (trackingTileLayer) {
+            splitMap.removeLayer(trackingTileLayer);
+        }
+        const cfg = mapTiles[tileKey];
+        trackingTileLayer = L.tileLayer(cfg.url, cfg.options).addTo(splitMap);
+        trackingTileLayer.bringToBack();
+
+        const label = document.getElementById('trackingTileLabel');
+        if (label) label.textContent = cfg.name;
+
+        document.querySelectorAll('[data-tracking-tile]').forEach(item => {
+            item.classList.toggle('active', item.dataset.trackingTile === tileKey);
+        });
+    }
+
+    function toggleTrackingStopLabels() {
+        trackingShowStopLabels = !trackingShowStopLabels;
+        const mapContainer = document.getElementById('splitTrackMap');
+        const text = document.getElementById('trackingLabelToggleText');
+        const btn = document.getElementById('btnToggleTrackingStopLabels');
+
+        if (trackingShowStopLabels) {
+            mapContainer?.classList.remove('hide-intermediate-labels');
+            if (text) text.textContent = 'Stops: ON';
+            btn?.classList.add('active', 'btn-outline-info');
+            btn?.classList.remove('btn-outline-secondary');
+        } else {
+            mapContainer?.classList.add('hide-intermediate-labels');
+            if (text) text.textContent = 'Stops: OFF';
+            btn?.classList.remove('active', 'btn-outline-info');
+            btn?.classList.add('btn-outline-secondary');
+        }
+    }
+
+    function updateRecenterBtnUI() {
+        const btn = document.getElementById('btnRecenterTrackingMap');
+        const icon = document.getElementById('recenterIcon');
+        const text = document.getElementById('recenterText');
+        if (!btn) return;
+
+        if (isCameraLocked) {
+            btn.classList.add('locked');
+            if (icon) icon.className = 'fa-solid fa-lock text-white';
+            if (text) text.textContent = 'Camera Locked';
+        } else {
+            btn.classList.remove('locked');
+            if (icon) icon.className = 'fa-solid fa-crosshairs text-info';
+            if (text) text.textContent = 'Recenter Bus';
+        }
+    }
+
+    function recenterTrackingMap() {
+        isCameraLocked = true;
+        updateRecenterBtnUI();
+        if (splitBusMarker && splitMap) {
+            const pos = splitBusMarker.getLatLng();
+            splitMap.panTo(pos, { animate: true, duration: 0.8 });
+        }
+    }
+
+    function logActivityEvent(text, badgeType = 'info', iconClass = 'fa-solid fa-circle-info') {
+        const feed = document.getElementById('trackingActivityFeed');
+        const badge = document.getElementById('activityCountBadge');
+        if (!feed) return;
+
+        const now = new Date();
+        const timeStr = now.toTimeString().split(' ')[0];
+
+        const item = document.createElement('div');
+        item.className = 'activity-item';
+        item.innerHTML = `
+            <span class="activity-time">${timeStr}</span>
+            <span class="activity-badge-tag ${badgeType}"><i class="${iconClass} me-1"></i>${badgeType}</span>
+            <span class="flex-grow-1 text-light">${text}</span>
+        `;
+
+        feed.insertBefore(item, feed.firstChild);
+
+        if (badge) {
+            badge.textContent = `${feed.children.length} events`;
+        }
+    }
+
+    function updateSpeechBubble(text) {
+        const el = document.getElementById('currentAnnouncementText');
+        const bubble = document.getElementById('speechBubble');
+        if (el) el.textContent = text;
+        if (bubble) {
+            bubble.style.borderColor = '#38bdf8';
+            bubble.style.boxShadow = '0 0 20px rgba(56, 189, 248, 0.45)';
+            setTimeout(() => {
+                bubble.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+                bubble.style.boxShadow = 'inset 0 2px 8px rgba(0, 0, 0, 0.4)';
+            }, 2500);
+        }
+    }
+
+    function setWaveActive(isActive) {
+        const wave = document.getElementById('voiceWaveBars');
+        if (!wave) return;
+        if (isActive) {
+            wave.classList.add('active');
+        } else {
+            wave.classList.remove('active');
+        }
+    }
+
+    function toggleTrackingMute() {
+        if (!splitAnnouncer) return;
+        const isMuted = splitAnnouncer.toggleMute();
+        const icon = document.getElementById('muteIcon');
+        const label = document.getElementById('muteBtnLabel');
+        if (isMuted) {
+            if (icon) icon.className = 'fa-solid fa-volume-xmark text-danger';
+            if (label) label.textContent = 'Voice: OFF';
+            setWaveActive(false);
+        } else {
+            if (icon) icon.className = 'fa-solid fa-volume-high text-info';
+            if (label) label.textContent = 'Voice: ON';
+        }
+    }
+
+    function testAudioVoice() {
+        if (!splitAnnouncer) return;
+        const testPhrase = `Audio test. System connected to Bus #${currentTrackingBusNumber}. Speech synthesizer active.`;
+        updateSpeechBubble(testPhrase);
+        setWaveActive(true);
+        splitAnnouncer.speak(testPhrase);
+        setTimeout(() => setWaveActive(false), 3500);
+    }
+
+    function createBusMarker(lat, lon, busNumber, heading = 0) {
+        const html = `
+            <div class="transit-pin-wrapper live-bus-pin-wrapper" id="splitBusPinWrapper">
+                <div class="radar-pulse-ring transfer-radar"></div>
+                <div class="bus-bearing-disc shadow-lg" id="splitBusDisc" style="transform: rotate(${heading}deg); transition: transform 0.5s ease; background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%); width: 42px; height: 42px; border-radius: 50%; border: 3px solid #ffffff; display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.6); position: relative;">
+                    <i class="fa-solid fa-bus" style="font-size: 1.1rem;"></i>
+                    <div style="position: absolute; top: -7px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid #38bdf8;"></div>
+                </div>
+                <div class="pin-floating-pill shadow" style="border: 2px solid #38bdf8; background: #0f172a; color: #ffffff;">
+                    <span class="pill-dot bg-info"></span>
+                    <span class="pill-name">Bus #${busNumber}</span>
+                    <span class="pill-action text-info">Live</span>
+                </div>
+            </div>
+        `;
+        return L.marker([lat, lon], {
+            icon: L.divIcon({
+                className: 'custom-transit-divicon smooth-bus-marker',
+                html: html,
+                iconSize: [200, 50],
+                iconAnchor: [21, 25]
+            }),
+            zIndexOffset: 3000
+        });
+    }
+
+    function updateBusMarkerHeading(marker, heading = 0) {
+        const disc = document.getElementById('splitBusDisc');
+        if (disc) {
+            disc.style.transform = `rotate(${heading}deg)`;
+        }
+    }
+
+    function createPassengerMarker(lat, lon, name = 'Pickup Stop') {
+        const html = `
+            <div class="transit-pin-wrapper start-pin-wrapper" id="splitPassengerPinWrapper">
+                <div class="radar-pulse-ring start-radar"></div>
+                <div class="pin-badge shadow-lg" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); width: 36px; height: 36px; border-radius: 50%; border: 3px solid #ffffff; display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.6);">
+                    <i class="fa-solid fa-person-walking-luggage" style="font-size: 1rem;"></i>
+                </div>
+                <div class="pin-floating-pill shadow" style="border: 2px solid #10b981; background: #0f172a; color: #ffffff;">
+                    <span class="pill-dot bg-success"></span>
+                    <span class="pill-name">You (Waiting)</span>
+                    <span class="pill-action text-success">Pickup</span>
+                </div>
+            </div>
+        `;
+        return L.marker([lat, lon], {
+            icon: L.divIcon({
+                className: 'custom-transit-divicon',
+                html: html,
+                iconSize: [200, 46],
+                iconAnchor: [18, 23]
+            }),
+            zIndexOffset: 2800
+        });
+    }
+
+    function renderSplitMapStops(stops) {
+        if (!splitStopMarkersGroup || !stops) return;
+        splitStopMarkersGroup.clearLayers();
+
+        stops.forEach((coord, idx) => {
+            const isOrigin = idx === 0;
+            const isDestination = idx === stops.length - 1;
+            let marker = null;
+
+            if (isOrigin) {
+                const startIcon = L.divIcon({
+                    className: 'custom-transit-divicon',
+                    html: `
+                        <div class="transit-pin-wrapper start-pin-wrapper">
+                            <div class="pin-badge start-badge shadow">
+                                <i class="fa-solid fa-person-walking-luggage"></i>
+                            </div>
+                            <div class="pin-floating-pill start-pill shadow">
+                                <span class="pill-dot bg-success"></span>
+                                <span class="pill-title text-success fw-bold">Point A:</span>
+                                <span class="pill-name">${coord.name || coord.stop_name}</span>
+                                <span class="pill-action">Board</span>
+                            </div>
+                        </div>
+                    `,
+                    iconSize: [40, 40],
+                    iconAnchor: [20, 20]
+                });
+                marker = L.marker([coord.lat, coord.lon], { icon: startIcon, zIndexOffset: 1500 });
+            } else if (isDestination) {
+                const destIcon = L.divIcon({
+                    className: 'custom-transit-divicon',
+                    html: `
+                        <div class="transit-pin-wrapper dest-pin-wrapper">
+                            <div class="dest-pin-head shadow">
+                                <i class="fa-solid fa-flag-checkered"></i>
+                            </div>
+                            <div class="pin-floating-pill dest-pill shadow">
+                                <span class="pill-dot bg-danger"></span>
+                                <span class="pill-title text-danger fw-bold">Point B:</span>
+                                <span class="pill-name">${coord.name || coord.stop_name}</span>
+                                <span class="pill-action">Destination</span>
+                            </div>
+                        </div>
+                    `,
+                    iconSize: [40, 48],
+                    iconAnchor: [20, 44]
+                });
+                marker = L.marker([coord.lat, coord.lon], { icon: destIcon, zIndexOffset: 1500 });
+            } else {
+                const isEven = idx % 2 === 0;
+                const interIcon = L.divIcon({
+                    className: 'custom-transit-divicon',
+                    html: `
+                        <div class="transit-pin-wrapper inter-pin-wrapper ${isEven ? 'pill-side-right' : 'pill-side-left'}">
+                            <div class="inter-node-dot shadow-sm" title="Stop #${idx}: ${coord.name || coord.stop_name}">
+                                <span class="node-order-num">${idx}</span>
+                            </div>
+                            <div class="pin-floating-pill inter-pill shadow-sm" title="Stop #${idx}: ${coord.name || coord.stop_name}">
+                                <i class="fa-solid fa-bus-simple me-1 text-primary" style="font-size: 0.65rem;"></i>
+                                <span class="pill-name">${coord.name || coord.stop_name}</span>
+                            </div>
+                        </div>
+                    `,
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                });
+                marker = L.marker([coord.lat, coord.lon], { icon: interIcon, zIndexOffset: 500 + idx });
+            }
+
+            marker.bindPopup(`
+                <div class="p-2">
+                    <strong class="d-block text-dark">${coord.name || coord.stop_name}</strong>
+                    <span class="small text-muted">${isOrigin ? 'Pickup Stop' : (isDestination ? 'Destination Stop' : `Intermediate Stop #${idx}`)}</span>
+                </div>
+            `);
+
+            splitStopMarkersGroup.addLayer(marker);
+        });
+    }
+
+    function initProgressStepper(stops) {
+        const container = document.getElementById('trackingStepperList');
+        if (!container || !stops) return;
+        container.innerHTML = '';
+
+        stops.forEach((st, idx) => {
+            const isOrigin = idx === 0;
+            const isDest = idx === stops.length - 1;
+            const item = document.createElement('div');
+            item.className = `stepper-stop-item ${idx === 0 ? 'active' : ''}`;
+            item.id = `stepperItem_${idx}`;
+
+            let labelBadge = '';
+            if (isOrigin) labelBadge = `<span class="badge bg-success small me-1">START</span>`;
+            else if (isDest) labelBadge = `<span class="badge bg-danger small me-1">END</span>`;
+
+            item.innerHTML = `
+                <div class="stepper-stop-dot">${isDest ? '<i class="fa-solid fa-flag-checkered" style="font-size:0.6rem;"></i>' : (idx + 1)}</div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        ${labelBadge}
+                        <span class="stepper-stop-name small fw-semibold">${st.name || st.stop_name}</span>
+                    </div>
+                    <span class="badge bg-dark text-secondary border border-secondary border-opacity-25 small" id="stepperBadge_${idx}">
+                        ${isOrigin ? 'Pickup' : (isDest ? 'Destination' : 'En Route')}
+                    </span>
+                </div>
+            `;
+            container.appendChild(item);
+        });
+
+        const remEl = document.getElementById('stepperStopsRemaining');
+        if (remEl) remEl.textContent = `${stops.length - 1} stops to destination`;
+    }
+
+    function updateProgressStepper(ev) {
+        if (!ev) return;
+        const currentIdx = ev.currentStopIndex !== undefined ? ev.currentStopIndex : -1;
+        const nextIdx = ev.nextStopIndex !== undefined ? ev.nextStopIndex : -1;
+
+        document.querySelectorAll('.stepper-stop-item').forEach((item, idx) => {
+            if (idx < currentIdx || (currentIdx === -1 && idx === 0 && ev.isBoarded)) {
+                item.classList.add('passed');
+                item.classList.remove('active');
+                const badge = document.getElementById(`stepperBadge_${idx}`);
+                if (badge) {
+                    badge.className = 'badge bg-success bg-opacity-20 text-success border border-success border-opacity-25 small';
+                    badge.innerHTML = '<i class="fa-solid fa-check me-1"></i> Passed';
+                }
+            } else if (idx === currentIdx || idx === nextIdx) {
+                item.classList.add('active');
+                item.classList.remove('passed');
+                const badge = document.getElementById(`stepperBadge_${idx}`);
+                if (badge) {
+                    badge.className = 'badge bg-primary bg-opacity-25 text-info border border-info border-opacity-25 small';
+                    badge.innerHTML = '<i class="fa-solid fa-location-dot me-1"></i> Next';
+                }
+            } else {
+                item.classList.remove('active', 'passed');
+            }
+        });
+    }
+
+    let splitTrackingSocket = null;
+
+    function updateBusPositionOnMap(lat, lon, speed = 0, heading = 0) {
+        if (!splitMap) return;
+        if (!isValidLatLng(lat, lon)) {
+            console.debug('Skipping invalid telemetry coords:', lat, lon);
+            return;
+        }
+
+        const validLat = parseFloat(lat);
+        const validLon = parseFloat(lon);
+        const validSpeed = parseFloat(speed || 0);
+        const validHeading = parseFloat(heading || 0);
+
+        // 1. Move or create bus marker with smooth CSS transition & bearing rotation
+        if (!splitBusMarker) {
+            splitBusMarker = createBusMarker(validLat, validLon, currentTrackingBusNumber, validHeading);
+            splitBusMarker.addTo(splitMap);
+        } else {
+            splitBusMarker.setLatLng([validLat, validLon]);
+            updateBusMarkerHeading(splitBusMarker, validHeading);
+        }
+
+        // 2. Dynamic Segment Trimming: Slice road geometry into traveled and remaining
+        if (currentRoadCoordinates && currentRoadCoordinates.length >= 2) {
+            const sliced = TripLifecycleAnnouncer.slicePolyline(currentRoadCoordinates, validLat, validLon);
+            if (splitTraveledPolyline && sliced.traveled.length > 0) {
+                splitTraveledPolyline.setLatLngs(sliced.traveled);
+            }
+            if (splitRemainingPolyline && sliced.remaining.length > 0) {
+                splitRemainingPolyline.setLatLngs(sliced.remaining);
+            }
+        }
+
+        // 3. User-controlled camera lock:
+        // Do NOT reset user zoom. Only smoothly pan if isCameraLocked is true!
+        if (isCameraLocked) {
+            splitMap.panTo([validLat, validLon], { animate: true, duration: 1.2 });
+        }
+
+        // 4. Update Bus Telemetry Card
+        const speedEl = document.getElementById('cardSpeed');
+        if (speedEl) speedEl.innerHTML = `${Math.round(validSpeed)} <small style="font-size: 0.6rem;">km/h</small>`;
+
+        // 5. Ingest into trip announcer state machine
+        if (splitAnnouncer) {
+            splitAnnouncer.ingestDriverGps({
+                latitude: validLat,
+                longitude: validLon,
+                speed: validSpeed,
+                heading: validHeading,
+                timestamp: new Date().toISOString()
+            });
+        }
+    }
+
+    function startRealTimeTrackingStreams(busNumber, busId = null) {
+        // Clear previous intervals and sockets
+        if (splitGpsPollInterval) clearInterval(splitGpsPollInterval);
+        if (splitTrackingSocket) {
+            try { splitTrackingSocket.close(); } catch (e) {}
+            splitTrackingSocket = null;
+        }
+
+        // 1. Geolocation passenger tracker (strict 2000ms cadence)
+        if ("geolocation" in navigator) {
+            splitPassengerWatchId = navigator.geolocation.watchPosition(
+                pos => {
+                    const pLat = pos.coords.latitude;
+                    const pLon = pos.coords.longitude;
+                    if (isValidLatLng(pLat, pLon)) {
+                        if (splitPassengerMarker) {
+                            splitPassengerMarker.setLatLng([pLat, pLon]);
+                        }
+                        if (splitAnnouncer) {
+                            splitAnnouncer.ingestPassengerGps({
+                                latitude: pLat,
+                                longitude: pLon,
+                                speed: pos.coords.speed || 0,
+                                timestamp: new Date().toISOString()
+                            });
+                        }
+                    }
+                },
+                err => {
+                    console.debug('Passenger GPS watch fallback:', err);
+                },
+                { enableHighAccuracy: true, timeout: 2000, maximumAge: 0 }
+            );
+        }
+
+        // 2. Real-Time WebSocket Channel for Sub-2-Second Latency
+        try {
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+            const socketUrl = `${wsProtocol}${window.location.host}/ws/bus-tracking/${busId || ''}`;
+            splitTrackingSocket = new WebSocket(socketUrl);
+
+            splitTrackingSocket.onmessage = function(event) {
+                if (isSimulationRunning) return;
+                try {
+                    const msg = JSON.parse(event.data);
+                    const b = msg.bus_data || msg.location || msg;
+                    if (b) {
+                        const mLat = b.latitude !== undefined ? b.latitude : (b.lat !== undefined ? b.lat : b.current_lat);
+                        const mLon = b.longitude !== undefined ? b.longitude : (b.lon !== undefined ? b.lon : (b.lng !== undefined ? b.lng : b.current_lon));
+                        if (isValidLatLng(mLat, mLon)) {
+                            updateBusPositionOnMap(
+                                parseFloat(mLat),
+                                parseFloat(mLon),
+                                parseFloat(b.speed || b.speed_kmh || 0),
+                                parseFloat(b.heading || 0)
+                            );
+                        }
+                    }
+                } catch (pe) {
+                    console.debug('WebSocket parse:', pe);
+                }
+            };
+        } catch (e) {
+            console.debug('WebSocket connection skipped, relying on 2s HTTP polling:', e);
+        }
+
+        // 3. Strict 2-Second (2000ms) HTTP Polling Interval (Guaranteed Fallback)
+        splitGpsPollInterval = setInterval(async () => {
+            if (isSimulationRunning) return; // Do not overwrite demo simulation
+            try {
+                const res = await fetch(`/api/bus/${encodeURIComponent(busNumber)}/live-status/`);
+                if (!res.ok) return;
+                const data = await res.json();
+
+                const pollLat = data.current_lat !== undefined && data.current_lat !== null ? data.current_lat : data.latitude;
+                const pollLon = data.current_lon !== undefined && data.current_lon !== null ? data.current_lon : data.longitude;
+
+                if (isValidLatLng(pollLat, pollLon)) {
+                    updateBusPositionOnMap(
+                        parseFloat(pollLat),
+                        parseFloat(pollLon),
+                        parseFloat(data.speed_kmh || data.speed || 25),
+                        parseFloat(data.heading || 0)
+                    );
+
+                    if (data.next_stop_data && data.next_stop_data.eta_mins !== undefined) {
+                        const etaEl = document.getElementById('cardEta');
+                        if (etaEl) etaEl.innerHTML = `${data.next_stop_data.eta_mins} <small style="font-size: 0.6rem;">min</small>`;
+                    }
+                }
+            } catch (err) {
+                console.debug('Polling telemetry update:', err);
+            }
+        }, 2000); // Strict 2000ms polling interval
+    }
+
+    function runJourneySimulation() {
+        if (!currentRoadCoordinates || currentRoadCoordinates.length < 2) {
+            alert('Route geometry loading. Please wait 1 second and retry.');
+            return;
+        }
+
+        const startBtn = document.getElementById('btnStartSimulation');
+        const resetBtn = document.getElementById('btnResetSimulation');
+        const pWrap = document.getElementById('simulationProgressBarWrapper');
+        const pBar = document.getElementById('simulationProgressBar');
+
+        isSimulationRunning = true;
+        if (startBtn) {
+            startBtn.disabled = true;
+            startBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Running Demo...';
+        }
+        if (resetBtn) resetBtn.classList.remove('d-none');
+        if (pWrap) pWrap.classList.remove('d-none');
+
+        // Create 12 evenly-spaced simulation waypoints along the road network
+        const totalPoints = currentRoadCoordinates.length;
+        const totalSteps = 12;
+        const waypoints = [];
+
+        for (let i = 0; i <= totalSteps; i++) {
+            const fraction = i / totalSteps;
+            const idx = Math.min(totalPoints - 1, Math.floor(fraction * (totalPoints - 1)));
+            const pt = currentRoadCoordinates[idx];
+            // Heading towards next point
+            let heading = 45;
+            if (idx < totalPoints - 1) {
+                const nxt = currentRoadCoordinates[idx + 1];
+                const dLon = (nxt[1] - pt[1]);
+                const dLat = (nxt[0] - pt[0]);
+                heading = Math.round((Math.atan2(dLon, dLat) * 180 / Math.PI + 360) % 360);
+            }
+            waypoints.push({
+                lat: pt[0],
+                lon: pt[1],
+                heading: heading,
+                fraction: fraction
+            });
+        }
+
+        simulationCurrentStep = 0;
+
+        function executeStep() {
+            if (!isSimulationRunning) return;
+            if (simulationCurrentStep >= waypoints.length) {
+                // Completed
+                if (startBtn) {
+                    startBtn.disabled = false;
+                    startBtn.innerHTML = '<i class="fa-solid fa-rotate-left me-1"></i> Re-Run Demo';
+                }
+                return;
+            }
+
+            const wp = waypoints[simulationCurrentStep];
+            const pct = Math.round((simulationCurrentStep / (waypoints.length - 1)) * 100);
+            if (pBar) pBar.style.width = `${pct}%`;
+
+            // Step speed variations (slowing down at stops, boarding stop near 0, cruising en-route)
+            let speed = 28;
+            if (simulationCurrentStep === 0) speed = 32;
+            else if (simulationCurrentStep === 3) speed = 12; // Approaching
+            else if (simulationCurrentStep === 4) speed = 0;  // Arrived at pickup stop!
+            else if (simulationCurrentStep === 5) speed = 22; // Boarded, accelerating
+            else if (simulationCurrentStep >= waypoints.length - 1) speed = 0; // Destination arrived
+
+            updateBusPositionOnMap(wp.lat, wp.lon, speed, wp.heading);
+
+            // Update ETA
+            const etaMins = Math.max(1, Math.round((1 - wp.fraction) * 15));
+            const etaEl = document.getElementById('cardEta');
+            if (etaEl) etaEl.innerHTML = `${etaMins} <small style="font-size: 0.6rem;">min</small>`;
+
+            simulationCurrentStep++;
+            simulationStepTimer = setTimeout(executeStep, 2200);
+        }
+
+        executeStep();
+    }
+
+    function resetJourneySimulation() {
+        if (simulationStepTimer) clearTimeout(simulationStepTimer);
+        isSimulationRunning = false;
+
+        const startBtn = document.getElementById('btnStartSimulation');
+        const resetBtn = document.getElementById('btnResetSimulation');
+        const pWrap = document.getElementById('simulationProgressBarWrapper');
+        const pBar = document.getElementById('simulationProgressBar');
+
+        if (startBtn) {
+            startBtn.disabled = false;
+            startBtn.innerHTML = '<i class="fa-solid fa-play me-1"></i> Run Journey Demo';
+        }
+        if (resetBtn) resetBtn.classList.add('d-none');
+        if (pWrap) pWrap.classList.add('d-none');
+        if (pBar) pBar.style.width = '0%';
+
+        // Reset announcer state
+        if (splitAnnouncer) {
+            splitAnnouncer.reset();
+        }
+
+        // Restore initial bus position
+        if (currentRoadCoordinates && currentRoadCoordinates.length > 0) {
+            updateBusPositionOnMap(currentRoadCoordinates[0][0], currentRoadCoordinates[0][1], 25, 45);
+        }
+
+        // Restore passenger marker
+        if (splitPassengerMarker && splitMap) {
+            splitMap.removeLayer(splitPassengerMarker);
+        }
+        if (splitMap && currentRoadCoordinates && currentRoadCoordinates.length > 0) {
+            splitPassengerMarker = createPassengerMarker(currentRoadCoordinates[0][0], currentRoadCoordinates[0][1], 'Pickup');
+            splitPassengerMarker.addTo(splitMap);
+        }
+
+        logActivityEvent('Simulation reset to initial route state.', 'info', 'fa-solid fa-rotate-left');
+    }
+
+    function showBusOfflineModal(busNo, data = {}, routeIndex = 0, legIndex = 0) {
+        const modalEl = document.getElementById('busOfflineModal');
+        const toastEl = document.getElementById('busOfflineToast');
+
+        const busNameEl = document.getElementById('offlineModalBusName');
+        if (busNameEl) busNameEl.textContent = `Bus #${busNo || '--'}`;
+
+        const tripStatusEl = document.getElementById('offlineModalTripStatus');
+        if (tripStatusEl) {
+            tripStatusEl.textContent = data.trip_status ? data.trip_status.replace(/_/g, ' ') : 'NOT STARTED';
+        }
+
+        const lastPingEl = document.getElementById('offlineModalLastPing');
+        if (lastPingEl) {
+            if (data.last_updated_seconds_ago !== null && data.last_updated_seconds_ago !== undefined) {
+                lastPingEl.innerHTML = `<span class="text-warning">${data.last_updated_seconds_ago}s ago</span>`;
+            } else {
+                lastPingEl.innerHTML = `<span class="text-danger"><i class="fa-solid fa-circle-xmark me-1"></i> No Broadcast (<10s)</span>`;
+            }
+        }
+
+        const routeNameEl = document.getElementById('offlineModalRouteName');
+        if (routeNameEl) {
+            let rName = data.route_name;
+            if (!rName && currentFetchedRoutes && currentFetchedRoutes[routeIndex]) {
+                const r = currentFetchedRoutes[routeIndex];
+                const leg = (r.legs && r.legs[legIndex]) ? r.legs[legIndex] : (r.legs ? r.legs[0] : null);
+                rName = leg ? leg.route_name : r.route_name;
+            }
+            routeNameEl.textContent = rName || 'City Transit Route';
+        }
+
+        // Setup retry button in modal
+        const retryBtn = document.getElementById('btnRetryLiveCheck');
+        if (retryBtn) {
+            retryBtn.onclick = () => {
+                const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                if (modalInstance) modalInstance.hide();
+                handleTrackClick(busNo, routeIndex, legIndex);
+            };
+        }
+
+        // Setup preview demo override in modal
+        const previewBtn = document.getElementById('btnPreviewOfflineRouteDemo');
+        if (previewBtn) {
+            previewBtn.onclick = () => {
+                const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                if (modalInstance) modalInstance.hide();
+                if (currentFetchedRoutes && currentFetchedRoutes[routeIndex]) {
+                    openSplitScreenTracking(currentFetchedRoutes[routeIndex], legIndex, null, true);
+                }
+            };
+        }
+
+        // Show Bootstrap Modal
+        if (modalEl && window.bootstrap) {
+            const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modalInstance.show();
+        }
+
+        // Also show Toast for non-blocking visual feedback
+        if (toastEl && window.bootstrap) {
+            const toastInstance = bootstrap.Toast.getOrCreateInstance(toastEl, { delay: 6000 });
+            toastInstance.show();
+        }
+    }
+
+    async function handleTrackClick(busNo, routeIndex = 0, legIndex = 0, btnEl = null) {
+        if (!busNo && currentFetchedRoutes && currentFetchedRoutes[routeIndex]) {
+            const route = currentFetchedRoutes[routeIndex];
+            const leg = (route.legs && route.legs[legIndex]) ? route.legs[legIndex] : (route.legs ? route.legs[0] : null);
+            busNo = leg?.bus_no || route.primary_live_bus?.bus_no || '24';
+        }
+
+        if (!busNo) busNo = '24';
+
+        let origHtml = '';
+        if (btnEl) {
+            origHtml = btnEl.innerHTML;
+            btnEl.disabled = true;
+            btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Checking...';
+        }
+
+        try {
+            const res = await fetch(`/api/bus/${encodeURIComponent(busNo)}/live-status/`);
+            const data = res.ok ? await res.json() : null;
+
+            if (btnEl) {
+                btnEl.disabled = false;
+                btnEl.innerHTML = origHtml;
+            }
+
+            const cLat = data ? (data.current_lat !== undefined && data.current_lat !== null ? data.current_lat : data.latitude) : null;
+            const cLon = data ? (data.current_lon !== undefined && data.current_lon !== null ? data.current_lon : data.longitude) : null;
+            const isLive = data && (data.is_live === true || data.isLive === true) && isValidLatLng(cLat, cLon);
+
+            if (isLive) {
+                // Case B: Bus is actively broadcasting live GPS!
+                // Transition smoothly to the split-screen interactive tracking view
+                let routeToTrack = currentFetchedRoutes && currentFetchedRoutes[routeIndex] ? currentFetchedRoutes[routeIndex] : null;
+                if (!routeToTrack) {
+                    routeToTrack = {
+                        route_name: data.route_name || `Route for Bus #${busNo}`,
+                        legs: [{
+                            bus_no: busNo,
+                            route_name: data.route_name || `Route for Bus #${busNo}`,
+                            driver_name: data.driver_name || 'NWKRTC Driver',
+                            board_at: 'Start Stop',
+                            alight_at: 'End Stop'
+                        }]
+                    };
+                }
+                openSplitScreenTracking(routeToTrack, legIndex, data, false);
+            } else {
+                // Case A: Bus is Offline / Not Live!
+                // Stay on the current screen and display clear popup modal
+                showBusOfflineModal(busNo, data || { trip_status: 'NOT_STARTED', status: 'OFFLINE' }, routeIndex, legIndex);
+            }
+        } catch (err) {
+            console.error('Error checking live bus status:', err);
+            if (btnEl) {
+                btnEl.disabled = false;
+                btnEl.innerHTML = origHtml;
+            }
+            showBusOfflineModal(busNo, { trip_status: 'NOT_STARTED', status: 'OFFLINE' }, routeIndex, legIndex);
+        }
+    }
+    window.handleTrackClick = handleTrackClick;
+
+    function openSplitScreenTracking(route, legIndex = 0, initialLiveData = null, isDemoOverride = false) {
+        if (!route) return;
+
+        // If called without live data and not in demo mode, gate through pre-check
+        if (!initialLiveData && !isDemoOverride) {
+            const leg = (route.legs && route.legs[legIndex]) ? route.legs[legIndex] : (route.legs ? route.legs[0] : null);
+            const busNo = leg?.bus_no || route.primary_live_bus?.bus_no;
+            if (busNo) {
+                const rIdx = currentFetchedRoutes ? currentFetchedRoutes.indexOf(route) : 0;
+                handleTrackClick(busNo, Math.max(0, rIdx), legIndex);
+                return;
+            }
+        }
+
+        currentTrackingRoute = route;
+        currentTrackingLeg = (route.legs && route.legs[legIndex]) ? route.legs[legIndex] : (route.legs && route.legs[0] ? route.legs[0] : {});
+
+        const cardLiveBus = route.primary_live_bus || (route.has_live_bus ? {
+            bus_no: currentTrackingLeg.bus_no || '24',
+            driver_name: currentTrackingLeg.driver_name || 'Shri Manjunath K.',
+            speed: 28
+        } : null);
+
+        currentTrackingBusNumber = (initialLiveData && initialLiveData.bus_no) || (cardLiveBus ? cardLiveBus.bus_no : (currentTrackingLeg.bus_no || '24'));
+        const driverName = (initialLiveData && initialLiveData.driver_name) || (cardLiveBus ? (cardLiveBus.driver_name || 'Shri Manjunath K.') : (currentTrackingLeg.driver_name || 'NWKRTC Driver'));
+        const routeName = (initialLiveData && initialLiveData.route_name) || currentTrackingLeg.route_name || route.route_name || 'Hubballi - Dharwad Transit';
+
+        // 1. Transition Views: Hide Search View, Show Split-Screen Dashboard
+        document.getElementById('routeFinderSearchView')?.classList.add('d-none');
+        const trackingDashboard = document.getElementById('splitScreenTrackingDashboard');
+        if (trackingDashboard) {
+            trackingDashboard.classList.remove('d-none');
+            window.scrollTo({ top: 120, behavior: 'smooth' });
+        }
+
+        // 2. Update Header & Card Telemetry
+        const topBusNoEl = document.getElementById('topTrackingBusNo');
+        if (topBusNoEl) topBusNoEl.textContent = `Bus #${currentTrackingBusNumber}`;
+        const topRouteEl = document.getElementById('topTrackingRouteName');
+        if (topRouteEl) topRouteEl.textContent = routeName;
+        const cardTitleEl = document.getElementById('cardBusTitle');
+        if (cardTitleEl) cardTitleEl.textContent = `Bus #${currentTrackingBusNumber} (${currentTrackingLeg.bus_type || 'Ordinary'})`;
+        const driverEl = document.getElementById('cardDriverName');
+        if (driverEl) driverEl.textContent = `Driver: ${driverName}`;
+
+        // 3. Collect ordered stops for journey
+        const journeyStops = [];
+        const seen = new Set();
+        if (route.legs) {
+            route.legs.forEach(leg => {
+                (leg.path_coords || []).forEach(coord => {
+                    const lat = parseFloat(coord.lat);
+                    const lon = parseFloat(coord.lon !== undefined ? coord.lon : coord.lng);
+                    if (!isNaN(lat) && !isNaN(lon)) {
+                        const key = `${lat.toFixed(4)}_${lon.toFixed(4)}`;
+                        if (!seen.has(key)) {
+                            seen.add(key);
+                            journeyStops.push({
+                                id: coord.id || coord.stop_id || journeyStops.length + 1,
+                                name: coord.stop_name || 'Stop',
+                                stop_name: coord.stop_name || 'Stop',
+                                lat: lat,
+                                lon: lon
+                            });
+                        }
+                    }
+                });
+            });
+        }
+
+        if (journeyStops.length < 2) return;
+
+        const pickupStopId = journeyStops[0].id;
+        const destStopId = journeyStops[journeyStops.length - 1].id;
+
+        // 4. Initialize Split Map with multiple layout invalidation passes to prevent blank container
+        initSplitTrackingMap();
+        requestAnimationFrame(() => {
+            if (splitMap) {
+                splitMap.invalidateSize(true);
+                setTimeout(() => { if (splitMap) splitMap.invalidateSize(true); }, 100);
+                setTimeout(() => { if (splitMap) splitMap.invalidateSize(true); }, 300);
+                setTimeout(() => { if (splitMap) splitMap.invalidateSize(true); }, 600);
+            }
+        });
+
+        // 5. Initialize TripLifecycleAnnouncer
+        if (splitAnnouncer) {
+            splitAnnouncer.reset();
+        }
+        splitAnnouncer = new TripLifecycleAnnouncer({
+            routeStops: journeyStops,
+            pickupStopId: pickupStopId,
+            destinationStopId: destStopId,
+            busNumber: currentTrackingBusNumber,
+            isMuted: false
+        });
+
+        // Initial announcement as required by specification:
+        const initMsg = `Tracking initiated for Bus #${currentTrackingBusNumber}. Monitoring route to your stop.`;
+        updateSpeechBubble(initMsg);
+        logActivityEvent(initMsg, 'info', 'fa-solid fa-satellite-dish');
+        splitAnnouncer.speak(initMsg);
+
+        // 6. Render Stop Markers & Stepper
+        renderSplitMapStops(journeyStops);
+        initProgressStepper(journeyStops);
+
+        // 7. Road-Snapped Polyline via OSRM / Backend
+        TripLifecycleAnnouncer.fetchRoadSnappedRoute(journeyStops).then(roadCoords => {
+            currentRoadCoordinates = roadCoords;
+            if (splitRemainingPolyline) {
+                splitRemainingPolyline.setLatLngs(roadCoords);
+            }
+            if (splitTraveledPolyline) {
+                splitTraveledPolyline.setLatLngs([]);
+            }
+
+            // Fit initial view to route bounds
+            if (splitMap && roadCoords.length > 0) {
+                const bounds = L.latLngBounds(roadCoords);
+                splitMap.fitBounds(bounds, { padding: [50, 40] });
+            }
+
+            // Create Passenger Marker at Point A (Boarding Stop)
+            const pStart = journeyStops[0];
+            splitPassengerMarker = createPassengerMarker(pStart.lat, pStart.lon, pStart.name);
+            splitPassengerMarker.addTo(splitMap);
+
+            // Initial bus location (strictly prefer verified live GPS telemetry)
+            let initialBusLat = null;
+            let initialBusLon = null;
+            let initialBusSpeed = 25;
+            let initialBusHeading = 45;
+
+            if (initialLiveData) {
+                const cLat = initialLiveData.current_lat !== undefined && initialLiveData.current_lat !== null ? initialLiveData.current_lat : initialLiveData.latitude;
+                const cLon = initialLiveData.current_lon !== undefined && initialLiveData.current_lon !== null ? initialLiveData.current_lon : initialLiveData.longitude;
+                if (isValidLatLng(cLat, cLon)) {
+                    initialBusLat = parseFloat(cLat);
+                    initialBusLon = parseFloat(cLon);
+                    initialBusSpeed = parseFloat(initialLiveData.speed_kmh || initialLiveData.speed || 25);
+                    initialBusHeading = parseFloat(initialLiveData.heading || 0);
+                }
+            } else if (isDemoOverride && roadCoords && roadCoords.length > 0) {
+                initialBusLat = roadCoords[0][0];
+                initialBusLon = roadCoords[0][1];
+            }
+
+            if (isValidLatLng(initialBusLat, initialBusLon)) {
+                updateBusPositionOnMap(initialBusLat, initialBusLon, initialBusSpeed, initialBusHeading);
+            }
+
+            // 8. Start Real-time streams (strict 2-second polling + WebSockets)
+            startRealTimeTrackingStreams(currentTrackingBusNumber, initialLiveData ? initialLiveData.bus_id : null);
+        });
+
+        // 9. Wire Announcer Engine Events
+        splitAnnouncer.on('announcement', ev => {
+            updateSpeechBubble(ev.text);
+            setWaveActive(true);
+            setTimeout(() => setWaveActive(false), Math.max(3000, ev.text.length * 75));
+
+            let badgeType = 'info';
+            if (ev.type.toLowerCase().includes('arrived')) badgeType = 'arrived';
+            else if (ev.type.toLowerCase().includes('board')) badgeType = 'boarded';
+            else if (ev.type.toLowerCase().includes('approach') || ev.type.toLowerCase().includes('countdown')) badgeType = 'proximity';
+
+            logActivityEvent(ev.text, badgeType, 'fa-solid fa-volume-high');
+        });
+
+        splitAnnouncer.on('passengerBoarded', ev => {
+            if (splitPassengerMarker) {
+                const el = splitPassengerMarker.getElement();
+                if (el) el.classList.add('passenger-merged-snap');
+                setTimeout(() => {
+                    if (splitPassengerMarker && splitMap) {
+                        splitMap.removeLayer(splitPassengerMarker);
+                        splitPassengerMarker = null;
+                    }
+                }, 1100);
+            }
+            const busBadge = document.getElementById('topTrackingBusNo');
+            if (busBadge) {
+                busBadge.innerHTML = `Bus #${currentTrackingBusNumber} <span class="badge bg-success ms-1 small">ONBOARD</span>`;
+            }
+            logActivityEvent(`You are now aboard Bus #${currentTrackingBusNumber}. Enjoy your trip!`, 'boarded', 'fa-solid fa-person-walking-luggage');
+        });
+
+        splitAnnouncer.on('stopProgress', ev => {
+            updateProgressStepper(ev);
+            if (ev.nextStop) {
+                const nextEl = document.getElementById('cardNextStop');
+                if (nextEl) nextEl.textContent = ev.nextStop;
+            }
+            if (ev.stopsRemaining !== undefined) {
+                const remEl = document.getElementById('stepperStopsRemaining');
+                if (remEl) remEl.textContent = `${ev.stopsRemaining} stop(s) remaining`;
+            }
+        });
+
+        splitAnnouncer.on('destinationArrived', ev => {
+            logActivityEvent(`Arrived at destination: ${ev.destinationStop ? ev.destinationStop.name : 'Destination'}. Please safely exit the bus.`, 'arrived', 'fa-solid fa-flag-checkered');
+        });
+    }
+
+    function closeSplitScreenTracking() {
+        if (splitGpsPollInterval) {
+            clearInterval(splitGpsPollInterval);
+            splitGpsPollInterval = null;
+        }
+        if (splitTrackingSocket) {
+            try { splitTrackingSocket.close(); } catch (e) {}
+            splitTrackingSocket = null;
+        }
+        if (splitPassengerWatchId && navigator.geolocation) {
+            navigator.geolocation.clearWatch(splitPassengerWatchId);
+            splitPassengerWatchId = null;
+        }
+        if (simulationStepTimer) {
+            clearTimeout(simulationStepTimer);
+            simulationStepTimer = null;
+        }
+        isSimulationRunning = false;
+
+        if (splitAnnouncer) {
+            splitAnnouncer.reset();
+            splitAnnouncer = null;
+        }
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
+
+        if (splitMap) {
+            splitMap.remove();
+            splitMap = null;
+        }
+
+        document.getElementById('splitScreenTrackingDashboard')?.classList.add('d-none');
+        document.getElementById('routeFinderSearchView')?.classList.remove('d-none');
+        window.scrollTo({ top: 100, behavior: 'smooth' });
+
+        if (routeMap) {
+            setTimeout(() => routeMap.invalidateSize(), 200);
+        }
+    }
+
+    window.openSplitScreenTrackingByRouteIndex = function(routeIndex, legIndex = 0) {
+        if (currentFetchedRoutes && currentFetchedRoutes[routeIndex]) {
+            const route = currentFetchedRoutes[routeIndex];
+            const leg = (route.legs && route.legs[legIndex]) ? route.legs[legIndex] : (route.legs ? route.legs[0] : null);
+            const busNo = leg?.bus_no || route.primary_live_bus?.bus_no || '24';
+            handleTrackClick(busNo, routeIndex, legIndex);
+        }
+    };
+
+    window.openSplitScreenTrackingByBusNo = function(busNo) {
+        let routeIndex = 0;
+        let legIndex = 0;
+        if (currentFetchedRoutes && currentFetchedRoutes.length > 0) {
+            const idx = currentFetchedRoutes.findIndex(r => r.legs && r.legs.some(l => l.bus_no === busNo));
+            if (idx !== -1) routeIndex = idx;
+        }
+        handleTrackClick(busNo, routeIndex, legIndex);
+    };
+
+    window.startLiveTracking = window.openSplitScreenTrackingByBusNo;
+    window.openSplitScreenTracking = openSplitScreenTracking;
+
+    // Attach DOM Control Listeners for Split Screen View
+    document.getElementById('btnBackToRoutes')?.addEventListener('click', closeSplitScreenTracking);
+    document.getElementById('btnRecenterTrackingMap')?.addEventListener('click', recenterTrackingMap);
+    document.getElementById('btnToggleTrackingStopLabels')?.addEventListener('click', toggleTrackingStopLabels);
+    document.getElementById('btnToggleSpeechMute')?.addEventListener('click', toggleTrackingMute);
+    document.getElementById('btnTestAudioVoice')?.addEventListener('click', testAudioVoice);
+    document.getElementById('btnStartSimulation')?.addEventListener('click', runJourneySimulation);
+    document.getElementById('btnResetSimulation')?.addEventListener('click', resetJourneySimulation);
+
+    document.getElementById('btnFitTrackingBounds')?.addEventListener('click', function() {
+        if (splitMap && currentRoadCoordinates && currentRoadCoordinates.length > 0) {
+            splitMap.fitBounds(L.latLngBounds(currentRoadCoordinates), { padding: [50, 40] });
+        }
+    });
+
+    document.querySelectorAll('[data-tracking-tile]').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const tile = this.dataset.trackingTile;
+            if (tile) setSplitMapTile(tile);
+        });
+    });
 });
 </script>
 {% endblock %}

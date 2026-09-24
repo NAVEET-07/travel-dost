@@ -688,6 +688,7 @@ class BusTrackingStatusAPIView(APIView):
 
 
 class RouteGeometryAPIView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def get(self, request, pk=None):
@@ -1001,6 +1002,7 @@ class DriverTripEndAPIView(APIView):
 
 
 class PassengerBusLiveStatusAPIView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def get(self, request, bus_no=None):
@@ -1010,8 +1012,11 @@ class PassengerBusLiveStatusAPIView(APIView):
         bus = resolve_bus_by_no_or_id(bus_no)
         if not bus:
             return Response({
+                "bus_id": None,
                 "bus_no": str(bus_no or ""),
                 "is_live": False,
+                "isLive": False,
+                "has_recent_ping": False,
                 "status": "OFFLINE",
                 "trip_status": "NOT_STARTED",
                 "current_lat": None,
@@ -1024,19 +1029,99 @@ class PassengerBusLiveStatusAPIView(APIView):
         loc = bus.get_current_location()
         seconds_ago = int((timezone.now() - loc.timestamp).total_seconds()) if loc and loc.timestamp else None
 
-        # STRICT: Only live if trip is actively ACTIVE, IN_PROGRESS, or IN_TRANSIT, bus is LIVE, and telemetry within 300s
-        is_live = (bus.trip_status in ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT']) and (bus.tracking_status == 'LIVE') and (loc is not None) and (seconds_ago is not None and seconds_ago <= 300)
+        # STRICT: Only live if trip is actively ACTIVE, IN_PROGRESS, or IN_TRANSIT, bus is LIVE, and telemetry exists
+        has_recent_ping = (seconds_ago is not None and seconds_ago <= 10)
+        is_live = (bus.trip_status in ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT']) and (bus.tracking_status == 'LIVE') and (loc is not None) and (seconds_ago is not None and seconds_ago <= 60)
         status_str = "ACTIVE" if is_live else "OFFLINE"
 
         return Response({
+            "bus_id": bus.id,
             "bus_no": bus.bus_number,
             "is_live": is_live,
+            "isLive": is_live,
+            "has_recent_ping": has_recent_ping,
             "status": status_str,
             "trip_status": bus.trip_status,
             "current_lat": float(loc.latitude) if (loc and is_live) else None,
             "current_lon": float(loc.longitude) if (loc and is_live) else None,
+            "latitude": float(loc.latitude) if (loc and is_live) else None,
+            "longitude": float(loc.longitude) if (loc and is_live) else None,
             "speed_kmh": float(loc.speed) if (loc and is_live) else 0.0,
+            "speed": float(loc.speed) if (loc and is_live) else 0.0,
             "heading": float(loc.heading) if (loc and is_live) else 0.0,
-            "last_updated_seconds_ago": seconds_ago
+            "last_updated_seconds_ago": seconds_ago,
+            "route_name": bus.route.route_name if bus.route else "City Route",
+            "driver_name": getattr(bus, 'driver_name', 'NWKRTC Operator') or "NWKRTC Operator"
         })
+
+
+class TripLifecycleEvaluateAPIView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        from tracking.services.trip_lifecycle import TripLifecycleEngine, TripState
+
+        route_stops = request.data.get('route_stops', [])
+        pickup_stop_id = request.data.get('pickup_stop_id')
+        destination_stop_id = request.data.get('destination_stop_id')
+        driver_gps_data = request.data.get('driver_gps')
+        passenger_gps_data = request.data.get('passenger_gps')
+
+        if not route_stops or not pickup_stop_id or not destination_stop_id:
+            return Response(
+                {"error": "route_stops, pickup_stop_id, and destination_stop_id are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            new_events = []
+            def on_event(msg, atype, meta):
+                new_events.append({
+                    'text': msg,
+                    'type': atype,
+                    'metadata': meta
+                })
+
+            engine = TripLifecycleEngine(
+                route_stops=route_stops,
+                pickup_stop_id=pickup_stop_id,
+                destination_stop_id=destination_stop_id,
+                on_announcement=on_event
+            )
+
+            # Restore state if provided
+            if 'current_state' in request.data:
+                engine.state = request.data['current_state']
+            if 'current_stop_index' in request.data:
+                engine.current_stop_index = int(request.data['current_stop_index'])
+                engine.next_stop_index = engine.current_stop_index + 1
+            if 'triggered_events' in request.data:
+                engine._triggered_events = set(request.data['triggered_events'])
+
+            if passenger_gps_data:
+                engine.update_passenger_gps(
+                    latitude=float(passenger_gps_data.get('latitude', passenger_gps_data.get('lat', 0.0))),
+                    longitude=float(passenger_gps_data.get('longitude', passenger_gps_data.get('lng', passenger_gps_data.get('lon', 0.0)))),
+                    speed=float(passenger_gps_data.get('speed', 0.0))
+                )
+
+            if driver_gps_data:
+                engine.update_driver_gps(
+                    latitude=float(driver_gps_data.get('latitude', driver_gps_data.get('lat', 0.0))),
+                    longitude=float(driver_gps_data.get('longitude', driver_gps_data.get('lng', driver_gps_data.get('lon', 0.0)))),
+                    speed=float(driver_gps_data.get('speed', 0.0)),
+                    heading=float(driver_gps_data.get('heading', 0.0))
+                )
+
+
+            summary = engine.get_status_snapshot()
+            summary['events'] = new_events
+            summary['triggered_events'] = list(engine._triggered_events)
+
+            return Response(summary, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 

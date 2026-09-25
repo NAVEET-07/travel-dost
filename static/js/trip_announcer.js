@@ -699,20 +699,63 @@
          * @param {number} busLon - Current bus longitude.
          * @returns {{ traveled: Array<[number, number]>, remaining: Array<[number, number]>, closestIndex: number, distanceMeters: number }}
          */
+        /**
+         * Validates and sanitizes a [lat, lon] coordinate pair, detecting and fixing any inverted [lon, lat] values.
+         */
+        static sanitizeCoord(coord) {
+            if (!coord) return null;
+            let lat, lon;
+            if (Array.isArray(coord)) {
+                lat = parseFloat(coord[0]);
+                lon = parseFloat(coord[1]);
+            } else if (typeof coord === 'object') {
+                lat = parseFloat(coord.lat !== undefined ? coord.lat : coord.latitude);
+                lon = parseFloat(coord.lon !== undefined ? coord.lon : (coord.lng !== undefined ? coord.lng : coord.longitude));
+            }
+            if (isNaN(lat) || isNaN(lon)) return null;
+
+            // Inversion check: Hubballi-Dharwad region is Latitude ~15°N, Longitude ~75°E.
+            // If latitude > 50 and longitude < 35, coordinates were inverted to [lon, lat]!
+            if (lat > 50 && lon < 35) {
+                const temp = lat;
+                lat = lon;
+                lon = temp;
+            }
+            if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
+            return [lat, lon];
+        }
+
+        /**
+         * Slices full road network polyline coordinates into traveled vs remaining based on current bus location.
+         * Completed portion (traveled): faded/muted gray where bus already drove.
+         * Remaining portion: vibrant upcoming path ahead of the bus marker.
+         * @param {Array<[number, number]>} roadCoords - Array of [lat, lon] coordinates.
+         * @param {number} busLat - Current bus latitude.
+         * @param {number} busLon - Current bus longitude.
+         * @returns {{ traveled: Array<[number, number]>, remaining: Array<[number, number]>, closestIndex: number, distanceMeters: number }}
+         */
         static slicePolyline(roadCoords, busLat, busLon) {
             if (!roadCoords || roadCoords.length === 0) {
                 return { traveled: [], remaining: [], closestIndex: -1, distanceMeters: 0 };
             }
-            if (roadCoords.length === 1) {
-                return { traveled: [[busLat, busLon]], remaining: [roadCoords[0]], closestIndex: 0, distanceMeters: 0 };
+
+            const cleanBus = TripLifecycleAnnouncer.sanitizeCoord([busLat, busLon]);
+            const cleanCoords = roadCoords.map(c => TripLifecycleAnnouncer.sanitizeCoord(c)).filter(Boolean);
+
+            if (!cleanBus || cleanCoords.length === 0) {
+                return { traveled: [], remaining: cleanCoords, closestIndex: 0, distanceMeters: 0 };
+            }
+
+            if (cleanCoords.length === 1) {
+                return { traveled: [cleanBus], remaining: [cleanCoords[0]], closestIndex: 0, distanceMeters: 0 };
             }
 
             let minDistance = Infinity;
             let closestIndex = 0;
 
-            for (let i = 0; i < roadCoords.length; i++) {
-                const pt = roadCoords[i];
-                const d = haversineMeters(busLat, busLon, pt[0], pt[1]);
+            for (let i = 0; i < cleanCoords.length; i++) {
+                const pt = cleanCoords[i];
+                const d = haversineMeters(cleanBus[0], cleanBus[1], pt[0], pt[1]);
                 if (d < minDistance) {
                     minDistance = d;
                     closestIndex = i;
@@ -720,11 +763,11 @@
             }
 
             // Sliced traveled portion: up to closest vertex, plus current bus position
-            const traveled = roadCoords.slice(0, closestIndex + 1);
-            traveled.push([busLat, busLon]);
+            const traveled = cleanCoords.slice(0, closestIndex + 1);
+            traveled.push(cleanBus);
 
             // Sliced remaining portion: begins from current bus position, followed by remaining road coordinates
-            const remaining = [[busLat, busLon], ...roadCoords.slice(closestIndex + 1)];
+            const remaining = [cleanBus, ...cleanCoords.slice(closestIndex + 1)];
 
             return {
                 traveled,
@@ -742,9 +785,9 @@
          */
         static async fetchRoadSnappedRoute(stops) {
             if (!stops || stops.length < 2) {
-                return stops ? stops.map(s => [s.lat, s.lon !== undefined ? s.lon : s.lng]) : [];
+                return stops ? stops.map(s => TripLifecycleAnnouncer.sanitizeCoord([s.lat, s.lon !== undefined ? s.lon : s.lng])).filter(Boolean) : [];
             }
-            const latLons = stops.map(s => [s.lat, s.lon !== undefined ? s.lon : s.lng]);
+            const latLons = stops.map(s => TripLifecycleAnnouncer.sanitizeCoord([s.lat, s.lon !== undefined ? s.lon : s.lng])).filter(Boolean);
 
             try {
                 // Try backend cached road-geometry endpoint
@@ -755,8 +798,17 @@
                 });
                 if (resp.ok) {
                     const data = await resp.json();
-                    if (data.status === 'success' && data.geometry && data.geometry.coordinates && data.geometry.coordinates.length >= 2) {
-                        return data.geometry.coordinates;
+                    if (data.status === 'success') {
+                        if (data.coordinates_lat_lng && data.coordinates_lat_lng.length >= 2) {
+                            return data.coordinates_lat_lng.map(c => TripLifecycleAnnouncer.sanitizeCoord(c)).filter(Boolean);
+                        }
+                        if (data.road_points && data.road_points.length >= 2) {
+                            return data.road_points.map(c => TripLifecycleAnnouncer.sanitizeCoord(c)).filter(Boolean);
+                        }
+                        if (data.geometry && data.geometry.coordinates && data.geometry.coordinates.length >= 2) {
+                            // GeoJSON coordinates are [lon, lat] -> convert to Leaflet [lat, lon]
+                            return data.geometry.coordinates.map(c => TripLifecycleAnnouncer.sanitizeCoord([c[1], c[0]])).filter(Boolean);
+                        }
                     }
                 }
             } catch (e) {
@@ -765,13 +817,13 @@
 
             // Fallback direct to OSRM driving profile
             try {
-                const coordStr = stops.map(s => `${(s.lon !== undefined ? s.lon : s.lng).toFixed(6)},${s.lat.toFixed(6)}`).join(';');
+                const coordStr = latLons.map(pt => `${pt[1].toFixed(6)},${pt[0].toFixed(6)}`).join(';');
                 const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${coordStr}?overview=full&geometries=geojson`;
                 const oResp = await fetch(osrmUrl);
                 if (oResp.ok) {
                     const oData = await oResp.json();
                     if (oData.code === 'Ok' && oData.routes && oData.routes[0]) {
-                        return oData.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                        return oData.routes[0].geometry.coordinates.map(c => TripLifecycleAnnouncer.sanitizeCoord([c[1], c[0]])).filter(Boolean);
                     }
                 }
             } catch (err) {

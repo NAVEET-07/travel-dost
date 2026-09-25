@@ -534,8 +534,10 @@ class BusTrackingStatusAPIView(APIView):
         try:
             bus = Bus.objects.select_related('route').get(pk=pk)
             loc = bus.get_current_location()
+            seconds_ago = int((timezone.now() - loc.timestamp).total_seconds()) if loc and loc.timestamp else None
 
-            is_live = (bus.tracking_status == 'LIVE') and (bus.trip_status in ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT'])
+            # Strictly gate is_live on active driver GPS broadcast (or fresh trip start, ping < 90s)
+            is_live = (bus.tracking_status == 'LIVE') and (bus.trip_status in ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT']) and (seconds_ago is None or seconds_ago <= 90)
 
             route_stops_data = []
             current_stop_data = None
@@ -813,7 +815,8 @@ class RouteGeometryAPIView(APIView):
                 "type": "LineString",
                 "coordinates": all_geojson_coords
             },
-            "road_points": road_lat_lng
+            "road_points": road_lat_lng,
+            "coordinates_lat_lng": road_lat_lng
         })
 
 

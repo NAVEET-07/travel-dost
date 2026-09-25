@@ -69,6 +69,77 @@ function initTravelDostMap(elementId, centerLat = 15.3647, centerLng = 75.1240, 
 }
 
 /**
+ * Universal Coordinate Sanitizer & Inversion Fixer
+ * Guarantees [latitude, longitude] format for Hubballi-Dharwad / Leaflet
+ */
+function sanitizeLatLng(coord) {
+    if (!coord) return null;
+    let lat, lng;
+    if (Array.isArray(coord)) {
+        lat = parseFloat(coord[0]);
+        lng = parseFloat(coord[1]);
+    } else if (typeof coord === 'object') {
+        lat = parseFloat(coord.lat !== undefined ? coord.lat : coord.latitude);
+        lng = parseFloat(coord.lng !== undefined ? coord.lng : (coord.lon !== undefined ? coord.lon : coord.longitude));
+    }
+    if (isNaN(lat) || isNaN(lng)) return null;
+
+    // Detect inverted [lng, lat] for India/Hubballi (lat ~15°N, lng ~75°E)
+    if (lat > 50 && lng < 35) {
+        const tmp = lat;
+        lat = lng;
+        lng = tmp;
+    }
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+    return [lat, lng];
+}
+
+/**
+ * Smooth coordinate tweening with slight bearing interpolation
+ */
+function animateMarkerTo(marker, targetLat, targetLng, targetHeading, durationMs = 1200) {
+    if (!marker) return;
+    const startLatLng = marker.getLatLng();
+    const startLat = startLatLng.lat;
+    const startLng = startLatLng.lng;
+    const startTime = performance.now();
+
+    if (marker._animFrameId) {
+        cancelAnimationFrame(marker._animFrameId);
+        marker._animFrameId = null;
+    }
+
+    const startHeading = marker._currentHeading || 0;
+    let dHeading = targetHeading !== undefined && targetHeading !== null
+        ? (((targetHeading - startHeading + 540) % 360) - 180)
+        : 0;
+
+    function step(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(1.0, elapsed / durationMs);
+        const ease = progress * (2 - progress); // Smooth Ease-out
+
+        const curLat = startLat + (targetLat - startLat) * ease;
+        const curLng = startLng + (targetLng - startLng) * ease;
+        marker.setLatLng([curLat, curLng]);
+
+        if (targetHeading !== undefined && targetHeading !== null) {
+            const curHeading = (startHeading + dHeading * ease + 360) % 360;
+            marker._currentHeading = curHeading;
+            updateBusMarkerHeading(marker, curHeading);
+        }
+
+        if (progress < 1.0) {
+            marker._animFrameId = requestAnimationFrame(step);
+        } else {
+            marker._animFrameId = null;
+        }
+    }
+
+    marker._animFrameId = requestAnimationFrame(step);
+}
+
+/**
  * Live Bus Marker Pin (Hubballi-Dharwad Smart Transit Theme)
  */
 function createBusIcon(status = 'LIVE', busNumber = '', heading = 0) {
@@ -100,7 +171,7 @@ function createBusIcon(status = 'LIVE', busNumber = '', heading = 0) {
 function renderTrackingPolylines(busLatLng, routeStops, roadGeometry, traveledRoadPoints, remainingRoadPoints, breadcrumbsPoints) {
     if (!travelDostMap) return;
 
-    // Clear old route polylines
+    // Clear old route polylines completely before redrawing
     if (sourceToDestPolyline) {
         travelDostMap.removeLayer(sourceToDestPolyline);
         sourceToDestPolyline = null;
@@ -120,9 +191,9 @@ function renderTrackingPolylines(busLatLng, routeStops, roadGeometry, traveledRo
 
     const bounds = [];
 
-    // Extract ordered stop coordinates
+    // Extract sanitized ordered stop coordinates
     const stopCoords = (routeStops && routeStops.length > 0)
-        ? routeStops.map(s => [parseFloat(s.lat || s.latitude), parseFloat(s.lng || s.longitude || s.lon)]).filter(p => !isNaN(p[0]) && !isNaN(p[1]))
+        ? routeStops.map(s => sanitizeLatLng(s)).filter(Boolean)
         : [];
 
     const sourcePoint = stopCoords.length > 0 ? stopCoords[0] : null;
@@ -134,9 +205,13 @@ function renderTrackingPolylines(busLatLng, routeStops, roadGeometry, traveledRo
     const destStopName = (routeStops && routeStops.length > 0) ? (routeStops[routeStops.length - 1].name || routeStops[routeStops.length - 1].stop_name || 'Terminus') : 'Terminus';
 
     // 1. FULL CORRIDOR: From Source to Destination (ONE TYPE: Solid Electric Blue)
-    const fullRoutePoints = (roadGeometry && roadGeometry.length >= 2)
-        ? roadGeometry
-        : stopCoords;
+    let fullRoutePoints = [];
+    if (roadGeometry && roadGeometry.length >= 2) {
+        fullRoutePoints = roadGeometry.map(sanitizeLatLng).filter(Boolean);
+    }
+    if (!fullRoutePoints || fullRoutePoints.length < 2) {
+        fullRoutePoints = stopCoords;
+    }
 
     if (fullRoutePoints && fullRoutePoints.length >= 2) {
         sourceToDestPolyline = L.polyline(fullRoutePoints, {
@@ -155,14 +230,8 @@ function renderTrackingPolylines(busLatLng, routeStops, roadGeometry, traveledRo
         fullRoutePoints.forEach(p => bounds.push(p));
     }
 
-    // Resolve bus location coordinates
-    let activeBusPt = null;
-    if (busLatLng && !isNaN(busLatLng[0]) && !isNaN(busLatLng[1])) {
-        activeBusPt = [busLatLng[0], busLatLng[1]];
-    } else if (sourcePoint) {
-        activeBusPt = sourcePoint;
-    }
-
+    // Resolve sanitized bus location coordinates
+    let activeBusPt = sanitizeLatLng(busLatLng);
     // 2. BUS LOCATION TO SOURCE: (DIFFERENT TYPE: Dashed Amber #f59e0b)
     if (activeBusPt && sourcePoint) {
         busToSourcePolyline = L.polyline([activeBusPt, sourcePoint], {
@@ -376,40 +445,46 @@ function updateBusMarkerOnMap(busData) {
     if (!travelDostMap || !busData) return;
 
     const busId = busData.bus_id || busData.id;
-    const lat = parseFloat(busData.latitude);
-    const lng = parseFloat(busData.longitude);
+    const cleanPt = sanitizeLatLng([busData.latitude, busData.longitude]);
+    if (!cleanPt) return;
+    const [lat, lng] = cleanPt;
+
     const status = busData.status || busData.tracking_status || 'LIVE';
     const tripStatus = (busData.trip_status || '').toUpperCase();
     const busNum = busData.bus_number || '';
 
-    // Only skip if coordinates are completely invalid
-    if (isNaN(lat) || isNaN(lng)) {
-        return;
-    }
-
-    const isLive = status === 'LIVE' && (!tripStatus || ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT'].includes(tripStatus));
+    // Check explicit live GPS broadcast status
+    const isLive = busData.is_live === true || (status === 'LIVE' && (!tripStatus || ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT'].includes(tripStatus)) && busData.is_live !== false);
     const speedStr = busData.speed !== undefined && busData.speed !== null ? Number(busData.speed).toFixed(1) : (isLive ? '30.0' : '0.0');
 
     const popupContent = `
-        <div class="p-2" style="min-width: 210px;">
+        <div class="p-2" style="min-width: 220px;">
             <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
                 <strong class="text-primary fs-6"><i class="fa-solid fa-bus me-1"></i> Bus ${busNum}</strong>
-                <span class="badge ${isLive ? 'bg-success' : 'bg-secondary'}">${isLive ? '<span class="live-dot me-1"></span> LIVE' : 'SCHEDULED'}</span>
+                <span class="badge ${isLive ? 'bg-success' : 'bg-secondary'}">${isLive ? '<span class="live-dot me-1"></span> LIVE' : 'OFFLINE'}</span>
             </div>
             <p class="m-0 small"><strong>Route:</strong> ${busData.route_name || 'NWKRTC Service'}</p>
             <p class="m-0 small"><strong>Speed:</strong> ${speedStr} km/h</p>
-            <p class="m-0 small text-muted"><strong>Status:</strong> ${isLive ? 'Real-Time GPS (3s sync)' : 'Scheduled / Terminal Standby'}</p>
+            <p class="m-0 small ${isLive ? 'text-success' : 'text-danger'} fw-semibold">
+                <strong>Status:</strong> ${isLive ? 'Real-Time GPS Active' : 'Bus is currently offline / Not live'}
+            </p>
         </div>
     `;
 
     if (busMarkersMap[busId]) {
-        busMarkersMap[busId].setLatLng([lat, lng]);
-        busMarkersMap[busId].setIcon(createBusIcon(isLive ? 'LIVE' : 'SCHEDULED', busNum, busData.heading || 0));
-        if (busMarkersMap[busId].getPopup()) {
-            busMarkersMap[busId].getPopup().setContent(popupContent);
+        const marker = busMarkersMap[busId];
+        marker.setIcon(createBusIcon(isLive ? 'LIVE' : 'OFFLINE', busNum, busData.heading || 0));
+        if (marker.getPopup()) {
+            marker.getPopup().setContent(popupContent);
+        }
+        if (isLive) {
+            // Smoothly animate marker only between consecutive received coordinates
+            animateMarkerTo(marker, lat, lng, busData.heading, 1200);
+        } else {
+            // If offline, do NOT interpolate or move marker across map arbitrarily
         }
     } else {
-        const marker = L.marker([lat, lng], { icon: createBusIcon(isLive ? 'LIVE' : 'SCHEDULED', busNum, busData.heading || 0) }).addTo(travelDostMap);
+        const marker = L.marker([lat, lng], { icon: createBusIcon(isLive ? 'LIVE' : 'OFFLINE', busNum, busData.heading || 0) }).addTo(travelDostMap);
         marker.bindPopup(popupContent);
         busMarkersMap[busId] = marker;
     }
@@ -428,6 +503,9 @@ function updateBusMarkerOnMap(busData) {
         }).addTo(travelDostMap);
     }
 
-    // Dynamically append to traveled breadcrumbs polyline
-    appendTraveledCoordinate(lat, lng);
+    if (isLive) {
+        // Dynamically append to traveled breadcrumbs polyline only when live
+        appendTraveledCoordinate(lat, lng);
+    }
 }
+

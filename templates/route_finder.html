@@ -1624,23 +1624,19 @@
                     </span>
                 </div>
 
-                <!-- 1-Click Interactive Demo Simulation Bar -->
-                <div class="simulation-demo-box p-2 mt-2 rounded-3">
-                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-1">
-                        <span class="small text-secondary" style="font-size: 0.72rem;">
-                            <i class="fa-solid fa-wand-magic-sparkles text-warning me-1"></i> Interactive Demo:
-                        </span>
-                        <div class="d-flex align-items-center gap-1">
-                            <button type="button" class="btn btn-xs btn-primary rounded-pill px-2 py-1 fw-bold" id="btnStartSimulation" style="font-size: 0.7rem;">
-                                <i class="fa-solid fa-play me-1"></i> Run Journey Demo
-                            </button>
-                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1 d-none" id="btnResetSimulation" style="font-size: 0.7rem;">
-                                <i class="fa-solid fa-rotate-left"></i>
-                            </button>
+                <!-- Driver Live GPS Status Panel -->
+                <div class="driver-live-status-box p-2 mt-2 rounded-3 border" id="driverLiveStatusBox" style="background: rgba(15, 23, 42, 0.7); border-color: rgba(148, 163, 184, 0.2) !important;">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="status-indicator-dot" id="driverGpsDot" style="width: 10px; height: 10px; border-radius: 50%; background: #64748b; display: inline-block;"></span>
+                            <div>
+                                <span class="d-block fw-bold text-white" id="driverGpsStatusText" style="font-size: 0.76rem;">Checking Driver GPS...</span>
+                                <span class="d-block text-secondary" id="driverGpsSubtext" style="font-size: 0.68rem;">Connecting to vehicle telemetry</span>
+                            </div>
                         </div>
-                    </div>
-                    <div class="progress mt-2 d-none" id="simulationProgressBarWrapper" style="height: 4px; background: rgba(255,255,255,0.1);">
-                        <div class="progress-bar bg-info progress-bar-striped progress-bar-animated" id="simulationProgressBar" style="width: 0%;"></div>
+                        <span class="badge rounded-pill px-2 py-1" id="driverGpsBadge" style="font-size: 0.68rem; background: rgba(100, 116, 139, 0.2); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.4);">
+                            STANDBY
+                        </span>
                     </div>
                 </div>
             </div>
@@ -2919,21 +2915,151 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentTrackingRoute = null;
     let currentTrackingLeg = null;
     let currentRoadCoordinates = [];
-    let isSimulationRunning = false;
-    let simulationStepTimer = null;
     let trackingTileLayer = null;
     let trackingShowStopLabels = true;
     let currentTrackingBusNumber = '24';
-    let simulationCurrentStep = 0;
+    let currentJourneyStops = [];
+    let lastKnownPassedIndex = -1;
+    let isDriverGpsLive = false;
+
+    function sanitizeLatLng(coord) {
+        if (!coord) return null;
+        let lat, lng;
+        if (Array.isArray(coord)) {
+            lat = parseFloat(coord[0]);
+            lng = parseFloat(coord[1]);
+        } else if (typeof coord === 'object') {
+            lat = parseFloat(coord.lat !== undefined ? coord.lat : coord.latitude);
+            lng = parseFloat(coord.lng !== undefined ? coord.lng : (coord.lon !== undefined ? coord.lon : coord.longitude));
+        }
+        if (isNaN(lat) || isNaN(lng)) return null;
+
+        // Detect inverted [lng, lat] for India/Hubballi (lat ~15°N, lng ~75°E)
+        if (lat > 50 && lng < 35) {
+            const tmp = lat;
+            lat = lng;
+            lng = tmp;
+        }
+        if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+        return [lat, lng];
+    }
 
     function isValidLatLng(lat, lon) {
-        if (lat === null || lat === undefined || lon === null || lon === undefined) return false;
-        const nLat = parseFloat(lat);
-        const nLon = parseFloat(lon);
-        if (isNaN(nLat) || isNaN(nLon)) return false;
-        if (nLat < -90 || nLat > 90 || nLon < -180 || nLon > 180) return false;
-        if (Math.abs(nLat) < 0.001 && Math.abs(nLon) < 0.001) return false;
-        return true;
+        return sanitizeLatLng([lat, lon]) !== null;
+    }
+
+    function animateMarkerTo(marker, targetLat, targetLng, targetHeading, durationMs = 1200) {
+        if (!marker) return;
+        const startLatLng = marker.getLatLng();
+        const startLat = startLatLng.lat;
+        const startLng = startLatLng.lng;
+        const startTime = performance.now();
+
+        if (marker._animFrameId) {
+            cancelAnimationFrame(marker._animFrameId);
+            marker._animFrameId = null;
+        }
+
+        const startHeading = marker._currentHeading || 0;
+        let dHeading = targetHeading !== undefined && targetHeading !== null
+            ? (((targetHeading - startHeading + 540) % 360) - 180)
+            : 0;
+
+        function step(now) {
+            const elapsed = now - startTime;
+            const progress = Math.min(1.0, elapsed / durationMs);
+            const ease = progress * (2 - progress); // Smooth Ease-out
+
+            const curLat = startLat + (targetLat - startLat) * ease;
+            const curLng = startLng + (targetLng - startLng) * ease;
+            marker.setLatLng([curLat, curLng]);
+
+            if (targetHeading !== undefined && targetHeading !== null) {
+                const curHeading = (startHeading + dHeading * ease + 360) % 360;
+                marker._currentHeading = curHeading;
+                updateBusMarkerHeading(marker, curHeading);
+            }
+
+            if (progress < 1.0) {
+                marker._animFrameId = requestAnimationFrame(step);
+            } else {
+                marker._animFrameId = null;
+            }
+        }
+
+        marker._animFrameId = requestAnimationFrame(step);
+    }
+
+    function calculateHaversineDistanceMeters(lat1, lon1, lat2, lon2) {
+        const R = 6371e3; // Earth radius in meters
+        const phi1 = lat1 * Math.PI / 180;
+        const phi2 = lat2 * Math.PI / 180;
+        const deltaPhi = (lat2 - lat1) * Math.PI / 180;
+        const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+                  Math.cos(phi1) * Math.cos(phi2) *
+                  Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
+    function updateDriverLiveStatusUI(isLive, details = {}) {
+        isDriverGpsLive = isLive;
+        const box = document.getElementById('driverLiveStatusBox');
+        const dot = document.getElementById('driverGpsDot');
+        const statusText = document.getElementById('driverGpsStatusText');
+        const subtext = document.getElementById('driverGpsSubtext');
+        const badge = document.getElementById('driverGpsBadge');
+        const cardSignal = document.getElementById('cardGpsSignal');
+
+        if (!box) return;
+
+        if (isLive) {
+            box.style.background = 'rgba(6, 78, 59, 0.4)';
+            box.style.borderColor = 'rgba(16, 185, 129, 0.4) !important';
+            if (dot) {
+                dot.style.background = '#10b981';
+                dot.className = 'status-indicator-dot pulse-active';
+            }
+            if (statusText) {
+                statusText.textContent = 'Driver GPS Active • Live Stream';
+                statusText.className = 'd-block fw-bold text-success';
+            }
+            if (subtext) {
+                const secAgo = details.last_updated_seconds_ago !== undefined ? `${details.last_updated_seconds_ago}s ago` : 'Real-Time';
+                subtext.textContent = `Broadcasting live coordinates (${secAgo})`;
+            }
+            if (badge) {
+                badge.className = 'badge rounded-pill px-2 py-1 bg-success text-white border-0';
+                badge.innerHTML = '<span class="live-dot me-1"></span> LIVE GPS';
+            }
+            if (cardSignal) {
+                cardSignal.className = 'badge bg-success bg-opacity-20 text-success border border-success border-opacity-25 rounded-pill px-2 py-1 small';
+                cardSignal.innerHTML = '<i class="fa-solid fa-satellite-dish me-1"></i> Live 4G GPS';
+            }
+        } else {
+            box.style.background = 'rgba(30, 41, 59, 0.6)';
+            box.style.borderColor = 'rgba(148, 163, 184, 0.2) !important';
+            if (dot) {
+                dot.style.background = '#ef4444';
+                dot.className = 'status-indicator-dot';
+            }
+            if (statusText) {
+                statusText.textContent = 'Bus is currently offline / Not live';
+                statusText.className = 'd-block fw-bold text-warning';
+            }
+            if (subtext) {
+                subtext.textContent = details.trip_status ? `Status: ${details.trip_status.replace(/_/g, ' ')} (Waiting for driver)` : 'Driver GPS broadcast inactive';
+            }
+            if (badge) {
+                badge.className = 'badge rounded-pill px-2 py-1 bg-secondary text-light border-0';
+                badge.textContent = 'OFFLINE';
+            }
+            if (cardSignal) {
+                cardSignal.className = 'badge bg-secondary bg-opacity-20 text-secondary border border-secondary border-opacity-25 rounded-pill px-2 py-1 small';
+                cardSignal.innerHTML = '<i class="fa-solid fa-circle-xmark me-1"></i> Standby / Offline';
+            }
+        }
     }
 
     function initSplitTrackingMap() {
@@ -3352,25 +3478,118 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let splitTrackingSocket = null;
 
-    function updateBusPositionOnMap(lat, lon, speed = 0, heading = 0) {
+    function updateStepperByProximity(busLat, busLon, stops) {
+        if (!stops || stops.length === 0 || !isValidLatLng(busLat, busLon)) return;
+
+        const cleanBus = sanitizeLatLng([busLat, busLon]);
+        if (!cleanBus) return;
+        const [bLat, bLon] = cleanBus;
+
+        // Calculate distance from bus to each stop
+        const distances = stops.map((st, idx) => {
+            const cleanSt = sanitizeLatLng([st.lat, st.lon]);
+            const sLat = cleanSt ? cleanSt[0] : st.lat;
+            const sLon = cleanSt ? cleanSt[1] : st.lon;
+            return {
+                index: idx,
+                stop: st,
+                distMeters: calculateHaversineDistanceMeters(bLat, bLon, sLat, sLon)
+            };
+        });
+
+        // Find closest stop
+        let closestIdx = 0;
+        let minDist = distances[0].distMeters;
+        for (let i = 1; i < distances.length; i++) {
+            if (distances[i].distMeters < minDist) {
+                minDist = distances[i].distMeters;
+                closestIdx = i;
+            }
+        }
+
+        // Monotonically advance passed stops
+        if (closestIdx > lastKnownPassedIndex) {
+            if (minDist <= 35 || closestIdx > 0) {
+                lastKnownPassedIndex = Math.max(lastKnownPassedIndex, closestIdx);
+            }
+        }
+
+        const isAtStop = minDist <= 35;
+        const atStopIdx = isAtStop ? closestIdx : -1;
+        const nextStopIdx = isAtStop ? Math.min(stops.length - 1, closestIdx + 1) : Math.min(stops.length - 1, Math.max(0, lastKnownPassedIndex));
+
+        // Update each stop in DOM
+        stops.forEach((st, idx) => {
+            const item = document.getElementById(`stepperItem_${idx}`);
+            const badge = document.getElementById(`stepperBadge_${idx}`);
+            if (!item) return;
+
+            if (idx < lastKnownPassedIndex) {
+                // Passed
+                item.className = 'stepper-stop-item passed';
+                if (badge) {
+                    badge.className = 'badge bg-success bg-opacity-20 text-success border border-success border-opacity-25 small';
+                    badge.innerHTML = '<i class="fa-solid fa-check me-1"></i> Passed';
+                }
+            } else if (idx === atStopIdx) {
+                // At Stop (within 35m)
+                item.className = 'stepper-stop-item active';
+                if (badge) {
+                    badge.className = 'badge bg-success text-white border-0 small';
+                    badge.innerHTML = '<i class="fa-solid fa-bus me-1"></i> At Stop';
+                }
+            } else if (idx === nextStopIdx) {
+                // Next upcoming stop
+                item.className = 'stepper-stop-item active';
+                const distKm = (distances[idx].distMeters / 1000).toFixed(1);
+                const etaMins = Math.max(1, Math.round(distances[idx].distMeters / 450));
+                if (badge) {
+                    badge.className = 'badge bg-primary bg-opacity-25 text-info border border-info border-opacity-25 small';
+                    badge.innerHTML = `<i class="fa-solid fa-location-dot me-1"></i> Next (${distKm} km, ~${etaMins}m)`;
+                }
+                const cardNextEl = document.getElementById('cardNextStop');
+                if (cardNextEl) cardNextEl.textContent = st.name || st.stop_name;
+                const cardEtaEl = document.getElementById('cardEta');
+                if (cardEtaEl) cardEtaEl.innerHTML = `${etaMins} <small style="font-size: 0.6rem;">min</small>`;
+            } else {
+                // Upcoming
+                item.className = 'stepper-stop-item';
+                if (badge) {
+                    badge.className = 'badge bg-dark text-secondary border border-secondary border-opacity-25 small';
+                    badge.textContent = idx === stops.length - 1 ? 'Destination' : 'Upcoming';
+                }
+            }
+        });
+
+        const stopsRemaining = Math.max(0, stops.length - 1 - lastKnownPassedIndex);
+        const remEl = document.getElementById('stepperStopsRemaining');
+        if (remEl) remEl.textContent = `${stopsRemaining} stop(s) remaining`;
+    }
+
+    function updateBusPositionOnMap(lat, lon, speed = 0, heading = 0, isLive = true) {
         if (!splitMap) return;
-        if (!isValidLatLng(lat, lon)) {
+        const cleanPt = sanitizeLatLng([lat, lon]);
+        if (!cleanPt) {
             console.debug('Skipping invalid telemetry coords:', lat, lon);
             return;
         }
 
-        const validLat = parseFloat(lat);
-        const validLon = parseFloat(lon);
+        const [validLat, validLon] = cleanPt;
         const validSpeed = parseFloat(speed || 0);
         const validHeading = parseFloat(heading || 0);
 
-        // 1. Move or create bus marker with smooth CSS transition & bearing rotation
+        // 1. Move or create bus marker with smooth tweening and bearing rotation
         if (!splitBusMarker) {
             splitBusMarker = createBusMarker(validLat, validLon, currentTrackingBusNumber, validHeading);
             splitBusMarker.addTo(splitMap);
         } else {
-            splitBusMarker.setLatLng([validLat, validLon]);
-            updateBusMarkerHeading(splitBusMarker, validHeading);
+            if (isLive) {
+                // Smoothly animate marker between consecutive coordinates
+                animateMarkerTo(splitBusMarker, validLat, validLon, validHeading, 1200);
+            } else {
+                // Offline: Keep stationary, do NOT interpolate arbitrarily across map
+                splitBusMarker.setLatLng([validLat, validLon]);
+            }
         }
 
         // 2. Dynamic Segment Trimming: Slice road geometry into traveled and remaining
@@ -3385,8 +3604,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // 2b. Bus Location to Source Polyline: DIFFERENT TYPE (Dashed Amber #f59e0b)
-        if (splitBusToSourcePolyline && splitCurrentSourceStop && isValidLatLng(splitCurrentSourceStop.lat, splitCurrentSourceStop.lon)) {
-            splitBusToSourcePolyline.setLatLngs([[validLat, validLon], [parseFloat(splitCurrentSourceStop.lat), parseFloat(splitCurrentSourceStop.lon)]]);
+        if (splitBusToSourcePolyline && splitCurrentSourceStop) {
+            const cleanSource = sanitizeLatLng([splitCurrentSourceStop.lat, splitCurrentSourceStop.lon]);
+            if (cleanSource) {
+                splitBusToSourcePolyline.setLatLngs([[validLat, validLon], cleanSource]);
+            }
         }
 
         // 3. User-controlled camera lock:
@@ -3399,8 +3621,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const speedEl = document.getElementById('cardSpeed');
         if (speedEl) speedEl.innerHTML = `${Math.round(validSpeed)} <small style="font-size: 0.6rem;">km/h</small>`;
 
-        // 5. Ingest into trip announcer state machine
-        if (splitAnnouncer) {
+        // 5. Update Stepper Proximity
+        if (currentJourneyStops && currentJourneyStops.length > 0) {
+            updateStepperByProximity(validLat, validLon, currentJourneyStops);
+        }
+
+        // 6. Ingest into trip announcer state machine only when live
+        if (splitAnnouncer && isLive) {
             splitAnnouncer.ingestDriverGps({
                 latitude: validLat,
                 longitude: validLon,
@@ -3423,9 +3650,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if ("geolocation" in navigator) {
             splitPassengerWatchId = navigator.geolocation.watchPosition(
                 pos => {
-                    const pLat = pos.coords.latitude;
-                    const pLon = pos.coords.longitude;
-                    if (isValidLatLng(pLat, pLon)) {
+                    const cleanPassenger = sanitizeLatLng([pos.coords.latitude, pos.coords.longitude]);
+                    if (cleanPassenger) {
+                        const [pLat, pLon] = cleanPassenger;
                         if (splitPassengerMarker) {
                             splitPassengerMarker.setLatLng([pLat, pLon]);
                         }
@@ -3453,19 +3680,22 @@ document.addEventListener('DOMContentLoaded', function() {
             splitTrackingSocket = new WebSocket(socketUrl);
 
             splitTrackingSocket.onmessage = function(event) {
-                if (isSimulationRunning) return;
                 try {
                     const msg = JSON.parse(event.data);
                     const b = msg.bus_data || msg.location || msg;
                     if (b) {
                         const mLat = b.latitude !== undefined ? b.latitude : (b.lat !== undefined ? b.lat : b.current_lat);
                         const mLon = b.longitude !== undefined ? b.longitude : (b.lon !== undefined ? b.lon : (b.lng !== undefined ? b.lng : b.current_lon));
-                        if (isValidLatLng(mLat, mLon)) {
+                        const cleanPt = sanitizeLatLng([mLat, mLon]);
+                        if (cleanPt) {
+                            const isLive = b.status === 'LIVE' || msg.status === 'LIVE' || b.is_live === true;
+                            updateDriverLiveStatusUI(isLive, b);
                             updateBusPositionOnMap(
-                                parseFloat(mLat),
-                                parseFloat(mLon),
+                                cleanPt[0],
+                                cleanPt[1],
                                 parseFloat(b.speed || b.speed_kmh || 0),
-                                parseFloat(b.heading || 0)
+                                parseFloat(b.heading || 0),
+                                isLive
                             );
                         }
                     }
@@ -3479,21 +3709,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 3. Strict 2-Second (2000ms) HTTP Polling Interval (Guaranteed Fallback)
         splitGpsPollInterval = setInterval(async () => {
-            if (isSimulationRunning) return; // Do not overwrite demo simulation
             try {
                 const res = await fetch(`/api/bus/${encodeURIComponent(busNumber)}/live-status/`);
                 if (!res.ok) return;
                 const data = await res.json();
 
+                const isLive = data.is_live === true || data.isLive === true;
+                updateDriverLiveStatusUI(isLive, data);
+
                 const pollLat = data.current_lat !== undefined && data.current_lat !== null ? data.current_lat : data.latitude;
                 const pollLon = data.current_lon !== undefined && data.current_lon !== null ? data.current_lon : data.longitude;
+                const cleanPt = sanitizeLatLng([pollLat, pollLon]);
 
-                if (isValidLatLng(pollLat, pollLon)) {
+                if (cleanPt) {
                     updateBusPositionOnMap(
-                        parseFloat(pollLat),
-                        parseFloat(pollLon),
-                        parseFloat(data.speed_kmh || data.speed || 25),
-                        parseFloat(data.heading || 0)
+                        cleanPt[0],
+                        cleanPt[1],
+                        parseFloat(data.speed_kmh || data.speed || 0),
+                        parseFloat(data.heading || 0),
+                        isLive
                     );
 
                     if (data.next_stop_data && data.next_stop_data.eta_mins !== undefined) {
@@ -3505,128 +3739,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.debug('Polling telemetry update:', err);
             }
         }, 2000); // Strict 2000ms polling interval
-    }
-
-    function runJourneySimulation() {
-        if (!currentRoadCoordinates || currentRoadCoordinates.length < 2) {
-            alert('Route geometry loading. Please wait 1 second and retry.');
-            return;
-        }
-
-        const startBtn = document.getElementById('btnStartSimulation');
-        const resetBtn = document.getElementById('btnResetSimulation');
-        const pWrap = document.getElementById('simulationProgressBarWrapper');
-        const pBar = document.getElementById('simulationProgressBar');
-
-        isSimulationRunning = true;
-        if (startBtn) {
-            startBtn.disabled = true;
-            startBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Running Demo...';
-        }
-        if (resetBtn) resetBtn.classList.remove('d-none');
-        if (pWrap) pWrap.classList.remove('d-none');
-
-        // Create 12 evenly-spaced simulation waypoints along the road network
-        const totalPoints = currentRoadCoordinates.length;
-        const totalSteps = 12;
-        const waypoints = [];
-
-        for (let i = 0; i <= totalSteps; i++) {
-            const fraction = i / totalSteps;
-            const idx = Math.min(totalPoints - 1, Math.floor(fraction * (totalPoints - 1)));
-            const pt = currentRoadCoordinates[idx];
-            // Heading towards next point
-            let heading = 45;
-            if (idx < totalPoints - 1) {
-                const nxt = currentRoadCoordinates[idx + 1];
-                const dLon = (nxt[1] - pt[1]);
-                const dLat = (nxt[0] - pt[0]);
-                heading = Math.round((Math.atan2(dLon, dLat) * 180 / Math.PI + 360) % 360);
-            }
-            waypoints.push({
-                lat: pt[0],
-                lon: pt[1],
-                heading: heading,
-                fraction: fraction
-            });
-        }
-
-        simulationCurrentStep = 0;
-
-        function executeStep() {
-            if (!isSimulationRunning) return;
-            if (simulationCurrentStep >= waypoints.length) {
-                // Completed
-                if (startBtn) {
-                    startBtn.disabled = false;
-                    startBtn.innerHTML = '<i class="fa-solid fa-rotate-left me-1"></i> Re-Run Demo';
-                }
-                return;
-            }
-
-            const wp = waypoints[simulationCurrentStep];
-            const pct = Math.round((simulationCurrentStep / (waypoints.length - 1)) * 100);
-            if (pBar) pBar.style.width = `${pct}%`;
-
-            // Step speed variations (slowing down at stops, boarding stop near 0, cruising en-route)
-            let speed = 28;
-            if (simulationCurrentStep === 0) speed = 32;
-            else if (simulationCurrentStep === 3) speed = 12; // Approaching
-            else if (simulationCurrentStep === 4) speed = 0;  // Arrived at pickup stop!
-            else if (simulationCurrentStep === 5) speed = 22; // Boarded, accelerating
-            else if (simulationCurrentStep >= waypoints.length - 1) speed = 0; // Destination arrived
-
-            updateBusPositionOnMap(wp.lat, wp.lon, speed, wp.heading);
-
-            // Update ETA
-            const etaMins = Math.max(1, Math.round((1 - wp.fraction) * 15));
-            const etaEl = document.getElementById('cardEta');
-            if (etaEl) etaEl.innerHTML = `${etaMins} <small style="font-size: 0.6rem;">min</small>`;
-
-            simulationCurrentStep++;
-            simulationStepTimer = setTimeout(executeStep, 2200);
-        }
-
-        executeStep();
-    }
-
-    function resetJourneySimulation() {
-        if (simulationStepTimer) clearTimeout(simulationStepTimer);
-        isSimulationRunning = false;
-
-        const startBtn = document.getElementById('btnStartSimulation');
-        const resetBtn = document.getElementById('btnResetSimulation');
-        const pWrap = document.getElementById('simulationProgressBarWrapper');
-        const pBar = document.getElementById('simulationProgressBar');
-
-        if (startBtn) {
-            startBtn.disabled = false;
-            startBtn.innerHTML = '<i class="fa-solid fa-play me-1"></i> Run Journey Demo';
-        }
-        if (resetBtn) resetBtn.classList.add('d-none');
-        if (pWrap) pWrap.classList.add('d-none');
-        if (pBar) pBar.style.width = '0%';
-
-        // Reset announcer state
-        if (splitAnnouncer) {
-            splitAnnouncer.reset();
-        }
-
-        // Restore initial bus position
-        if (currentRoadCoordinates && currentRoadCoordinates.length > 0) {
-            updateBusPositionOnMap(currentRoadCoordinates[0][0], currentRoadCoordinates[0][1], 25, 45);
-        }
-
-        // Restore passenger marker
-        if (splitPassengerMarker && splitMap) {
-            splitMap.removeLayer(splitPassengerMarker);
-        }
-        if (splitMap && currentRoadCoordinates && currentRoadCoordinates.length > 0) {
-            splitPassengerMarker = createPassengerMarker(currentRoadCoordinates[0][0], currentRoadCoordinates[0][1], 'Pickup');
-            splitPassengerMarker.addTo(splitMap);
-        }
-
-        logActivityEvent('Simulation reset to initial route state.', 'info', 'fa-solid fa-rotate-left');
     }
 
     function showBusOfflineModal(busNo, data = {}, routeIndex = 0, legIndex = 0) {
@@ -3671,14 +3783,14 @@ document.addEventListener('DOMContentLoaded', function() {
             };
         }
 
-        // Setup preview demo override in modal
+        // Setup preview scheduled route in modal
         const previewBtn = document.getElementById('btnPreviewOfflineRouteDemo');
         if (previewBtn) {
             previewBtn.onclick = () => {
                 const modalInstance = bootstrap.Modal.getInstance(modalEl);
                 if (modalInstance) modalInstance.hide();
                 if (currentFetchedRoutes && currentFetchedRoutes[routeIndex]) {
-                    openSplitScreenTracking(currentFetchedRoutes[routeIndex], legIndex, null, true);
+                    openSplitScreenTracking(currentFetchedRoutes[routeIndex], legIndex, null);
                 }
             };
         }
@@ -3721,10 +3833,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 btnEl.innerHTML = origHtml;
             }
 
-            const cLat = data ? (data.current_lat !== undefined && data.current_lat !== null ? data.current_lat : data.latitude) : null;
-            const cLon = data ? (data.current_lon !== undefined && data.current_lon !== null ? data.current_lon : data.longitude) : null;
-            const isLive = data && (data.is_live === true || data.isLive === true) && isValidLatLng(cLat, cLon);
-
             // Transition smoothly to the split-screen interactive tracking view
             let routeToTrack = currentFetchedRoutes && currentFetchedRoutes[routeIndex] ? currentFetchedRoutes[routeIndex] : null;
             if (!routeToTrack) {
@@ -3739,7 +3847,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }]
                 };
             }
-            openSplitScreenTracking(routeToTrack, legIndex, data, false);
+            openSplitScreenTracking(routeToTrack, legIndex, data);
         } catch (err) {
             console.error('Error checking live bus status:', err);
             if (btnEl) {
@@ -3748,17 +3856,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             let routeToTrack = currentFetchedRoutes && currentFetchedRoutes[routeIndex] ? currentFetchedRoutes[routeIndex] : null;
             if (routeToTrack) {
-                openSplitScreenTracking(routeToTrack, legIndex, null, true);
+                openSplitScreenTracking(routeToTrack, legIndex, null);
             }
         }
     }
     window.handleTrackClick = handleTrackClick;
 
-    function openSplitScreenTracking(route, legIndex = 0, initialLiveData = null, isDemoOverride = false) {
+    function openSplitScreenTracking(route, legIndex = 0, initialLiveData = null) {
         if (!route) return;
 
-        // If called without live data and not in demo mode, gate through pre-check
-        if (!initialLiveData && !isDemoOverride) {
+        // If called without live data, gate through pre-check
+        if (!initialLiveData) {
             const leg = (route.legs && route.legs[legIndex]) ? route.legs[legIndex] : (route.legs ? route.legs[0] : null);
             const busNo = leg?.bus_no || route.primary_live_bus?.bus_no;
             if (busNo) {
@@ -3805,18 +3913,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (route.legs) {
             route.legs.forEach(leg => {
                 (leg.path_coords || []).forEach(coord => {
-                    const lat = parseFloat(coord.lat);
-                    const lon = parseFloat(coord.lon !== undefined ? coord.lon : coord.lng);
-                    if (!isNaN(lat) && !isNaN(lon)) {
-                        const key = `${lat.toFixed(4)}_${lon.toFixed(4)}`;
+                    const cleanPt = sanitizeLatLng([coord.lat, coord.lon !== undefined ? coord.lon : coord.lng]);
+                    if (cleanPt) {
+                        const key = `${cleanPt[0].toFixed(4)}_${cleanPt[1].toFixed(4)}`;
                         if (!seen.has(key)) {
                             seen.add(key);
                             journeyStops.push({
                                 id: coord.id || coord.stop_id || journeyStops.length + 1,
-                                name: coord.stop_name || 'Stop',
-                                stop_name: coord.stop_name || 'Stop',
-                                lat: lat,
-                                lon: lon
+                                name: coord.stop_name || coord.name || 'Stop',
+                                stop_name: coord.stop_name || coord.name || 'Stop',
+                                lat: cleanPt[0],
+                                lon: cleanPt[1]
                             });
                         }
                     }
@@ -3825,6 +3932,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (journeyStops.length < 2) return;
+
+        currentJourneyStops = journeyStops;
+        lastKnownPassedIndex = -1;
 
         const pickupStopId = journeyStops[0].id;
         const destStopId = journeyStops[journeyStops.length - 1].id;
@@ -3852,11 +3962,16 @@ document.addEventListener('DOMContentLoaded', function() {
             isMuted: false
         });
 
-        // Initial announcement as required by specification:
-        const initMsg = `Tracking initiated for Bus #${currentTrackingBusNumber}. Monitoring route to your stop.`;
+        // Initial announcement
+        const isLive = initialLiveData && (initialLiveData.is_live === true || initialLiveData.isLive === true);
+        updateDriverLiveStatusUI(isLive, initialLiveData || {});
+
+        const initMsg = isLive
+            ? `Real-time GPS connected for Bus #${currentTrackingBusNumber}. Live tracking route to your stop.`
+            : `Bus #${currentTrackingBusNumber} is currently offline. Showing scheduled route itinerary.`;
         updateSpeechBubble(initMsg);
-        logActivityEvent(initMsg, 'info', 'fa-solid fa-satellite-dish');
-        splitAnnouncer.speak(initMsg);
+        logActivityEvent(initMsg, isLive ? 'info' : 'warning', isLive ? 'fa-solid fa-satellite-dish' : 'fa-solid fa-clock');
+        if (isLive) splitAnnouncer.speak(initMsg);
 
         // 6. Render Stop Markers & Stepper
         renderSplitMapStops(journeyStops);
@@ -3869,23 +3984,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 7. Road-Snapped Polyline via OSRM / Backend
         TripLifecycleAnnouncer.fetchRoadSnappedRoute(journeyStops).then(roadCoords => {
-            currentRoadCoordinates = roadCoords;
+            currentRoadCoordinates = (roadCoords && roadCoords.length >= 2)
+                ? roadCoords.map(sanitizeLatLng).filter(Boolean)
+                : journeyStops.map(s => [s.lat, s.lon]);
 
             // 1. Source to Destination Polyline: ONE TYPE (Solid Vibrant Blue #2563eb)
-            if (splitSourceToDestPolyline && roadCoords.length > 0) {
-                splitSourceToDestPolyline.setLatLngs(roadCoords);
+            if (splitSourceToDestPolyline && currentRoadCoordinates.length > 0) {
+                splitSourceToDestPolyline.setLatLngs(currentRoadCoordinates);
             }
             if (splitRemainingPolyline) {
-                splitRemainingPolyline.setLatLngs(roadCoords);
+                splitRemainingPolyline.setLatLngs(currentRoadCoordinates);
             }
             if (splitTraveledPolyline) {
                 splitTraveledPolyline.setLatLngs([]);
             }
 
-            // Fit initial view to route bounds
-            if (splitMap && roadCoords.length > 0) {
-                const bounds = L.latLngBounds(roadCoords);
-                splitMap.fitBounds(bounds, { padding: [50, 40] });
+            // Fit initial view to route bounds without erratic zoom snapping
+            if (splitMap && currentRoadCoordinates.length > 0) {
+                const bounds = L.latLngBounds(currentRoadCoordinates);
+                if (bounds.isValid()) {
+                    splitMap.fitBounds(bounds, { padding: [50, 40], maxZoom: 15 });
+                }
             }
 
             // Create Passenger Marker at Point A (Boarding Stop)
@@ -3896,33 +4015,35 @@ document.addEventListener('DOMContentLoaded', function() {
             // Initial bus location (strictly prefer verified live GPS telemetry)
             let initialBusLat = null;
             let initialBusLon = null;
-            let initialBusSpeed = 25;
-            let initialBusHeading = 45;
+            let initialBusSpeed = 0;
+            let initialBusHeading = 0;
 
             if (initialLiveData) {
                 const cLat = initialLiveData.current_lat !== undefined && initialLiveData.current_lat !== null ? initialLiveData.current_lat : initialLiveData.latitude;
                 const cLon = initialLiveData.current_lon !== undefined && initialLiveData.current_lon !== null ? initialLiveData.current_lon : initialLiveData.longitude;
-                if (isValidLatLng(cLat, cLon)) {
-                    initialBusLat = parseFloat(cLat);
-                    initialBusLon = parseFloat(cLon);
-                    initialBusSpeed = parseFloat(initialLiveData.speed_kmh || initialLiveData.speed || 25);
+                const cleanInitial = sanitizeLatLng([cLat, cLon]);
+                if (cleanInitial) {
+                    initialBusLat = cleanInitial[0];
+                    initialBusLon = cleanInitial[1];
+                    initialBusSpeed = parseFloat(initialLiveData.speed_kmh || initialLiveData.speed || 0);
                     initialBusHeading = parseFloat(initialLiveData.heading || 0);
                 }
-            } else if (isDemoOverride && roadCoords && roadCoords.length > 0) {
-                initialBusLat = roadCoords[0][0];
-                initialBusLon = roadCoords[0][1];
             }
 
+            // Fallback to origin stop if bus has no live location
             if (!isValidLatLng(initialBusLat, initialBusLon) && journeyStops.length > 0) {
                 initialBusLat = journeyStops[0].lat;
                 initialBusLon = journeyStops[0].lon;
             }
 
             if (isValidLatLng(initialBusLat, initialBusLon)) {
-                updateBusPositionOnMap(initialBusLat, initialBusLon, initialBusSpeed, initialBusHeading);
+                updateBusPositionOnMap(initialBusLat, initialBusLon, initialBusSpeed, initialBusHeading, isLive);
                 // 2. Bus Location to Source Polyline: DIFFERENT TYPE (Dashed Amber #f59e0b)
-                if (splitBusToSourcePolyline && splitCurrentSourceStop && isValidLatLng(splitCurrentSourceStop.lat, splitCurrentSourceStop.lon)) {
-                    splitBusToSourcePolyline.setLatLngs([[initialBusLat, initialBusLon], [parseFloat(splitCurrentSourceStop.lat), parseFloat(splitCurrentSourceStop.lon)]]);
+                if (splitBusToSourcePolyline && splitCurrentSourceStop) {
+                    const cleanSource = sanitizeLatLng([splitCurrentSourceStop.lat, splitCurrentSourceStop.lon]);
+                    if (cleanSource) {
+                        splitBusToSourcePolyline.setLatLngs([[initialBusLat, initialBusLon], cleanSource]);
+                    }
                 }
             }
 
@@ -3992,11 +4113,6 @@ document.addEventListener('DOMContentLoaded', function() {
             navigator.geolocation.clearWatch(splitPassengerWatchId);
             splitPassengerWatchId = null;
         }
-        if (simulationStepTimer) {
-            clearTimeout(simulationStepTimer);
-            simulationStepTimer = null;
-        }
-        isSimulationRunning = false;
 
         if (splitAnnouncer) {
             splitAnnouncer.reset();
@@ -4048,8 +4164,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('btnToggleTrackingStopLabels')?.addEventListener('click', toggleTrackingStopLabels);
     document.getElementById('btnToggleSpeechMute')?.addEventListener('click', toggleTrackingMute);
     document.getElementById('btnTestAudioVoice')?.addEventListener('click', testAudioVoice);
-    document.getElementById('btnStartSimulation')?.addEventListener('click', runJourneySimulation);
-    document.getElementById('btnResetSimulation')?.addEventListener('click', resetJourneySimulation);
 
     document.getElementById('btnFitTrackingBounds')?.addEventListener('click', function() {
         if (splitMap && currentRoadCoordinates && currentRoadCoordinates.length > 0) {

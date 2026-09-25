@@ -343,16 +343,17 @@
                 </div>
 
                 <!-- Action Controls -->
-                <div class="d-flex gap-2 mb-2">
+                <div class="d-flex align-items-center gap-2 mb-2">
                     <button class="btn btn-primary btn-sm flex-grow-1 extra-small fw-bold py-1" id="btnActivateAnnouncer">
                         <i class="fa-solid fa-play me-1"></i> Start Journey
                     </button>
                     <button class="btn btn-outline-info btn-sm extra-small py-1" id="btnTestVoiceSpeech" title="Test Web Speech API Audio Synthesis">
                         <i class="fa-solid fa-microphone-lines me-1"></i> Test
                     </button>
-                    <button class="btn btn-outline-warning btn-sm extra-small py-1" id="btnSimulateAnnouncer" title="Simulate 5-Stage Lifecycle Demo">
-                        <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Demo
-                    </button>
+                    <span class="badge bg-secondary bg-opacity-50 text-white extra-small py-1 px-2 d-inline-flex align-items-center" id="driverGpsStreamBadge" title="Driver GPS Live Broadcast Status">
+                        <span class="live-dot me-1" id="driverGpsStreamDot" style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; display: inline-block;"></span>
+                        <span id="driverGpsStreamLabel">GPS Standby</span>
+                    </span>
                 </div>
 
                 <!-- Live Geofence Proximity Metrics -->
@@ -581,9 +582,22 @@ $(document.body).ready(function() {
 
             $('#telemetryCard').show();
             $('#noLiveBusesOverlay').addClass('d-none');
+            const isLive = data.is_live === true;
             $('#telBusNum').text(`Bus ${data.bus_number} (${data.bus_type})`);
-            $('#telStatus').text(data.is_live ? 'LIVE' : 'SCHEDULED')
-                .attr('class', data.is_live ? 'badge bg-success' : 'badge bg-secondary');
+            $('#telStatus').text(isLive ? 'LIVE' : 'OFFLINE')
+                .attr('class', isLive ? 'badge bg-success' : 'badge bg-secondary');
+
+            if (isLive) {
+                $('#liveStatusBadge').html('<span class="live-dot me-1"></span> Live GPS Tracking Active');
+                $('#driverGpsStreamDot').css('background', '#10b981').addClass('pulse-active');
+                $('#driverGpsStreamLabel').text('Driver GPS Active');
+                $('#driverGpsStreamBadge').removeClass('bg-secondary bg-opacity-50').addClass('bg-success text-white');
+            } else {
+                $('#liveStatusBadge').html('<i class="fa-solid fa-clock me-1 text-warning"></i> Bus is currently offline / Not live');
+                $('#driverGpsStreamDot').css('background', '#ef4444').removeClass('pulse-active');
+                $('#driverGpsStreamLabel').text('Bus Offline');
+                $('#driverGpsStreamBadge').removeClass('bg-success').addClass('bg-secondary bg-opacity-50 text-white');
+            }
 
             if (data.latest_location) {
                 $('#telSpeed').text(Number(data.latest_location.speed || 0).toFixed(1));
@@ -592,9 +606,11 @@ $(document.body).ready(function() {
 
             let busLatLng = null;
             if (data.latest_location && data.latest_location.latitude && data.latest_location.longitude) {
-                busLatLng = [parseFloat(data.latest_location.latitude), parseFloat(data.latest_location.longitude)];
+                const cleanLoc = sanitizeLatLng([data.latest_location.latitude, data.latest_location.longitude]);
+                if (cleanLoc) busLatLng = cleanLoc;
             } else if (data.route_stops && data.route_stops.length > 0) {
-                busLatLng = [parseFloat(data.route_stops[0].lat), parseFloat(data.route_stops[0].lng)];
+                const cleanStop = sanitizeLatLng([data.route_stops[0].lat, data.route_stops[0].lng]);
+                if (cleanStop) busLatLng = cleanStop;
             }
 
             // ALWAYS Render bus marker on map (Live or Scheduled)
@@ -604,7 +620,8 @@ $(document.body).ready(function() {
                     bus_number: data.bus_number,
                     bus_name: data.bus_name,
                     bus_type: data.bus_type,
-                    status: data.is_live ? 'LIVE' : 'SCHEDULED',
+                    status: isLive ? 'LIVE' : 'OFFLINE',
+                    is_live: isLive,
                     latitude: busLatLng[0],
                     longitude: busLatLng[1],
                     speed: (data.latest_location && data.latest_location.speed) || 0,
@@ -711,24 +728,87 @@ $(document.body).ready(function() {
         startBusTrackingSocket(busId);
     });
 
-    // Callback when bus location update arrives via WebSocket
+    function updateLiveSidebarStepper(busLat, busLon) {
+        if (!currentRouteStops || currentRouteStops.length === 0) return;
+        const cleanBus = sanitizeLatLng([busLat, busLon]);
+        if (!cleanBus) return;
+
+        let closestIdx = 0;
+        let minDist = Infinity;
+        currentRouteStops.forEach((st, i) => {
+            const cleanSt = sanitizeLatLng([st.lat || st.latitude, st.lng || st.longitude]);
+            if (cleanSt) {
+                const dist = calculateHaversineDistanceKm(cleanBus[0], cleanBus[1], cleanSt[0], cleanSt[1]) * 1000;
+                if (dist < minDist) {
+                    minDist = dist;
+                    closestIdx = i;
+                }
+            }
+        });
+
+        // Update stop items in sidebar
+        $('#sidebarBusInfo .list-group-item').each(function(i) {
+            const isAtStop = i === closestIdx && minDist <= 35;
+            const isPassed = i < closestIdx;
+            const isNext = (isAtStop && i + 1 < currentRouteStops.length) || (!isAtStop && i === closestIdx);
+
+            if (isPassed) {
+                $(this).removeClass('bg-success bg-warning bg-opacity-10 border-start border-4 border-success border-warning').addClass('bg-light text-secondary');
+                $(this).find('.badge').replaceWith('<span class="badge bg-light text-success border ms-auto"><i class="fa-solid fa-check me-1"></i> Passed</span>');
+            } else if (isAtStop) {
+                $(this).removeClass('bg-light bg-warning bg-opacity-10 border-warning').addClass('bg-success bg-opacity-10 border-start border-4 border-success');
+                $(this).find('.badge').replaceWith('<span class="badge bg-success ms-auto"><i class="fa-solid fa-bus me-1"></i> At Stop</span>');
+            } else if (isNext) {
+                $(this).removeClass('bg-light bg-success bg-opacity-10 border-success').addClass('bg-warning bg-opacity-10 border-start border-4 border-warning');
+                const etaMins = Math.max(1, Math.round(minDist / 450));
+                $(this).find('.badge').replaceWith(`<span class="badge bg-warning text-dark ms-auto"><i class="fa-solid fa-clock me-1"></i> Next (~${etaMins}m)</span>`);
+            }
+        });
+    }
+
+    // Callback when bus location update arrives via WebSocket / API
     window.onBusLocationUpdate = function(data) {
         const activeSelectedBus = $('#busSelect').val();
         if (activeSelectedBus && String(data.bus_id) === String(activeSelectedBus)) {
-            if (data.latitude && data.longitude) {
-                appendTraveledCoordinate(data.latitude, data.longitude);
+            const cleanPt = sanitizeLatLng([data.latitude, data.longitude]);
+            if (cleanPt) {
+                const [lat, lon] = cleanPt;
+
+                // Update driver live stream indicator
+                $('#driverGpsStreamDot').css('background', '#10b981').addClass('pulse-active');
+                $('#driverGpsStreamLabel').text('Driver GPS Active');
+                $('#driverGpsStreamBadge').removeClass('bg-secondary bg-opacity-50').addClass('bg-success text-white');
+                $('#telStatus').text('LIVE').removeClass('bg-secondary').addClass('bg-success');
+                $('#liveStatusBadge').html('<span class="live-dot me-1"></span> Live GPS Tracking Active');
+
+                appendTraveledCoordinate(lat, lon);
+
+                // Update bus marker with smooth tweening
+                updateBusMarkerOnMap({
+                    bus_id: data.bus_id,
+                    bus_number: data.bus_number,
+                    status: 'LIVE',
+                    is_live: true,
+                    latitude: lat,
+                    longitude: lon,
+                    speed: data.speed || 0,
+                    heading: data.heading || 0
+                });
 
                 // Feed driver GPS to Trip Lifecycle Announcer
                 if (window.tripAnnouncer) {
                     window.tripAnnouncer.ingestDriverGps({
-                        latitude: data.latitude,
-                        longitude: data.longitude,
+                        latitude: lat,
+                        longitude: lon,
                         speed: data.speed || 0,
                         heading: data.heading || 0,
                         timestamp: data.timestamp || Date.now()
                     });
                     updateAnnouncerMetricsUI();
                 }
+
+                // Update sidebar stepper dynamically based on proximity
+                updateLiveSidebarStepper(lat, lon);
             }
         }
     };
@@ -736,8 +816,11 @@ $(document.body).ready(function() {
     window.onBusOffline = function(busId) {
         const activeSelectedBus = $('#busSelect').val();
         if (activeSelectedBus && String(busId) === String(activeSelectedBus)) {
-            $('#telStatus').text('SCHEDULED').removeClass('bg-success').addClass('bg-secondary');
-            $('#liveStatusBadge').html('<i class="fa-solid fa-clock me-1 text-warning"></i> Scheduled Mode');
+            $('#telStatus').text('OFFLINE').removeClass('bg-success').addClass('bg-secondary');
+            $('#liveStatusBadge').html('<i class="fa-solid fa-clock me-1 text-warning"></i> Bus is currently offline / Not live');
+            $('#driverGpsStreamDot').css('background', '#ef4444').removeClass('pulse-active');
+            $('#driverGpsStreamLabel').text('Bus Offline');
+            $('#driverGpsStreamBadge').removeClass('bg-success').addClass('bg-secondary bg-opacity-50 text-white');
         }
     };
 
@@ -745,17 +828,20 @@ $(document.body).ready(function() {
     $('#btnPassengerLocation').on('click', function() {
         if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(function(pos) {
-                updatePassengerMarker(pos.coords.latitude, pos.coords.longitude);
+                const cleanPassenger = sanitizeLatLng([pos.coords.latitude, pos.coords.longitude]);
+                if (cleanPassenger) {
+                    updatePassengerMarker(cleanPassenger[0], cleanPassenger[1]);
 
-                // Feed passenger GPS to Trip Lifecycle Announcer
-                if (window.tripAnnouncer) {
-                    window.tripAnnouncer.ingestPassengerGps({
-                        latitude: pos.coords.latitude,
-                        longitude: pos.coords.longitude,
-                        speed: pos.coords.speed || 0,
-                        timestamp: pos.timestamp || Date.now()
-                    });
-                    updateAnnouncerMetricsUI();
+                    // Feed passenger GPS to Trip Lifecycle Announcer
+                    if (window.tripAnnouncer) {
+                        window.tripAnnouncer.ingestPassengerGps({
+                            latitude: cleanPassenger[0],
+                            longitude: cleanPassenger[1],
+                            speed: pos.coords.speed || 0,
+                            timestamp: pos.timestamp || Date.now()
+                        });
+                        updateAnnouncerMetricsUI();
+                    }
                 }
             }, function(err) {
                 alert("Location permission denied.");
@@ -801,91 +887,6 @@ $(document.body).ready(function() {
             const tempAnnouncer = new TripLifecycleAnnouncer();
             tempAnnouncer.speak("Travel Dost voice announcer is active and ready.");
         }
-    });
-
-    // Button: Simulate 5-Stage Demo Journey
-    $('#btnSimulateAnnouncer').on('click', function() {
-        if (!currentRouteStops || currentRouteStops.length < 2) {
-            alert("Please wait for bus route stops to load before starting demo.");
-            return;
-        }
-
-        if (simulationTimer) {
-            clearInterval(simulationTimer);
-            simulationTimer = null;
-            $('#btnSimulateAnnouncer').html('<i class="fa-solid fa-wand-magic-sparkles me-1"></i> Demo');
-            return;
-        }
-
-        const pickupId = $('#announcerPickupSelect').val() || currentRouteStops[0].id;
-        const destId = $('#announcerDestSelect').val() || currentRouteStops[currentRouteStops.length - 1].id;
-        initTripAnnouncer(currentRouteStops, pickupId, destId);
-
-        const pStop = window.tripAnnouncer.pickupStop;
-        const dStop = window.tripAnnouncer.destinationStop;
-        const pLat = parseFloat(pStop.lat);
-        const pLng = parseFloat(pStop.lng || pStop.lon);
-        const dLat = parseFloat(dStop.lat);
-        const dLng = parseFloat(dStop.lng || dStop.lon);
-
-        $('#btnSimulateAnnouncer').html('<i class="fa-solid fa-stop text-danger me-1"></i> Stop');
-
-        const stages = [
-            // Stage 1: Approaching (125m away)
-            {
-                label: "Stage 1: Approaching (125m)",
-                driver: { latitude: pLat + 0.00112, longitude: pLng, speed: 25.0 },
-                passenger: { latitude: pLat, longitude: pLng, speed: 0.0 }
-            },
-            // Stage 2: Imminent (40m away)
-            {
-                label: "Stage 2: Imminent (< 50m)",
-                driver: { latitude: pLat + 0.00036, longitude: pLng, speed: 14.0 },
-                passenger: { latitude: pLat, longitude: pLng, speed: 0.0 }
-            },
-            // Stage 3: Arrived at pickup (< 20m, 0 km/h)
-            {
-                label: "Stage 3: Arrived at Pickup (< 20m)",
-                driver: { latitude: pLat + 0.00008, longitude: pLng, speed: 1.0 },
-                passenger: { latitude: pLat, longitude: pLng, speed: 0.0 }
-            },
-            // Stage 4: Boarding sync (passenger & driver sync <= 30m, moves away > 10 km/h)
-            {
-                label: "Stage 4: Trip Started / Boarded",
-                driver: { latitude: pLat + 0.00035, longitude: pLng, speed: 22.0 },
-                passenger: { latitude: pLat + 0.00030, longitude: pLng, speed: 22.0 }
-            },
-            // Stage 5: En-route progression
-            {
-                label: "Stage 5: En-Route Progression",
-                driver: { latitude: (pLat + dLat) / 2, longitude: (pLng + dLng) / 2, speed: 30.0 },
-                passenger: { latitude: (pLat + dLat) / 2, longitude: (pLng + dLng) / 2, speed: 30.0 }
-            },
-            // Stage 6: Destination arrival (< 20m)
-            {
-                label: "Stage 6: Destination Arrival (< 20m)",
-                driver: { latitude: dLat + 0.00008, longitude: dLng, speed: 4.0 },
-                passenger: { latitude: dLat + 0.00008, longitude: dLng, speed: 4.0 }
-            }
-        ];
-
-        let sIdx = 0;
-        function runStage() {
-            if (sIdx >= stages.length) {
-                clearInterval(simulationTimer);
-                simulationTimer = null;
-                $('#btnSimulateAnnouncer').html('<i class="fa-solid fa-wand-magic-sparkles me-1"></i> Demo');
-                return;
-            }
-            const s = stages[sIdx];
-            window.tripAnnouncer.ingestPassengerGps(s.passenger);
-            window.tripAnnouncer.ingestDriverGps(s.driver);
-            updateAnnouncerMetricsUI();
-            sIdx++;
-        }
-
-        runStage();
-        simulationTimer = setInterval(runStage, 4000);
     });
 });
 </script>

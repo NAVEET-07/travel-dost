@@ -120,7 +120,7 @@ function fetchBusesApi(busId) {
             url: `/api/buses/${busId}/tracking-status/`,
             type: 'GET',
             success: function(resp) {
-                if (resp && resp.is_live && resp.latest_location && ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT'].includes((resp.trip_status || '').toUpperCase())) {
+                if (resp && resp.latest_location) {
                     const data = {
                         bus_id: resp.bus_id,
                         bus_number: resp.bus_number,
@@ -130,18 +130,12 @@ function fetchBusesApi(busId) {
                         longitude: resp.latest_location.longitude,
                         speed: resp.latest_location.speed,
                         heading: resp.latest_location.heading,
-                        status: resp.tracking_status,
-                        trip_status: resp.trip_status,
+                        status: resp.is_live ? (resp.tracking_status || 'LIVE') : 'SCHEDULED',
+                        trip_status: resp.trip_status || 'SCHEDULED',
                         timestamp: resp.latest_location.timestamp
                     };
                     updateBusMarkerOnMap(data);
                     updateTelemetryCard(data);
-                } else if (resp && (!resp.is_live || !['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT'].includes((resp.trip_status || '').toUpperCase()))) {
-                    // Remove if no longer on active trip
-                    updateBusMarkerOnMap({ bus_id: resp.bus_id, status: 'OFFLINE', trip_status: resp.trip_status || 'COMPLETED' });
-                    if (typeof window.onBusOffline === 'function') {
-                        window.onBusOffline(resp.bus_id);
-                    }
                 }
             }
         });

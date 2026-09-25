@@ -741,13 +741,14 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentRouteData = null;
     let antPathLayer = null;
 
-    // Tile Layer Definitions - Esri World Street & World Topo (Zero 403 blocks, zero watermark, no API key required)
-    const streetTileUrl = window.esriStreetTileUrl || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+    // Tile Layer Definitions - OpenStreetMap HOT (Modern Crisp Transit Styling, zero key required) & Topo
+    const streetTileUrl = window.osmHotUrl || window.osmTileUrl || 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png';
     const topoTileUrl = window.esriTopoTileUrl || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}';
     let currentTileMode = 'street';
     const mapTileOptions = {
         maxZoom: 19,
-        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, METI'
+        subdomains: 'abc',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a>'
     };
 
     // 1. Initialize Leaflet Map

@@ -12,6 +12,9 @@ let currentTrackingBusId = null;
 let driverMap = null;
 let driverMarker = null;
 let driverTraveledPolyline = null;
+let driverSourceToDestPolyline = null; // Solid Blue (One Type)
+let driverBusToSourcePolyline = null;  // Dashed Amber (Different Type)
+let driverFirstStopLatLng = null;
 let packetsSentCount = 0;
 let nextSyncCountdown = 3;
 
@@ -110,11 +113,12 @@ function initDriverMap() {
         fadeAnimation: true,
         zoomAnimation: true
     }).setView([15.36470, 75.12400], 13);
-    const osmTileUrl = window.osmTileUrl || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
-    const osmTileAttribution = window.osmTileAttribution || 'Tiles &copy; Esri &mdash; Sources: Esri, DeLorme, NAVTEQ, USGS, METI';
+    const osmTileUrl = window.osmTileUrl || 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png';
+    const osmTileAttribution = window.osmTileAttribution || '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a>';
 
     const tileOptions = {
         maxZoom: 19,
+        subdomains: window.osmTileSubdomains || 'abc',
         attribution: osmTileAttribution
     };
     L.tileLayer(osmTileUrl, tileOptions).addTo(driverMap);
@@ -186,12 +190,25 @@ function initDriverMap() {
         });
 
         if (stopLatLngs.length >= 2) {
-            // Draw planned scheduled route polyline in blue
-            L.polyline(stopLatLngs, {
+            // Polyline 1: Source to Destination (One Type: Solid Vibrant Blue #2563eb, weight 5, opacity 0.92)
+            driverSourceToDestPolyline = L.polyline(stopLatLngs, {
                 color: '#2563eb',
-                weight: 4,
-                opacity: 0.8,
-                dashArray: '5, 8',
+                weight: 5,
+                opacity: 0.92,
+                lineCap: 'round',
+                lineJoin: 'round'
+            }).addTo(driverMap);
+        }
+
+        if (stopLatLngs.length > 0) {
+            driverFirstStopLatLng = stopLatLngs[0];
+            // Polyline 2: Bus Location to Source (Different Type: Dashed Amber #f59e0b, dashArray '8, 10')
+            const busPos = driverMarker ? driverMarker.getLatLng() : [15.36470, 75.12400];
+            driverBusToSourcePolyline = L.polyline([busPos, driverFirstStopLatLng], {
+                color: '#f59e0b',
+                weight: 4.5,
+                opacity: 0.95,
+                dashArray: '8, 10',
                 lineCap: 'round',
                 lineJoin: 'round'
             }).addTo(driverMap);
@@ -324,6 +341,10 @@ function sendGpsPayload(lat, lng, speed, heading) {
         driverMarker.setLatLng(newLatLng);
         if (driverTraveledPolyline) {
             driverTraveledPolyline.addLatLng(newLatLng);
+        }
+        // Update Bus Location to Source Polyline (Different Type: Dashed Amber #f59e0b)
+        if (driverBusToSourcePolyline && driverFirstStopLatLng) {
+            driverBusToSourcePolyline.setLatLngs([newLatLng, driverFirstStopLatLng]);
         }
         driverMap.panTo(newLatLng);
     }

@@ -441,15 +441,16 @@
 }
 
 .pin-floating-pill.start-pill {
-    border: 2px solid #10b981;
+    border: 1.5px solid #10b981;
     left: 50% !important;
     top: auto !important;
-    bottom: calc(100% + 10px) !important;
+    bottom: calc(100% + 8px) !important;
     transform: translateX(-50%) !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    background: rgba(255, 255, 255, 0.98);
 }
 .start-pin-wrapper:hover .pin-floating-pill.start-pill {
-    transform: translateX(-50%) scale(1.06) !important;
+    transform: translateX(-50%) scale(1.05) !important;
 }
 .pin-floating-pill.start-pill::after {
     content: '';
@@ -463,15 +464,16 @@
 }
 
 .pin-floating-pill.dest-pill {
-    border: 2px solid #ef4444;
+    border: 1.5px solid #ef4444;
     left: 50% !important;
     top: auto !important;
-    bottom: calc(100% + 10px) !important;
+    bottom: calc(100% + 8px) !important;
     transform: translateX(-50%) !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    background: rgba(255, 255, 255, 0.98);
 }
 .dest-pin-wrapper:hover .pin-floating-pill.dest-pill {
-    transform: translateX(-50%) scale(1.06) !important;
+    transform: translateX(-50%) scale(1.05) !important;
 }
 .pin-floating-pill.dest-pill::after {
     content: '';
@@ -1293,12 +1295,14 @@
                         <!-- Tile Theme Switcher -->
                         <div class="dropdown">
                             <button class="btn btn-sm btn-dark border border-secondary border-opacity-50 rounded-pill px-2 py-1 dropdown-toggle text-light" type="button" id="mapThemeDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.74rem;">
-                                <i class="fa-solid fa-layer-group me-1 text-warning"></i> <span id="currentTileLabel">Esri Streets</span>
+                                <i class="fa-solid fa-layer-group me-1 text-warning"></i> <span id="currentTileLabel">OpenStreetMap (Transit HOT)</span>
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow-lg border-secondary" aria-labelledby="mapThemeDropdown" style="font-size: 0.8rem; min-width: 190px;">
-                                <li><a class="dropdown-item active d-flex align-items-center gap-2" href="javascript:void(0)" data-tile="esri_street"><i class="fa-solid fa-road text-info"></i> Esri Streets (Clean)</a></li>
-                                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tile="esri_topo"><i class="fa-solid fa-mountain-sun text-success"></i> Topo Terrain</a></li>
-                                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tile="satellite"><i class="fa-solid fa-satellite text-warning"></i> Satellite Imagery</a></li>
+                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow-lg border-secondary" aria-labelledby="mapThemeDropdown" style="font-size: 0.8rem; min-width: 210px;">
+                                <li><a class="dropdown-item active d-flex align-items-center gap-2" href="javascript:void(0)" data-tile="osm_hot"><i class="fa-solid fa-fire-flame-curved text-warning"></i> OpenStreetMap (Transit HOT)</a></li>
+                                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tile="osm_standard"><i class="fa-solid fa-road text-success"></i> OpenStreetMap Standard</a></li>
+                                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tile="esri_gray"><i class="fa-solid fa-sun text-info"></i> Esri Clean Light</a></li>
+                                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tile="esri_street"><i class="fa-solid fa-city text-secondary"></i> Esri Streets</a></li>
+                                <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tile="satellite"><i class="fa-solid fa-satellite text-danger"></i> Satellite Imagery</a></li>
                             </ul>
                         </div>
                         <!-- Fit Route Bounds Button -->
@@ -1500,15 +1504,17 @@
                         <i class="fa-solid fa-tags me-1"></i> <span id="trackingLabelToggleText">Stops: ON</span>
                     </button>
 
-                    <!-- Tile Switcher (Esri Streets Clean as Primary Default - Zero 403 blocks) -->
+                    <!-- Tile Switcher (CartoDB Voyager as Modern Transit Default) -->
                     <div class="dropdown">
                         <button class="btn btn-sm btn-dark border border-secondary border-opacity-50 rounded-pill px-2 py-1 dropdown-toggle text-light" type="button" id="trackingMapThemeDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.74rem;">
-                            <i class="fa-solid fa-layer-group me-1 text-warning"></i> <span id="trackingTileLabel">Esri Streets</span>
+                            <i class="fa-solid fa-layer-group me-1 text-warning"></i> <span id="trackingTileLabel">OpenStreetMap (Transit HOT)</span>
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow-lg border-secondary" style="font-size: 0.8rem; min-width: 190px;">
-                            <li><a class="dropdown-item active d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="esri_street"><i class="fa-solid fa-road text-info"></i> Esri Streets (Clean)</a></li>
-                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="esri_topo"><i class="fa-solid fa-mountain-sun text-secondary"></i> Topo Terrain</a></li>
-                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="satellite"><i class="fa-solid fa-satellite text-warning"></i> Satellite Imagery</a></li>
+                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow-lg border-secondary" style="font-size: 0.8rem; min-width: 210px;">
+                            <li><a class="dropdown-item active d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="osm_hot"><i class="fa-solid fa-fire-flame-curved text-warning"></i> OpenStreetMap (Transit HOT)</a></li>
+                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="osm_standard"><i class="fa-solid fa-road text-success"></i> OpenStreetMap Standard</a></li>
+                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="esri_gray"><i class="fa-solid fa-sun text-info"></i> Esri Clean Light</a></li>
+                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="esri_street"><i class="fa-solid fa-city text-secondary"></i> Esri Streets</a></li>
+                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="satellite"><i class="fa-solid fa-satellite text-danger"></i> Satellite Imagery</a></li>
                         </ul>
                     </div>
 
@@ -1531,7 +1537,8 @@
             <!-- Floating Map Legend (Bottom-Left) -->
             <div class="map-floating-legend shadow-sm" style="bottom: 16px; left: 16px;">
                 <div class="d-flex align-items-center gap-2 flex-wrap" style="font-size: 0.7rem;">
-                    <span class="legend-badge"><span class="legend-line" style="background: #64748b; height: 3px;"></span> Traveled</span>
+                    <span class="legend-badge"><span class="legend-line" style="display:inline-block; width: 18px; height: 4px; background: #2563eb; border-radius: 2px;"></span> Source ➔ Dest</span>
+                    <span class="legend-badge"><span class="legend-line" style="display:inline-block; width: 18px; height: 0; border-top: 3px dashed #f59e0b;"></span> Bus ➔ Source</span>
                     <span class="legend-badge"><span class="legend-line" style="background: #10b981; height: 3px;"></span> Upcoming</span>
                     <span class="legend-badge"><span class="legend-circle" style="background: #3b82f6;"></span> Passenger</span>
                     <span class="legend-badge"><span class="legend-circle" style="background: #f59e0b;"></span> Live Bus</span>
@@ -1676,28 +1683,46 @@ let currentPolylineGroup = null;
 let currentTransitPathGroup = null;
 let activeRenderingRouteKey = null;
 let currentBaseTileLayer = null;
-let currentTileKey = 'esri_street';
+let currentTileKey = 'osm_hot';
 let showStopLabels = true;
 let liveTrackingInterval = null;
 let liveBusMarker = null;
 let currentFetchedRoutes = [];
 
-// High-Performance Zero-Watermark 100% Free Public Map Tile Providers (Zero 403 blocks, No API Key Required)
+// High-Performance Free Public Map Tile Providers (Zero 403 blocks, Zero Watermarks, Modern Transit Aesthetics)
 const mapTiles = {
+    osm_hot: {
+        name: 'OpenStreetMap (Transit HOT)',
+        url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+        options: {
+            maxZoom: 19,
+            subdomains: 'abc',
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a>'
+        }
+    },
+    osm_standard: {
+        name: 'OpenStreetMap Standard',
+        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        options: {
+            maxZoom: 19,
+            subdomains: 'abc',
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }
+    },
+    esri_gray: {
+        name: 'Esri Clean Light',
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+        options: {
+            maxZoom: 19,
+            attribution: 'Tiles &copy; Esri &mdash; Esri Light Gray'
+        }
+    },
     esri_street: {
         name: 'Esri Streets',
         url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
         options: {
             maxZoom: 19,
             attribution: 'Tiles &copy; Esri &mdash; Sources: Esri, DeLorme, NAVTEQ, USGS, METI'
-        }
-    },
-    esri_topo: {
-        name: 'Esri Topo',
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-        options: {
-            maxZoom: 19,
-            attribution: 'Tiles &copy; Esri &mdash; Sources: GEBCO, NOAA, CHS, National Geographic, and Esri'
         }
     },
     satellite: {
@@ -1707,45 +1732,13 @@ const mapTiles = {
             maxZoom: 19,
             attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and GIS User Community'
         }
-    },
-    osm_standard: {
-        name: 'Esri Streets',
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-        options: {
-            maxZoom: 19,
-            attribution: 'Tiles &copy; Esri &mdash; Sources: Esri, DeLorme, NAVTEQ, USGS, METI'
-        }
-    },
-    transit_hot: {
-        name: 'Esri Streets',
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-        options: {
-            maxZoom: 19,
-            attribution: 'Tiles &copy; Esri &mdash; Sources: Esri, DeLorme, NAVTEQ, USGS, METI'
-        }
-    },
-    osm_clean: {
-        name: 'Esri Streets',
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-        options: {
-            maxZoom: 19,
-            attribution: 'Tiles &copy; Esri &mdash; Sources: Esri, DeLorme, NAVTEQ, USGS, METI'
-        }
-    },
-    carto_voyager: {
-        name: 'Esri Streets',
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-        options: {
-            maxZoom: 19,
-            attribution: 'Tiles &copy; Esri &mdash; Sources: Esri, DeLorme, NAVTEQ, USGS, METI'
-        }
     }
 };
 
 function switchMapTile(tileKey) {
     if (!routeMap) return;
-    const resolvedKey = (tileKey && mapTiles[tileKey]) ? tileKey : 'esri_street';
-    const tileConfig = mapTiles[resolvedKey] || mapTiles['esri_street'];
+    const resolvedKey = (tileKey && mapTiles[tileKey]) ? tileKey : 'osm_hot';
+    const tileConfig = mapTiles[resolvedKey] || mapTiles['osm_hot'];
     if (!tileConfig) return;
 
     if (currentBaseTileLayer) {
@@ -1801,8 +1794,8 @@ function initRouteMap() {
         zoomAnimation: true
     }).setView([15.3647, 75.1240], 13);
 
-    // Default to clean zero-watermark, zero-block Esri Streets
-    switchMapTile('esri_street');
+    // Default to ultra-clean, modern OpenStreetMap (Transit HOT)
+    switchMapTile('osm_hot');
 
     currentTransitPathGroup = L.layerGroup().addTo(routeMap);
     currentPolylineGroup = L.layerGroup().addTo(routeMap);
@@ -1878,76 +1871,41 @@ function addTransitPolylineLayers(geometryOrCoords, isGeoJSON) {
     if (!currentTransitPathGroup) return;
     currentTransitPathGroup.clearLayers();
 
+    // 1. Soft contrast casing / road boundary
+    const casingStyle = {
+        color: '#1e3a8a',
+        weight: 8,
+        opacity: 0.32,
+        lineCap: 'round',
+        lineJoin: 'round'
+    };
+    // 2. Vibrant crisp Transit Line (One Type: Solid Vibrant Blue #2563eb)
+    const coreStyle = {
+        color: '#2563eb',
+        weight: 5.5,
+        opacity: 0.98,
+        lineCap: 'round',
+        lineJoin: 'round'
+    };
+    // 3. Subtle directional flow pulse
+    const dashStyle = {
+        color: '#ffffff',
+        weight: 1.8,
+        opacity: 0.85,
+        dashArray: '8, 14',
+        lineCap: 'round',
+        lineJoin: 'round',
+        className: 'animated-transit-flow'
+    };
+
     if (isGeoJSON) {
-        // Glow Halo
-        const glowLayer = L.geoJSON(geometryOrCoords, {
-            style: {
-                color: '#38bdf8',
-                weight: 12,
-                opacity: 0.35,
-                lineCap: 'round',
-                lineJoin: 'round'
-            }
-        });
-        currentTransitPathGroup.addLayer(glowLayer);
-
-        // Core Transit Line
-        const coreLayer = L.geoJSON(geometryOrCoords, {
-            style: {
-                color: '#1d4ed8',
-                weight: 6,
-                opacity: 0.95,
-                lineCap: 'round',
-                lineJoin: 'round'
-            }
-        });
-        currentTransitPathGroup.addLayer(coreLayer);
-
-        // Animated Transit Dashes
-        const dashLayer = L.geoJSON(geometryOrCoords, {
-            style: {
-                color: '#ffffff',
-                weight: 2.5,
-                opacity: 0.85,
-                dashArray: '8, 16',
-                lineCap: 'round',
-                lineJoin: 'round',
-                className: 'animated-transit-flow'
-            }
-        });
-        currentTransitPathGroup.addLayer(dashLayer);
+        currentTransitPathGroup.addLayer(L.geoJSON(geometryOrCoords, { style: casingStyle }));
+        currentTransitPathGroup.addLayer(L.geoJSON(geometryOrCoords, { style: coreStyle }));
+        currentTransitPathGroup.addLayer(L.geoJSON(geometryOrCoords, { style: dashStyle }));
     } else {
-        // Glow Halo
-        const glowLayer = L.polyline(geometryOrCoords, {
-            color: '#38bdf8',
-            weight: 12,
-            opacity: 0.35,
-            lineCap: 'round',
-            lineJoin: 'round'
-        });
-        currentTransitPathGroup.addLayer(glowLayer);
-
-        // Core Transit Line
-        const coreLayer = L.polyline(geometryOrCoords, {
-            color: '#1d4ed8',
-            weight: 6,
-            opacity: 0.95,
-            lineCap: 'round',
-            lineJoin: 'round'
-        });
-        currentTransitPathGroup.addLayer(coreLayer);
-
-        // Animated Transit Dashes
-        const dashLayer = L.polyline(geometryOrCoords, {
-            color: '#ffffff',
-            weight: 2.5,
-            opacity: 0.85,
-            dashArray: '8, 16',
-            lineCap: 'round',
-            lineJoin: 'round',
-            className: 'animated-transit-flow'
-        });
-        currentTransitPathGroup.addLayer(dashLayer);
+        currentTransitPathGroup.addLayer(L.polyline(geometryOrCoords, casingStyle));
+        currentTransitPathGroup.addLayer(L.polyline(geometryOrCoords, coreStyle));
+        currentTransitPathGroup.addLayer(L.polyline(geometryOrCoords, dashStyle));
     }
 }
 
@@ -1966,17 +1924,9 @@ async function startLiveTracking(busNo) {
             if (!res.ok) return;
             const data = await res.json();
 
-            if (!data.is_live || data.current_lat === null || data.current_lon === null) {
-                alert(`Bus ${busNo} is currently stationary or has not commenced an active trip.`);
-                if (liveTrackingInterval) {
-                    clearInterval(liveTrackingInterval);
-                    liveTrackingInterval = null;
-                }
-                return;
-            }
-
-            const lat = parseFloat(data.current_lat);
-            const lon = parseFloat(data.current_lon);
+            const isBusLive = data.is_live === true || data.isLive === true;
+            const lat = parseFloat(data.current_lat !== null && data.current_lat !== undefined ? data.current_lat : (data.source_stop ? data.source_stop.lat : 15.3647));
+            const lon = parseFloat(data.current_lon !== null && data.current_lon !== undefined ? data.current_lon : (data.source_stop ? data.source_stop.lon : 75.1240));
 
             const busDivIcon = L.divIcon({
                 className: 'custom-transit-divicon',
@@ -1987,9 +1937,9 @@ async function startLiveTracking(busNo) {
                             <i class="fa-solid fa-bus"></i>
                         </div>
                         <div class="pin-floating-pill shadow" style="border: 2px solid #0284c7; background: #0f172a; color: #ffffff;">
-                            <span class="pill-dot bg-info"></span>
+                            <span class="pill-dot ${isBusLive ? 'bg-info' : 'bg-warning'}"></span>
                             <span class="pill-name">Bus ${data.bus_no}</span>
-                            <span class="pill-action text-info">${data.speed_kmh || 0} km/h</span>
+                            <span class="pill-action ${isBusLive ? 'text-info' : 'text-warning'}">${isBusLive ? (data.speed_kmh || 0) + ' km/h' : 'Scheduled'}</span>
                         </div>
                     </div>
                 `,
@@ -1999,13 +1949,13 @@ async function startLiveTracking(busNo) {
 
             const popupContent = `
                 <div class="custom-transit-popup">
-                    <div class="popup-header bg-primary text-white">
-                        <i class="fa-solid fa-bus me-1"></i> Live Bus Telemetry
-                        <span class="badge bg-white text-primary ms-auto">LIVE</span>
+                    <div class="popup-header ${isBusLive ? 'bg-primary' : 'bg-secondary'} text-white">
+                        <i class="fa-solid fa-bus me-1"></i> Bus Telemetry
+                        <span class="badge ${isBusLive ? 'bg-white text-primary' : 'bg-warning text-dark'} ms-auto">${isBusLive ? 'LIVE' : 'SCHEDULED'}</span>
                     </div>
                     <div class="popup-body p-2">
                         <h6 class="fw-bold mb-1 text-dark">Bus ${data.bus_no}</h6>
-                        <div class="small mb-1">Status: <strong class="text-success">En Route (${data.status})</strong></div>
+                        <div class="small mb-1">Status: <strong class="${isBusLive ? 'text-success' : 'text-warning'}">${isBusLive ? 'En Route (' + (data.status || 'LIVE') + ')' : 'Scheduled / Approaching Origin'}</strong></div>
                         <div class="small mb-1">Speed: <strong>${data.speed_kmh || 0} km/h</strong></div>
                         <div class="extra-small text-muted border-top pt-1 mt-1">Updated ${data.last_updated_seconds_ago || 0}s ago</div>
                     </div>
@@ -2019,6 +1969,23 @@ async function startLiveTracking(busNo) {
                 liveBusMarker.setIcon(busDivIcon);
                 liveBusMarker.setLatLng([lat, lon]);
                 liveBusMarker.setPopupContent(popupContent);
+            }
+
+            // Draw dashed amber line from Bus Location to Source Stop (Different Type)
+            if (data.source_stop && isValidLatLng(data.source_stop.lat, data.source_stop.lon)) {
+                const connCoords = [[lat, lon], [parseFloat(data.source_stop.lat), parseFloat(data.source_stop.lon)]];
+                if (!window.liveBusToSourcePolyline) {
+                    window.liveBusToSourcePolyline = L.polyline(connCoords, {
+                        color: '#f59e0b',
+                        weight: 4.5,
+                        opacity: 0.95,
+                        dashArray: '8, 10',
+                        lineCap: 'round',
+                        lineJoin: 'round'
+                    }).addTo(routeMap);
+                } else {
+                    window.liveBusToSourcePolyline.setLatLngs(connCoords);
+                }
             }
 
             routeMap.setView([lat, lon], 14, { animate: true });
@@ -2939,6 +2906,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let splitMap = null;
     let splitTraveledPolyline = null;
     let splitRemainingPolyline = null;
+    let splitSourceToDestPolyline = null; // Polyline 1: Source to Destination (One Type - Solid Blue)
+    let splitBusToSourcePolyline = null;  // Polyline 2: Bus Location to Source (Different Type - Dashed Amber)
+    let splitCurrentSourceStop = null;
     let splitStopMarkersGroup = null;
     let splitBusMarker = null;
     let splitPassengerMarker = null;
@@ -2987,13 +2957,32 @@ document.addEventListener('DOMContentLoaded', function() {
             zoomAnimation: true
         }).setView([15.3647, 75.1240], 14);
 
-        // High-Performance Tile Layer (Esri Streets Clean as default - Zero 403 blocks)
-        setSplitMapTile('esri_street');
+        // High-Performance Modern Transit Tile Layer (OpenStreetMap HOT - zero key, zero watermark)
+        setSplitMapTile('osm_hot');
+
+        // 1. Source to Destination Polyline: ONE TYPE (Solid Vibrant Blue #2563eb, weight 6)
+        splitSourceToDestPolyline = L.polyline([], {
+            color: '#2563eb',
+            weight: 6,
+            opacity: 0.92,
+            lineCap: 'round',
+            lineJoin: 'round'
+        }).addTo(splitMap);
+
+        // 2. Bus Location to Source Polyline: DIFFERENT TYPE (Dashed Amber #f59e0b, dashArray 8, 10, weight 4.5)
+        splitBusToSourcePolyline = L.polyline([], {
+            color: '#f59e0b',
+            weight: 4.5,
+            opacity: 0.95,
+            dashArray: '8, 10',
+            lineCap: 'round',
+            lineJoin: 'round'
+        }).addTo(splitMap);
 
         // Dynamic Polyline Layers: Traveled (faded gray) vs Remaining (vibrant emerald)
         splitTraveledPolyline = L.polyline([], {
             color: '#64748b',
-            weight: 6,
+            weight: 5,
             opacity: 0.85,
             lineCap: 'round',
             lineJoin: 'round'
@@ -3001,7 +2990,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         splitRemainingPolyline = L.polyline([], {
             color: '#10b981',
-            weight: 6,
+            weight: 5,
             opacity: 0.95,
             lineCap: 'round',
             lineJoin: 'round'
@@ -3025,8 +3014,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function setSplitMapTile(tileKey) {
         if (!splitMap) return;
-        const resolvedKey = (tileKey && mapTiles[tileKey]) ? tileKey : 'esri_street';
-        const cfg = mapTiles[resolvedKey] || mapTiles['esri_street'];
+        const resolvedKey = (tileKey && mapTiles[tileKey]) ? tileKey : 'osm_hot';
+        const cfg = mapTiles[resolvedKey] || mapTiles['osm_hot'];
         if (!cfg) return;
 
         if (trackingTileLayer) {
@@ -3395,6 +3384,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
+        // 2b. Bus Location to Source Polyline: DIFFERENT TYPE (Dashed Amber #f59e0b)
+        if (splitBusToSourcePolyline && splitCurrentSourceStop && isValidLatLng(splitCurrentSourceStop.lat, splitCurrentSourceStop.lon)) {
+            splitBusToSourcePolyline.setLatLngs([[validLat, validLon], [parseFloat(splitCurrentSourceStop.lat), parseFloat(splitCurrentSourceStop.lon)]]);
+        }
+
         // 3. User-controlled camera lock:
         // Do NOT reset user zoom. Only smoothly pan if isCameraLocked is true!
         if (isCameraLocked) {
@@ -3731,35 +3725,31 @@ document.addEventListener('DOMContentLoaded', function() {
             const cLon = data ? (data.current_lon !== undefined && data.current_lon !== null ? data.current_lon : data.longitude) : null;
             const isLive = data && (data.is_live === true || data.isLive === true) && isValidLatLng(cLat, cLon);
 
-            if (isLive) {
-                // Case B: Bus is actively broadcasting live GPS!
-                // Transition smoothly to the split-screen interactive tracking view
-                let routeToTrack = currentFetchedRoutes && currentFetchedRoutes[routeIndex] ? currentFetchedRoutes[routeIndex] : null;
-                if (!routeToTrack) {
-                    routeToTrack = {
-                        route_name: data.route_name || `Route for Bus #${busNo}`,
-                        legs: [{
-                            bus_no: busNo,
-                            route_name: data.route_name || `Route for Bus #${busNo}`,
-                            driver_name: data.driver_name || 'NWKRTC Driver',
-                            board_at: 'Start Stop',
-                            alight_at: 'End Stop'
-                        }]
-                    };
-                }
-                openSplitScreenTracking(routeToTrack, legIndex, data, false);
-            } else {
-                // Case A: Bus is Offline / Not Live!
-                // Stay on the current screen and display clear popup modal
-                showBusOfflineModal(busNo, data || { trip_status: 'NOT_STARTED', status: 'OFFLINE' }, routeIndex, legIndex);
+            // Transition smoothly to the split-screen interactive tracking view
+            let routeToTrack = currentFetchedRoutes && currentFetchedRoutes[routeIndex] ? currentFetchedRoutes[routeIndex] : null;
+            if (!routeToTrack) {
+                routeToTrack = {
+                    route_name: (data && data.route_name) || `Route for Bus #${busNo}`,
+                    legs: [{
+                        bus_no: busNo,
+                        route_name: (data && data.route_name) || `Route for Bus #${busNo}`,
+                        driver_name: (data && data.driver_name) || 'NWKRTC Driver',
+                        board_at: 'Start Stop',
+                        alight_at: 'End Stop'
+                    }]
+                };
             }
+            openSplitScreenTracking(routeToTrack, legIndex, data, false);
         } catch (err) {
             console.error('Error checking live bus status:', err);
             if (btnEl) {
                 btnEl.disabled = false;
                 btnEl.innerHTML = origHtml;
             }
-            showBusOfflineModal(busNo, { trip_status: 'NOT_STARTED', status: 'OFFLINE' }, routeIndex, legIndex);
+            let routeToTrack = currentFetchedRoutes && currentFetchedRoutes[routeIndex] ? currentFetchedRoutes[routeIndex] : null;
+            if (routeToTrack) {
+                openSplitScreenTracking(routeToTrack, legIndex, null, true);
+            }
         }
     }
     window.handleTrackClick = handleTrackClick;
@@ -3872,9 +3862,19 @@ document.addEventListener('DOMContentLoaded', function() {
         renderSplitMapStops(journeyStops);
         initProgressStepper(journeyStops);
 
+        // Store source stop for bus-to-source connector polyline
+        if (journeyStops && journeyStops.length > 0) {
+            splitCurrentSourceStop = journeyStops[0];
+        }
+
         // 7. Road-Snapped Polyline via OSRM / Backend
         TripLifecycleAnnouncer.fetchRoadSnappedRoute(journeyStops).then(roadCoords => {
             currentRoadCoordinates = roadCoords;
+
+            // 1. Source to Destination Polyline: ONE TYPE (Solid Vibrant Blue #2563eb)
+            if (splitSourceToDestPolyline && roadCoords.length > 0) {
+                splitSourceToDestPolyline.setLatLngs(roadCoords);
+            }
             if (splitRemainingPolyline) {
                 splitRemainingPolyline.setLatLngs(roadCoords);
             }
@@ -3913,8 +3913,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 initialBusLon = roadCoords[0][1];
             }
 
+            if (!isValidLatLng(initialBusLat, initialBusLon) && journeyStops.length > 0) {
+                initialBusLat = journeyStops[0].lat;
+                initialBusLon = journeyStops[0].lon;
+            }
+
             if (isValidLatLng(initialBusLat, initialBusLon)) {
                 updateBusPositionOnMap(initialBusLat, initialBusLon, initialBusSpeed, initialBusHeading);
+                // 2. Bus Location to Source Polyline: DIFFERENT TYPE (Dashed Amber #f59e0b)
+                if (splitBusToSourcePolyline && splitCurrentSourceStop && isValidLatLng(splitCurrentSourceStop.lat, splitCurrentSourceStop.lon)) {
+                    splitBusToSourcePolyline.setLatLngs([[initialBusLat, initialBusLon], [parseFloat(splitCurrentSourceStop.lat), parseFloat(splitCurrentSourceStop.lon)]]);
+                }
             }
 
             // 8. Start Real-time streams (strict 2-second polling + WebSockets)

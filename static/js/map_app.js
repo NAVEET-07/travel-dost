@@ -7,6 +7,21 @@ let busStopMarkersGroup = null;
 let traveledPolyline = null;
 let remainingPolyline = null;
 let approachingPolyline = null;
+let sourceToDestPolyline = null; // Polyline 1: Source to Destination (One Type - Solid Vibrant Blue)
+let busToSourcePolyline = null;  // Polyline 2: Bus Location to Source (Different Type - Dashed Amber)
+let currentSourceStopCoords = null;
+let currentDestStopCoords = null;
+
+function calculateHaversineDistanceKm(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
 
 function initTravelDostMap(elementId, centerLat = 15.3647, centerLng = 75.1240, zoomLevel = 12) {
     if (travelDostMap) {
@@ -16,28 +31,39 @@ function initTravelDostMap(elementId, centerLat = 15.3647, centerLng = 75.1240, 
         traveledPolyline = null;
         remainingPolyline = null;
         approachingPolyline = null;
+        sourceToDestPolyline = null;
+        busToSourcePolyline = null;
+        currentSourceStopCoords = null;
+        currentDestStopCoords = null;
     }
+
+    const mapElement = document.getElementById(elementId);
+    if (!mapElement) return null;
 
     travelDostMap = L.map(elementId, {
         fadeAnimation: true,
         zoomAnimation: true
     }).setView([centerLat, centerLng], zoomLevel);
 
-    const defaultTileUrl = window.osmTileUrl || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
-    const defaultAttribution = window.osmTileAttribution || 'Tiles &copy; Esri &mdash; Sources: Esri, DeLorme, NAVTEQ, USGS, METI';
+    const defaultTileUrl = window.osmTileUrl || 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png';
+    const defaultAttribution = window.osmTileAttribution || '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a>';
     const tileOptions = {
         maxZoom: 19,
+        subdomains: window.osmTileSubdomains || 'abc',
         attribution: defaultAttribution
     };
 
-    L.tileLayer(defaultTileUrl, tileOptions).addTo(travelDostMap);
+    const primaryTileLayer = L.tileLayer(defaultTileUrl, tileOptions).addTo(travelDostMap);
 
     busStopMarkersGroup = L.layerGroup().addTo(travelDostMap);
 
     // Staggered invalidation passes to guarantee no blank/gray canvas
-    setTimeout(() => { if (travelDostMap) travelDostMap.invalidateSize(true); }, 80);
-    setTimeout(() => { if (travelDostMap) travelDostMap.invalidateSize(true); }, 250);
-    setTimeout(() => { if (travelDostMap) travelDostMap.invalidateSize(true); }, 600);
+    const invalidate = () => { if (travelDostMap) travelDostMap.invalidateSize(true); };
+    setTimeout(invalidate, 80);
+    setTimeout(invalidate, 250);
+    setTimeout(invalidate, 600);
+    setTimeout(invalidate, 1200);
+    window.addEventListener('resize', invalidate);
 
     return travelDostMap;
 }
@@ -67,14 +93,22 @@ function createBusIcon(status = 'LIVE', busNumber = '', heading = 0) {
 }
 
 /**
- * Traveled (Start -> Bus) vs Remaining (Bus -> End) Route Visualizer
- * - Traveled Path: Solid Emerald Green (#10b981, weight 6)
- * - Remaining Path: Dashed Transit Blue (#2563eb, weight 5, dashArray: 6,8)
+ * Render Tracking Polylines:
+ * 1. Source to Destination: ONE TYPE (Solid Vibrant Electric Blue #2563eb, weight 6, opacity 0.92)
+ * 2. Bus Location to Source: DIFFERENT TYPE (Dashed Amber Gold #f59e0b, weight 4.5, dashArray: 8, 10)
  */
-function renderTraveledAndRemainingRoute(busLatLng, routeStops, traveledRoadPoints, remainingRoadPoints, breadcrumbsPoints) {
+function renderTrackingPolylines(busLatLng, routeStops, roadGeometry, traveledRoadPoints, remainingRoadPoints, breadcrumbsPoints) {
     if (!travelDostMap) return;
 
     // Clear old route polylines
+    if (sourceToDestPolyline) {
+        travelDostMap.removeLayer(sourceToDestPolyline);
+        sourceToDestPolyline = null;
+    }
+    if (busToSourcePolyline) {
+        travelDostMap.removeLayer(busToSourcePolyline);
+        busToSourcePolyline = null;
+    }
     if (traveledPolyline) {
         travelDostMap.removeLayer(traveledPolyline);
         traveledPolyline = null;
@@ -86,50 +120,88 @@ function renderTraveledAndRemainingRoute(busLatLng, routeStops, traveledRoadPoin
 
     const bounds = [];
 
-    // Prioritize high-accuracy breadcrumbs if available
-    const activeTraveledPoints = (breadcrumbsPoints && breadcrumbsPoints.length >= 2)
-        ? breadcrumbsPoints
-        : traveledRoadPoints;
+    // Extract ordered stop coordinates
+    const stopCoords = (routeStops && routeStops.length > 0)
+        ? routeStops.map(s => [parseFloat(s.lat || s.latitude), parseFloat(s.lng || s.longitude || s.lon)]).filter(p => !isNaN(p[0]) && !isNaN(p[1]))
+        : [];
 
-    // 1. Draw Traveled Path (Solid Emerald Green)
-    if (activeTraveledPoints && activeTraveledPoints.length >= 1) {
-        traveledPolyline = L.polyline(activeTraveledPoints, {
-            color: '#10b981',
-            weight: 6,
-            opacity: 0.95,
-            lineJoin: 'round',
-            lineCap: 'round'
-        }).addTo(travelDostMap);
-        activeTraveledPoints.forEach(p => bounds.push(p));
-    }
+    const sourcePoint = stopCoords.length > 0 ? stopCoords[0] : null;
+    const destPoint = stopCoords.length > 0 ? stopCoords[stopCoords.length - 1] : null;
+    currentSourceStopCoords = sourcePoint;
+    currentDestStopCoords = destPoint;
 
-    // 2. Draw Remaining Path (Dashed Transit Blue)
-    if (remainingRoadPoints && remainingRoadPoints.length >= 2) {
-        remainingPolyline = L.polyline(remainingRoadPoints, {
+    const sourceStopName = (routeStops && routeStops[0]) ? (routeStops[0].name || routeStops[0].stop_name || 'Origin') : 'Origin';
+    const destStopName = (routeStops && routeStops.length > 0) ? (routeStops[routeStops.length - 1].name || routeStops[routeStops.length - 1].stop_name || 'Terminus') : 'Terminus';
+
+    // 1. FULL CORRIDOR: From Source to Destination (ONE TYPE: Solid Electric Blue)
+    const fullRoutePoints = (roadGeometry && roadGeometry.length >= 2)
+        ? roadGeometry
+        : stopCoords;
+
+    if (fullRoutePoints && fullRoutePoints.length >= 2) {
+        sourceToDestPolyline = L.polyline(fullRoutePoints, {
             color: '#2563eb',
-            weight: 5,
-            opacity: 0.85,
-            dashArray: '7, 8',
-            lineJoin: 'round',
-            lineCap: 'round'
+            weight: 6,
+            opacity: 0.92,
+            lineCap: 'round',
+            lineJoin: 'round'
         }).addTo(travelDostMap);
-        remainingRoadPoints.forEach(p => bounds.push(p));
+
+        sourceToDestPolyline.bindTooltip(`🛣️ Route: ${sourceStopName} ➔ ${destStopName} (${routeStops.length} stops)`, {
+            sticky: true,
+            className: 'custom-transit-tooltip'
+        });
+
+        fullRoutePoints.forEach(p => bounds.push(p));
     }
 
-    // Fallback: If no road points, connect stops directly
-    if ((!activeTraveledPoints || activeTraveledPoints.length < 2) && routeStops && routeStops.length > 0) {
-        plotRouteStopsOnly(routeStops);
-    } else if (routeStops && routeStops.length > 0) {
-        plotDetailedRouteStops(routeStops, busLatLng);
+    // Resolve bus location coordinates
+    let activeBusPt = null;
+    if (busLatLng && !isNaN(busLatLng[0]) && !isNaN(busLatLng[1])) {
+        activeBusPt = [busLatLng[0], busLatLng[1]];
+    } else if (sourcePoint) {
+        activeBusPt = sourcePoint;
     }
 
-    if (busLatLng) {
-        bounds.push(busLatLng);
+    // 2. BUS LOCATION TO SOURCE: (DIFFERENT TYPE: Dashed Amber #f59e0b)
+    if (activeBusPt && sourcePoint) {
+        busToSourcePolyline = L.polyline([activeBusPt, sourcePoint], {
+            color: '#f59e0b',
+            weight: 4.5,
+            opacity: 0.95,
+            dashArray: '8, 10',
+            lineCap: 'round',
+            lineJoin: 'round'
+        }).addTo(travelDostMap);
+
+        const distKm = calculateHaversineDistanceKm(activeBusPt[0], activeBusPt[1], sourcePoint[0], sourcePoint[1]);
+        const distStr = distKm < 0.05 ? 'At Boarding Stop' : (distKm < 1.0 ? `${Math.round(distKm * 1000)} m away` : `${distKm.toFixed(1)} km away`);
+
+        busToSourcePolyline.bindTooltip(`🚌 Bus Location ➔ Source Stop (${sourceStopName}): ${distStr}`, {
+            sticky: true,
+            className: 'custom-transit-tooltip'
+        });
+
+        bounds.push(activeBusPt);
+        bounds.push(sourcePoint);
+    }
+
+    // Plot Route Stop Markers
+    if (routeStops && routeStops.length > 0) {
+        plotDetailedRouteStops(routeStops, activeBusPt);
     }
 
     if (bounds.length > 0) {
         travelDostMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
     }
+
+    setTimeout(() => { if (travelDostMap) travelDostMap.invalidateSize(true); }, 100);
+    setTimeout(() => { if (travelDostMap) travelDostMap.invalidateSize(true); }, 300);
+}
+
+// Backward compatibility alias
+function renderTraveledAndRemainingRoute(busLatLng, routeStops, traveledRoadPoints, remainingRoadPoints, breadcrumbsPoints, roadGeometry) {
+    renderTrackingPolylines(busLatLng, routeStops, roadGeometry || remainingRoadPoints, traveledRoadPoints, remainingRoadPoints, breadcrumbsPoints);
 }
 
 /**
@@ -298,11 +370,7 @@ function updatePassengerMarker(lat, lng) {
 }
 
 /**
- * Real-Time Live Bus Marker Plotter
- * STRICT GHOST BUS POLICY:
- * Only renders bus markers if the driver has actively clicked "Start Trip"
- * and trip status is strictly set to ACTIVE, IN_PROGRESS, or IN_TRANSIT.
- * If status is OFFLINE or trip is completed/cancelled, marker is immediately deleted from map.
+ * Real-Time Bus Marker Plotter (Always Renders & Tracks Bus Position)
  */
 function updateBusMarkerOnMap(busData) {
     if (!travelDostMap || !busData) return;
@@ -314,43 +382,50 @@ function updateBusMarkerOnMap(busData) {
     const tripStatus = (busData.trip_status || '').toUpperCase();
     const busNum = busData.bus_number || '';
 
-    // Check if trip is active
-    const isTripActive = !tripStatus || ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT'].includes(tripStatus);
-    const isOffline = status === 'OFFLINE' || tripStatus === 'COMPLETED' || tripStatus === 'CANCELLED' || tripStatus === 'SCHEDULED' || !isTripActive;
-
-    // If offline, inactive trip, or invalid coordinates, remove marker completely
-    if (isNaN(lat) || isNaN(lng) || isOffline) {
-        if (busMarkersMap[busId]) {
-            travelDostMap.removeLayer(busMarkersMap[busId]);
-            delete busMarkersMap[busId];
-        }
+    // Only skip if coordinates are completely invalid
+    if (isNaN(lat) || isNaN(lng)) {
         return;
     }
 
-    const speedStr = busData.speed !== undefined && busData.speed !== null ? Number(busData.speed).toFixed(1) : '30.0';
+    const isLive = status === 'LIVE' && (!tripStatus || ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT'].includes(tripStatus));
+    const speedStr = busData.speed !== undefined && busData.speed !== null ? Number(busData.speed).toFixed(1) : (isLive ? '30.0' : '0.0');
 
     const popupContent = `
         <div class="p-2" style="min-width: 210px;">
             <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
                 <strong class="text-primary fs-6"><i class="fa-solid fa-bus me-1"></i> Bus ${busNum}</strong>
-                <span class="badge bg-success"><span class="live-dot me-1"></span> LIVE</span>
+                <span class="badge ${isLive ? 'bg-success' : 'bg-secondary'}">${isLive ? '<span class="live-dot me-1"></span> LIVE' : 'SCHEDULED'}</span>
             </div>
             <p class="m-0 small"><strong>Route:</strong> ${busData.route_name || 'NWKRTC Service'}</p>
             <p class="m-0 small"><strong>Speed:</strong> ${speedStr} km/h</p>
-            <p class="m-0 small text-muted"><strong>Updated:</strong> ${busData.timestamp ? new Date(busData.timestamp).toLocaleTimeString() : 'Live 3s GPS'}</p>
+            <p class="m-0 small text-muted"><strong>Status:</strong> ${isLive ? 'Real-Time GPS (3s sync)' : 'Scheduled / Terminal Standby'}</p>
         </div>
     `;
 
     if (busMarkersMap[busId]) {
         busMarkersMap[busId].setLatLng([lat, lng]);
-        busMarkersMap[busId].setIcon(createBusIcon(status, busNum, busData.heading || 0));
+        busMarkersMap[busId].setIcon(createBusIcon(isLive ? 'LIVE' : 'SCHEDULED', busNum, busData.heading || 0));
         if (busMarkersMap[busId].getPopup()) {
             busMarkersMap[busId].getPopup().setContent(popupContent);
         }
     } else {
-        const marker = L.marker([lat, lng], { icon: createBusIcon(status, busNum, busData.heading || 0) }).addTo(travelDostMap);
+        const marker = L.marker([lat, lng], { icon: createBusIcon(isLive ? 'LIVE' : 'SCHEDULED', busNum, busData.heading || 0) }).addTo(travelDostMap);
         marker.bindPopup(popupContent);
         busMarkersMap[busId] = marker;
+    }
+
+    // Dynamically update the Bus Location to Source Stop polyline (Different Type: Dashed Amber)
+    if (busToSourcePolyline && currentSourceStopCoords) {
+        busToSourcePolyline.setLatLngs([[lat, lng], currentSourceStopCoords]);
+    } else if (currentSourceStopCoords && travelDostMap) {
+        busToSourcePolyline = L.polyline([[lat, lng], currentSourceStopCoords], {
+            color: '#f59e0b',
+            weight: 4.5,
+            opacity: 0.95,
+            dashArray: '8, 10',
+            lineCap: 'round',
+            lineJoin: 'round'
+        }).addTo(travelDostMap);
     }
 
     // Dynamically append to traveled breadcrumbs polyline

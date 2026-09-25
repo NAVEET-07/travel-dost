@@ -364,10 +364,9 @@
 document.addEventListener('DOMContentLoaded', function() {
     const routeId = "{{ route.id }}";
     let map = null;
-    let currentTileLayer = null;
-    const streetTileUrl = window.esriStreetTileUrl || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+    const streetTileUrl = window.osmHotUrl || window.osmTileUrl || 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png';
     const topoTileUrl = window.esriTopoTileUrl || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}';
-    const mapAttribution = 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, METI';
+    const mapAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a>';
 
     let tileMode = 'street';
     let markersMap = new Map();
@@ -383,7 +382,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     currentTileLayer = L.tileLayer(streetTileUrl, {
-        maxZoom: 19,
+        maxZoom: 20,
+        subdomains: 'abcd',
         attribution: mapAttribution
     }).addTo(map);
 

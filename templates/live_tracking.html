@@ -202,23 +202,23 @@
                 <div class="d-flex flex-wrap align-items-center justify-content-md-end gap-2">
                     {% if buses %}
                         <div class="d-flex align-items-center gap-2">
-                            <label class="fw-bold text-secondary small text-uppercase m-0" style="font-size: 0.72rem;">ACTIVE BUS:</label>
-                            <select class="form-select form-select-sm rounded-pill bg-slate-900 text-white border-secondary border-opacity-50 px-3 py-2 shadow-sm" id="busSelect" style="min-width: 260px;">
+                            <label class="fw-bold text-secondary small text-uppercase m-0" style="font-size: 0.72rem;">SELECT BUS:</label>
+                            <select class="form-select form-select-sm rounded-pill bg-slate-900 text-white border-secondary border-opacity-50 px-3 py-2 shadow-sm" id="busSelect" style="min-width: 280px;">
                                 {% for b in buses %}
                                     <option value="{{ b.id }}" {% if selected_bus and selected_bus.id == b.id %}selected{% endif %}>
-                                        Bus {{ b.bus_number }} — {{ b.route.route_name|default:b.bus_name }}
+                                        {% if b.tracking_status == 'LIVE' %}🟢 [LIVE GPS] {% else %}⚪ [Scheduled] {% endif %}Bus {{ b.bus_number }} — {{ b.route.route_name|default:b.bus_name }}
                                     </option>
                                 {% endfor %}
                             </select>
                         </div>
                     {% else %}
                         <span class="badge bg-secondary px-3 py-2 rounded-pill small">
-                            <i class="fa-solid fa-power-off me-1"></i> 0 Active Driver Trips
+                            <i class="fa-solid fa-bus me-1"></i> Fleet Initializing...
                         </span>
                     {% endif %}
 
                     <div id="liveStatusBadge" class="badge bg-success text-white px-3 py-2 rounded-pill d-flex align-items-center gap-1 shadow-sm">
-                        <span class="live-dot me-1"></span> Live Stream Active
+                        <span class="live-dot me-1"></span> Live Map Active
                     </div>
 
                     <button class="btn btn-outline-light btn-sm rounded-pill px-3 py-2 shadow-sm" id="btnPassengerLocation">
@@ -235,43 +235,27 @@
         <!-- Leaflet Map Container -->
         <div class="col-lg-8 col-xl-9">
             <div class="transit-card overflow-hidden position-relative p-0 shadow-lg">
-                <div id="map" style="height: 680px; border-radius: 16px;"></div>
+                <div id="map" style="height: 680px; width: 100%; border-radius: 16px;"></div>
 
-                <!-- Traveled vs Remaining Route Legend -->
+                <!-- Source to Destination vs Bus to Source Route Legend -->
                 <div class="map-route-legend p-2 px-3">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="d-flex align-items-center gap-1">
-                            <span class="legend-line traveled"></span>
-                            <span class="text-white extra-small fw-semibold">Traveled Path</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="legend-line" style="display:inline-block; width: 22px; height: 5px; background: #2563eb; border-radius: 3px;"></span>
+                            <span class="text-white extra-small fw-semibold">Source ➔ Destination (Full Route)</span>
                         </div>
-                        <div class="d-flex align-items-center gap-1">
-                            <span class="legend-line remaining"></span>
-                            <span class="text-white extra-small fw-semibold">Remaining Route</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="legend-line" style="display:inline-block; width: 22px; height: 0; border-top: 3px dashed #f59e0b;"></span>
+                            <span class="text-white extra-small fw-semibold">Bus Location ➔ Source</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- No Live Buses Standby Overlay (If 0 buses live) -->
-                <div class="no-live-buses-overlay p-4 p-md-5 {% if buses %}d-none{% endif %}" id="noLiveBusesOverlay">
-                    <div class="d-inline-flex p-3 rounded-circle bg-warning bg-opacity-20 text-warning mb-3">
-                        <i class="fa-solid fa-tower-broadcast fa-2x"></i>
-                    </div>
-                    <h4 class="fw-bold text-white mb-2">No Buses Currently on a Live Trip</h4>
-                    <p class="text-secondary small mb-4" style="line-height: 1.6;">
-                        Travel Dost is strictly real-time. Live tracking activates only when a bus driver starts their trip in the Driver Cockpit and begins transmitting GPS every 3 seconds.
-                    </p>
-                    <div class="d-flex justify-content-center flex-wrap gap-2">
-                        <a href="{% url 'route-finder' %}" class="btn btn-outline-light rounded-pill btn-sm px-3 py-2">
-                            <i class="fa-solid fa-route me-1 text-primary"></i> Route Finder
-                        </a>
-                        <a href="{% url 'driver-portal' %}" class="btn btn-warning rounded-pill btn-sm px-3 py-2 fw-bold text-dark">
-                            <i class="fa-solid fa-gauge-high me-1"></i> Start a Trip as Driver
-                        </a>
-                    </div>
-                </div>
+                <!-- Non-blocking floating status notification (never blocks map) -->
+                <div class="d-none" id="noLiveBusesOverlay"></div>
 
                 <!-- Overlay Speed & Telemetry Card -->
-                <div class="telemetry-overlay-box p-3" id="telemetryCard" style="{% if not buses %}display:none;{% endif %}">
+                <div class="telemetry-overlay-box p-3" id="telemetryCard">
                     <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom border-secondary border-opacity-25">
                         <div class="d-flex align-items-center gap-2">
                             <span class="live-dot"></span>
@@ -598,42 +582,47 @@ $(document.body).ready(function() {
             $('#telemetryCard').show();
             $('#noLiveBusesOverlay').addClass('d-none');
             $('#telBusNum').text(`Bus ${data.bus_number} (${data.bus_type})`);
-            $('#telStatus').text(data.is_live ? 'LIVE' : 'OFFLINE')
+            $('#telStatus').text(data.is_live ? 'LIVE' : 'SCHEDULED')
                 .attr('class', data.is_live ? 'badge bg-success' : 'badge bg-secondary');
 
             if (data.latest_location) {
-                $('#telSpeed').text(data.latest_location.speed.toFixed(1));
-                $('#telHeading').text(`${Math.round(data.latest_location.heading)}°`);
+                $('#telSpeed').text(Number(data.latest_location.speed || 0).toFixed(1));
+                $('#telHeading').text(`${Math.round(data.latest_location.heading || 0)}°`);
             }
 
-            const busLatLng = (data.latest_location && data.latest_location.latitude) 
-                ? [data.latest_location.latitude, data.latest_location.longitude] 
-                : null;
+            let busLatLng = null;
+            if (data.latest_location && data.latest_location.latitude && data.latest_location.longitude) {
+                busLatLng = [parseFloat(data.latest_location.latitude), parseFloat(data.latest_location.longitude)];
+            } else if (data.route_stops && data.route_stops.length > 0) {
+                busLatLng = [parseFloat(data.route_stops[0].lat), parseFloat(data.route_stops[0].lng)];
+            }
 
-            // Render live marker
-            if (data.latest_location && data.is_live) {
+            // ALWAYS Render bus marker on map (Live or Scheduled)
+            if (busLatLng) {
                 updateBusMarkerOnMap({
                     bus_id: data.bus_id,
                     bus_number: data.bus_number,
                     bus_name: data.bus_name,
                     bus_type: data.bus_type,
-                    status: 'LIVE',
-                    latitude: data.latest_location.latitude,
-                    longitude: data.latest_location.longitude,
-                    speed: data.latest_location.speed,
-                    heading: data.latest_location.heading,
-                    timestamp: data.latest_location.timestamp,
+                    status: data.is_live ? 'LIVE' : 'SCHEDULED',
+                    latitude: busLatLng[0],
+                    longitude: busLatLng[1],
+                    speed: (data.latest_location && data.latest_location.speed) || 0,
+                    heading: (data.latest_location && data.latest_location.heading) || 0,
+                    timestamp: (data.latest_location && data.latest_location.timestamp) || Date.now(),
                     route_name: data.route_name
                 });
             }
 
-            // Render Traveled vs Remaining Route Polylines
-            renderTraveledAndRemainingRoute(
+            // Render Route Polylines:
+            // 1. Source to Destination: ONE TYPE (Solid Vibrant Blue)
+            // 2. Bus Location to Source: DIFFERENT TYPE (Dashed Amber)
+            renderTrackingPolylines(
                 busLatLng,
                 data.route_stops,
+                data.road_geometry,
                 data.traveled_road_points,
-                data.remaining_road_points,
-                data.traveled_breadcrumbs
+                data.remaining_road_points
             );
 
             // Populate Trip Announcer Selectors
@@ -747,17 +736,8 @@ $(document.body).ready(function() {
     window.onBusOffline = function(busId) {
         const activeSelectedBus = $('#busSelect').val();
         if (activeSelectedBus && String(busId) === String(activeSelectedBus)) {
-            $('#busSelect option[value="' + busId + '"]').remove();
-            if ($('#busSelect option').length === 0) {
-                $('#noLiveBusesOverlay').removeClass('d-none');
-                $('#telemetryCard').hide();
-                $('#sidebarBusInfo').html('<div class="text-muted py-4 text-center">Bus has completed its trip and is now offline.</div>');
-            } else {
-                const nextBus = $('#busSelect option:first').val();
-                $('#busSelect').val(nextBus);
-                loadBusRouteDetails(nextBus);
-                startBusTrackingSocket(nextBus);
-            }
+            $('#telStatus').text('SCHEDULED').removeClass('bg-success').addClass('bg-secondary');
+            $('#liveStatusBadge').html('<i class="fa-solid fa-clock me-1 text-warning"></i> Scheduled Mode');
         }
     };
 

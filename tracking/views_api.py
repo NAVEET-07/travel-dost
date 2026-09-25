@@ -653,6 +653,21 @@ class BusTrackingStatusAPIView(APIView):
             elif road_geometry:
                 remaining_road_points = road_geometry
 
+            # Resolve guaranteed Source & Destination points and Bus Location
+            first_stop = route_stops_data[0] if route_stops_data else None
+            last_stop = route_stops_data[-1] if route_stops_data else None
+            source_coords = [first_stop['lat'], first_stop['lng']] if first_stop else [15.3647, 75.1240]
+            dest_coords = [last_stop['lat'], last_stop['lng']] if last_stop else source_coords
+
+            bus_lat = loc.latitude if (loc and loc.latitude is not None) else source_coords[0]
+            bus_lng = loc.longitude if (loc and loc.longitude is not None) else source_coords[1]
+            bus_speed = loc.speed if (loc and loc.speed is not None) else 0.0
+            bus_heading = loc.heading if (loc and loc.heading is not None) else 0.0
+            bus_ts = loc.timestamp.isoformat() if (loc and loc.timestamp) else (bus.last_updated.isoformat() if bus.last_updated else None)
+
+            source_to_dest_points = road_geometry if (road_geometry and len(road_geometry) >= 2) else [[s['lat'], s['lng']] for s in route_stops_data]
+            bus_to_source_points = [[bus_lat, bus_lng], source_coords]
+
             return Response({
                 "bus_id": bus.id,
                 "bus_number": bus.bus_number,
@@ -665,12 +680,17 @@ class BusTrackingStatusAPIView(APIView):
                 "is_live": is_live,
                 "last_updated": bus.last_updated,
                 "latest_location": {
-                    "latitude": loc.latitude if loc else None,
-                    "longitude": loc.longitude if loc else None,
-                    "speed": loc.speed if loc else 0.0,
-                    "heading": loc.heading if loc else 0.0,
-                    "timestamp": loc.timestamp.isoformat() if loc else None
-                } if loc else None,
+                    "latitude": bus_lat,
+                    "longitude": bus_lng,
+                    "speed": bus_speed,
+                    "heading": bus_heading,
+                    "timestamp": bus_ts,
+                    "is_live": is_live
+                },
+                "source_stop": first_stop,
+                "destination_stop": last_stop,
+                "source_to_destination_points": source_to_dest_points,
+                "bus_to_source_points": bus_to_source_points,
                 "route_stops": route_stops_data,
                 "current_stop": current_stop_data,
                 "next_stop": next_stop_data,
@@ -1034,7 +1054,34 @@ class PassengerBusLiveStatusAPIView(APIView):
         is_live = (bus.trip_status in ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT']) and (bus.tracking_status == 'LIVE') and (loc is not None) and (seconds_ago is not None and seconds_ago <= 60)
         status_str = "ACTIVE" if is_live else "OFFLINE"
 
+        # Scheduled/default coordinates if no active GPS ping
+        origin_lat, origin_lon = None, None
+        source_stop_dict, dest_stop_dict = None, None
+        if bus.route:
+            first_rs = bus.route.route_stops.select_related('bus_stop').order_by('stop_order').first()
+            last_rs = bus.route.route_stops.select_related('bus_stop').order_by('stop_order').last()
+            if first_rs and first_rs.bus_stop:
+                origin_lat = float(first_rs.bus_stop.latitude)
+                origin_lon = float(first_rs.bus_stop.longitude)
+                source_stop_dict = {
+                    "id": first_rs.bus_stop.id,
+                    "name": first_rs.bus_stop.stop_name,
+                    "lat": origin_lat,
+                    "lon": origin_lon
+                }
+            if last_rs and last_rs.bus_stop:
+                dest_stop_dict = {
+                    "id": last_rs.bus_stop.id,
+                    "name": last_rs.bus_stop.stop_name,
+                    "lat": float(last_rs.bus_stop.latitude),
+                    "lon": float(last_rs.bus_stop.longitude)
+                }
+
+        active_lat = float(loc.latitude) if (loc and loc.latitude is not None) else origin_lat
+        active_lon = float(loc.longitude) if (loc and loc.longitude is not None) else origin_lon
+
         return Response({
+            "success": True,
             "bus_id": bus.id,
             "bus_no": bus.bus_number,
             "is_live": is_live,
@@ -1042,16 +1089,18 @@ class PassengerBusLiveStatusAPIView(APIView):
             "has_recent_ping": has_recent_ping,
             "status": status_str,
             "trip_status": bus.trip_status,
-            "current_lat": float(loc.latitude) if (loc and is_live) else None,
-            "current_lon": float(loc.longitude) if (loc and is_live) else None,
-            "latitude": float(loc.latitude) if (loc and is_live) else None,
-            "longitude": float(loc.longitude) if (loc and is_live) else None,
+            "current_lat": active_lat,
+            "current_lon": active_lon,
+            "latitude": active_lat,
+            "longitude": active_lon,
             "speed_kmh": float(loc.speed) if (loc and is_live) else 0.0,
             "speed": float(loc.speed) if (loc and is_live) else 0.0,
             "heading": float(loc.heading) if (loc and is_live) else 0.0,
             "last_updated_seconds_ago": seconds_ago,
             "route_name": bus.route.route_name if bus.route else "City Route",
-            "driver_name": getattr(bus, 'driver_name', 'NWKRTC Operator') or "NWKRTC Operator"
+            "driver_name": getattr(bus, 'driver_name', 'NWKRTC Operator') or "NWKRTC Operator",
+            "source_stop": source_stop_dict,
+            "destination_stop": dest_stop_dict
         })
 
 

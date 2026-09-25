@@ -55,33 +55,39 @@ def route_finder_view(request):
 
 @login_required(login_url='login')
 def live_tracking_view(request, bus_id=None):
-    # Strictly fetch buses that are currently on an active trip (ACTIVE, IN_PROGRESS or IN_TRANSIT and LIVE)
-    live_buses = Bus.objects.filter(
+    # Fetch all active buses that have an assigned route
+    all_buses = Bus.objects.filter(
         is_active=True,
+        route__isnull=False
+    ).select_related('route', 'driver').order_by('bus_number')
+
+    # Active streaming buses
+    live_buses = all_buses.filter(
         tracking_status='LIVE',
         trip_status__in=['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT']
-    ).select_related('route', 'driver')
+    )
 
     selected_bus = None
     if bus_id:
-        selected_bus = Bus.objects.filter(id=bus_id, is_active=True).select_related('route', 'driver').first()
+        selected_bus = all_buses.filter(id=bus_id).first()
     elif request.GET.get('bus_id'):
         b_id = request.GET.get('bus_id')
         if b_id.isdigit():
-            selected_bus = Bus.objects.filter(id=int(b_id), is_active=True).select_related('route', 'driver').first()
+            selected_bus = all_buses.filter(id=int(b_id)).first()
 
-    # If no specific bus selected and there are live buses, default to first live bus
-    if not selected_bus and live_buses.exists():
-        selected_bus = live_buses.first()
+    # If no specific bus selected, prioritize live streaming bus, else default to first active bus
+    if not selected_bus:
+        selected_bus = live_buses.first() or all_buses.first()
 
     all_stops = BusStop.objects.filter(is_active=True).order_by('stop_name')
 
     context = {
-        'buses': live_buses,
+        'buses': all_buses,
         'live_buses': live_buses,
         'selected_bus': selected_bus,
         'all_stops': all_stops,
         'live_buses_count': live_buses.count(),
+        'total_buses_count': all_buses.count(),
     }
     return render(request, 'live_tracking.html', context)
 

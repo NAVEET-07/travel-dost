@@ -771,7 +771,7 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
 }
 /* ============================================================== */
-/* INTERACTIVE REAL-TIME SPLIT-SCREEN TRACKING DASHBOARD          */
+/* MODERN CONSOLIDATED SPLIT-SCREEN TRACKING VIEW                 */
 /* ============================================================== */
 .split-screen-tracking-view {
     display: flex;
@@ -783,36 +783,23 @@
     flex: 0 0 65%;
     max-width: 65%;
     position: relative;
-    border-radius: 22px;
+    border-radius: 24px;
     overflow: hidden;
-    background: #0b1329;
-    border: 1px solid rgba(56, 189, 248, 0.28);
-    box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.65), 0 0 30px rgba(56, 189, 248, 0.10);
-    height: calc(100vh - 130px);
-    min-height: 620px;
+    background: #0f172a;
+    border: 1px solid rgba(51, 65, 85, 0.6);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65), 0 0 25px rgba(56, 189, 248, 0.06);
+    height: calc(100vh - 120px);
+    min-height: 640px;
     transition: all 0.3s ease;
 }
 
 .split-track-sidebar-panel {
     flex: 0 0 35%;
     max-width: 35%;
-    height: calc(100vh - 130px);
-    min-height: 620px;
-    overflow-y: auto;
-    padding-right: 4px;
+    height: calc(100vh - 120px);
+    min-height: 640px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(56, 189, 248, 0.3) rgba(15, 23, 42, 0.5);
-}
-
-.split-track-sidebar-panel::-webkit-scrollbar {
-    width: 6px;
-}
-.split-track-sidebar-panel::-webkit-scrollbar-thumb {
-    background: rgba(56, 189, 248, 0.3);
-    border-radius: 6px;
 }
 
 @media (max-width: 991px) {
@@ -829,11 +816,11 @@
         flex: 0 0 100%;
         max-width: 100%;
         height: auto;
-        min-height: 480px;
-        overflow-y: visible;
+        min-height: 520px;
     }
 }
 
+/* Floating Frosted-Glass Map Pills & Top Toolbar */
 .split-map-floating-top {
     position: absolute;
     top: 14px;
@@ -850,17 +837,41 @@
     pointer-events: auto;
 }
 
-.tracking-top-badge {
-    background: rgba(15, 23, 42, 0.90);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(56, 189, 248, 0.35);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+.map-glass-pill {
+    background: rgba(15, 23, 42, 0.85) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(51, 65, 85, 0.6) !important;
+    color: #f8fafc !important;
+    border-radius: 9999px !important;
+    padding: 6px 14px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(56, 189, 248, 0.05);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.map-glass-pill:hover {
+    background: rgba(30, 41, 59, 0.95) !important;
+    border-color: rgba(56, 189, 248, 0.6) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.6);
+}
+
+.offline-notice-pill {
+    background: rgba(245, 158, 11, 0.18) !important;
+    border: 1px solid rgba(245, 158, 11, 0.45) !important;
+    color: #fef08a !important;
+    box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.25);
 }
 
 .live-dot-pulse {
-    width: 10px;
-    height: 10px;
+    width: 9px;
+    height: 9px;
     background-color: #10b981;
     border-radius: 50%;
     display: inline-block;
@@ -869,8 +880,16 @@
 }
 @keyframes livePulseGlow {
     0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-    70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+    70% { transform: scale(1); box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
     100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.offline-dot-stationary {
+    width: 9px;
+    height: 9px;
+    background-color: #f59e0b;
+    border-radius: 50%;
+    display: inline-block;
 }
 
 /* User-Controlled Camera Recenter Button */
@@ -879,14 +898,14 @@
     bottom: 24px;
     right: 24px;
     z-index: 1000;
-    background: rgba(15, 23, 42, 0.92);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(56, 189, 248, 0.45);
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(51, 65, 85, 0.6);
     color: #38bdf8;
-    border-radius: 50px;
-    padding: 8px 16px;
-    font-size: 0.8rem;
+    border-radius: 9999px;
+    padding: 8px 18px;
+    font-size: 0.78rem;
     font-weight: 700;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     cursor: pointer;
@@ -896,83 +915,281 @@
     transition: all 0.25s ease;
 }
 .btn-recenter-floating.locked {
-    background: rgba(16, 185, 129, 0.92);
-    border-color: #34d399;
-    color: #ffffff;
+    background: rgba(16, 185, 129, 0.22);
+    border-color: rgba(16, 185, 129, 0.55);
+    color: #34d399;
 }
 .btn-recenter-floating:hover {
     transform: translateY(-2px);
     box-shadow: 0 14px 30px rgba(0, 0, 0, 0.65);
 }
 
-/* Cards on Right Sidebar */
-.tracking-side-card {
-    background: linear-gradient(165deg, #0b1329 0%, #0f172a 55%, #1e293b 100%);
-    border: 1px solid rgba(56, 189, 248, 0.22);
-    border-radius: 20px;
-    box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.55), 0 0 20px rgba(56, 189, 248, 0.05);
-    color: #f8fafc;
-    transition: all 0.25s ease;
-}
-.tracking-side-card:hover {
-    border-color: rgba(56, 189, 248, 0.38);
+/* Floating Map Minimalist Legend Pill (Bottom-Left) */
+.map-floating-legend-pill {
+    position: absolute;
+    bottom: 18px;
+    left: 18px;
+    z-index: 999;
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(51, 65, 85, 0.6);
+    border-radius: 9999px;
+    padding: 6px 14px;
+    color: #e2e8f0;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    pointer-events: none;
 }
 
-.bus-icon-circle {
-    width: 38px;
-    height: 38px;
+/* ============================================================== */
+/* CONSOLIDATED MODERN GLASSMORPHIC RIGHT CARD                    */
+/* ============================================================== */
+.unified-tracking-card {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.93) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(51, 65, 85, 0.6);
+    border-radius: 24px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65), 0 0 30px rgba(56, 189, 248, 0.05);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    color: #f8fafc;
+}
+
+.unified-card-header {
+    background: rgba(15, 23, 42, 0.6);
+}
+
+.bus-shield-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.operator-badge {
+    background: rgba(56, 189, 248, 0.15) !important;
+    border: 1px solid rgba(56, 189, 248, 0.35) !important;
+    color: #38bdf8 !important;
+    font-weight: 800 !important;
+    font-size: 0.68rem !important;
+    letter-spacing: 0.05em;
+    padding: 3px 8px !important;
+    border-radius: 6px !important;
+}
+
+.status-pill {
+    font-size: 0.72rem;
+    font-weight: 700;
+    border-radius: 9999px;
+    padding: 4px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.03em;
+}
+.status-pill.active-pill {
+    background: rgba(16, 185, 129, 0.18);
+    border: 1px solid rgba(16, 185, 129, 0.45);
+    color: #34d399;
+}
+.status-pill.offline-pill {
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    color: #fbbf24;
+}
+
+.offline-callout-notice {
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 12px;
+    padding: 8px 12px;
+    margin-top: 10px;
+}
+
+/* Quick Stats Bar Grid */
+.unified-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px solid rgba(51, 65, 85, 0.5);
+    border-radius: 14px;
+    padding: 10px 12px;
+}
+.stat-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+.stat-lbl {
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+}
+.stat-val {
+    font-size: 0.95rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+/* Vertical Route Stepper */
+.unified-stepper-container {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(56, 189, 248, 0.25) transparent;
+}
+.unified-stepper-container::-webkit-scrollbar {
+    width: 5px;
+}
+.unified-stepper-container::-webkit-scrollbar-thumb {
+    background: rgba(56, 189, 248, 0.25);
+    border-radius: 5px;
+}
+
+.stepper-list-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+.stepper-stop-item {
+    position: relative;
+    padding-left: 36px;
+    padding-bottom: 16px;
+    cursor: pointer;
+    border-radius: 10px;
+    padding-right: 8px;
+    padding-top: 2px;
+    transition: all 0.2s ease;
+}
+.stepper-stop-item:hover {
+    background: rgba(56, 189, 248, 0.05);
+}
+.stepper-stop-item::before {
+    content: '';
+    position: absolute;
+    left: 11px;
+    top: 22px;
+    bottom: 0;
+    width: 2px;
+    background: rgba(51, 65, 85, 0.6);
+}
+.stepper-stop-item:last-child::before {
+    display: none;
+}
+.stepper-stop-item.passed::before {
+    background: #10b981;
+}
+
+.stepper-stop-dot {
+    position: absolute;
+    left: 0;
+    top: 2px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    background: rgba(2, 132, 199, 0.2);
-    border: 1px solid rgba(56, 189, 248, 0.4);
+    background: #0f172a;
+    border: 2px solid #475569;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #94a3b8;
+    transition: all 0.25s ease;
+}
+.stepper-stop-item.start-stop .stepper-stop-dot {
+    border-color: #10b981;
+    background: #064e3b;
+    color: #34d399;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.45);
+}
+.stepper-stop-item.dest-stop .stepper-stop-dot {
+    border-color: #ef4444;
+    background: #7f1d1d;
+    color: #f87171;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.45);
+}
+.stepper-stop-item.active .stepper-stop-dot {
+    border-color: #38bdf8;
+    background: #0369a1;
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+}
+.stepper-stop-item.passed .stepper-stop-dot {
+    border-color: #10b981;
+    background: #10b981;
+    color: #ffffff;
+}
+.stepper-stop-item.passed .stepper-stop-name {
+    color: #64748b;
+    text-decoration: line-through;
+}
+
+.stepper-stop-name {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #f8fafc;
+}
+.stepper-stop-sub {
+    font-size: 0.72rem;
+    color: #94a3b8;
+}
+
+/* Collapsible Secondary Drawer */
+.unified-drawer-container {
+    background: rgba(15, 23, 42, 0.7);
+    border-top: 1px solid rgba(51, 65, 85, 0.6);
+}
+.drawer-header-btn {
+    background: transparent;
+    border: none;
+    width: 100%;
+    padding: 10px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+}
+.drawer-header-btn:hover {
+    background: rgba(30, 41, 59, 0.5);
+}
+.drawer-icon-bubble {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.25);
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.stat-pill {
-    background: rgba(15, 23, 42, 0.85);
-    border: 1px solid rgba(148, 163, 184, 0.22);
-    border-radius: 12px;
-}
-.stat-label {
-    display: block;
-    font-size: 0.65rem;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    color: #94a3b8;
-    margin-bottom: 2px;
-}
-.stat-value {
-    font-size: 0.95rem;
-    font-weight: 700;
-}
-
-/* Live Dynamic Announcer Speech Box */
-.announcement-speech-bubble {
-    background: rgba(15, 23, 42, 0.92);
-    border: 1px solid rgba(56, 189, 248, 0.4);
-    border-left: 5px solid #38bdf8;
-    border-radius: 14px;
-    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
-    transition: all 0.3s ease;
-}
-.speech-text {
-    font-size: 0.92rem;
-    line-height: 1.45;
-    color: #ffffff;
-}
-
-/* Animated Audio Wave Graphic */
 .audio-wave-bars {
     display: inline-flex;
     align-items: center;
     gap: 3px;
-    height: 18px;
+    height: 16px;
     vertical-align: middle;
 }
 .audio-wave-bar {
     width: 3px;
-    height: 5px;
+    height: 4px;
     background: #64748b;
     border-radius: 3px;
     transition: all 0.2s ease;
@@ -988,47 +1205,29 @@
 .audio-wave-bars.active .audio-wave-bar:nth-child(5) { animation-delay: 0.60s; }
 
 @keyframes wavePulseAnim {
-    0%, 100% { height: 5px; background: #38bdf8; }
-    50% { height: 18px; background: #34d399; }
+    0%, 100% { height: 4px; background: #38bdf8; }
+    50% { height: 16px; background: #34d399; }
 }
 
-.announcer-pulse-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: rgba(56, 189, 248, 0.15);
-    border: 1px solid rgba(56, 189, 248, 0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.simulation-demo-box {
-    background: rgba(15, 23, 42, 0.65);
-    border: 1px dashed rgba(56, 189, 248, 0.3);
-}
-
-/* Activity Log Stream */
 .activity-log-feed {
-    max-height: 200px;
+    max-height: 130px;
     overflow-y: auto;
     scrollbar-width: thin;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding-right: 2px;
+    gap: 6px;
 }
 .activity-item {
-    background: rgba(15, 23, 42, 0.75);
-    border: 1px solid rgba(148, 163, 184, 0.18);
-    border-radius: 10px;
-    padding: 7px 10px;
-    font-size: 0.78rem;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(51, 65, 85, 0.4);
+    border-radius: 8px;
+    padding: 5px 8px;
+    font-size: 0.74rem;
     color: #e2e8f0;
     display: flex;
     align-items: flex-start;
-    gap: 8px;
-    animation: fadeInActivity 0.3s ease;
+    gap: 6px;
+    animation: fadeInActivity 0.25s ease;
 }
 @keyframes fadeInActivity {
     from { opacity: 0; transform: translateY(-4px); }
@@ -1036,14 +1235,14 @@
 }
 .activity-time {
     font-family: monospace;
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     color: #94a3b8;
     white-space: nowrap;
 }
 .activity-badge-tag {
-    font-size: 0.65rem;
+    font-size: 0.62rem;
     font-weight: 700;
-    padding: 1px 6px;
+    padding: 1px 5px;
     border-radius: 9999px;
     text-transform: uppercase;
 }
@@ -1051,111 +1250,19 @@
 .activity-badge-tag.proximity { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
 .activity-badge-tag.boarded { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
 .activity-badge-tag.arrived { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+.activity-badge-tag.warning { background: rgba(245, 158, 11, 0.25); color: #f59e0b; }
 
-/* Progress Stepper */
-.tracking-stepper-list {
-    max-height: 220px;
-    overflow-y: auto;
-    padding: 4px 8px;
-    scrollbar-width: thin;
-}
-.stepper-stop-item {
-    position: relative;
-    padding-left: 28px;
-    padding-bottom: 12px;
-}
-.stepper-stop-item::before {
-    content: '';
-    position: absolute;
-    left: 9px;
-    top: 18px;
-    bottom: 0;
-    width: 2px;
-    background: rgba(148, 163, 184, 0.25);
-}
-.stepper-stop-item:last-child::before {
-    display: none;
-}
-.stepper-stop-dot {
-    position: absolute;
-    left: 0;
-    top: 2px;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #1e293b;
-    border: 2px solid #64748b;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.65rem;
-    color: #94a3b8;
-}
-.stepper-stop-item.passed .stepper-stop-dot {
-    background: #10b981;
-    border-color: #34d399;
-    color: #ffffff;
-}
-.stepper-stop-item.active .stepper-stop-dot {
-    background: #2563eb;
-    border-color: #60a5fa;
-    color: #ffffff;
-    box-shadow: 0 0 10px rgba(37, 99, 235, 0.8);
-}
-.stepper-stop-item.passed .stepper-stop-name {
-    color: #94a3b8;
-    text-decoration: line-through;
-}
-.stepper-stop-item.active .stepper-stop-name {
-    color: #ffffff;
-    font-weight: 700;
-}
-
-/* Passenger Marker Snap/Merge Animation */
-@keyframes passengerMergeSnap {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.6); box-shadow: 0 0 25px rgba(16, 185, 129, 0.95); opacity: 0.8; }
-    100% { transform: scale(0.1); opacity: 0; }
-}
-.passenger-merged-snap {
-    animation: passengerMergeSnap 1.1s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
-}
-
-/* Explicit Map Container Dimensions & Tile Reliability */
+/* Custom Leaflet Map Container & Marker Drop Shadows */
 #splitTrackMap {
     width: 100% !important;
     height: 100% !important;
-    min-height: 620px !important;
+    min-height: 640px !important;
     background: #0f172a !important;
     position: relative;
     z-index: 1;
 }
-.leaflet-container {
-    background-color: #0f172a !important;
-}
-
-/* Smooth 2-Second Marker Interpolation (glides smoothly along roads without abrupt jumping) */
-.smooth-bus-marker, .smooth-bus-marker .custom-transit-divicon {
-    transition: transform 1.9s linear !important;
-}
-#splitBusPinWrapper {
-    transition: transform 1.9s linear !important;
-}
-#splitBusDisc {
-    transition: transform 0.6s ease-out !important;
-}
-
-/* Offline Modal & Toast Custom Styles */
-.modal-backdrop.show {
-    backdrop-filter: blur(6px);
-}
-.bus-offline-pulse {
-    animation: offlinePulse 2s infinite;
-}
-@keyframes offlinePulse {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.08); opacity: 0.7; }
-    100% { transform: scale(1); opacity: 1; }
+.smooth-bus-marker {
+    transition: transform 1.2s linear !important;
 }
 </style>
 {% endblock %}
@@ -1479,191 +1586,213 @@
     </div>
 </div>
 
-<!-- Interactive Real-Time Split-Screen Tracking View (Triggered strictly upon clicking "Track") -->
+<!-- Modern Real-Time Split-Screen Tracking View -->
 <div class="container-fluid px-2 px-lg-4 mb-5 d-none" id="splitScreenTrackingDashboard">
     <div class="split-screen-tracking-view">
-        <!-- LEFT PANEL (65% width): Interactive Map -->
+        <!-- LEFT PANEL (65% width): Interactive Map with Floating Frosted-Glass Controls -->
         <div class="split-track-map-panel" id="splitTrackMapCard">
-            <!-- Floating Top Toolbar -->
+            <!-- Floating Top Toolbar with Frosted-Glass Pills -->
             <div class="split-map-floating-top">
-                <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-sm btn-dark border border-secondary border-opacity-50 rounded-pill px-3 py-1 shadow text-light" id="btnBackToRoutes" title="Exit tracking and return to routes list">
-                        <i class="fa-solid fa-arrow-left me-1 text-info"></i> Back to Routes
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <button type="button" class="map-glass-pill btn-back-routes shadow-lg" id="btnBackToRoutes" title="Exit tracking and return to routes list">
+                        <i class="fa-solid fa-arrow-left text-sky-400"></i>
+                        <span>Back to Routes</span>
                     </button>
-                    <div class="tracking-top-badge d-flex align-items-center gap-2 px-3 py-1 rounded-pill">
-                        <span class="live-dot-pulse"></span>
-                        <strong class="text-white small" id="topTrackingBusNo">Bus --</strong>
-                        <span class="text-secondary small d-none d-sm-inline">•</span>
-                        <span class="text-info small text-truncate d-none d-sm-inline" id="topTrackingRouteName">Route</span>
+                    <div class="map-glass-pill tracking-status-pill shadow-lg" id="mapTopStatusPill">
+                        <span class="live-dot-pulse" id="topPillDot"></span>
+                        <strong class="text-white text-xs" id="topTrackingBusNo">Bus --</strong>
+                        <span class="text-slate-400 text-xs d-none d-sm-inline">•</span>
+                        <span class="text-sky-300 text-xs text-truncate d-none d-sm-inline" id="topTrackingRouteName">Route</span>
                     </div>
                 </div>
 
-                <div class="d-flex align-items-center gap-2">
-                    <!-- Stop Labels Toggle -->
-                    <button type="button" class="btn btn-sm btn-outline-info rounded-pill px-2 py-1 fw-semibold active" id="btnToggleTrackingStopLabels" title="Toggle Stop Name Labels" style="font-size: 0.74rem;">
-                        <i class="fa-solid fa-tags me-1"></i> <span id="trackingLabelToggleText">Stops: ON</span>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <!-- Stop Labels Toggle Pill -->
+                    <button type="button" class="map-glass-pill shadow-lg" id="btnToggleTrackingStopLabels" title="Toggle Stop Name Labels">
+                        <i class="fa-solid fa-tags text-sky-400"></i>
+                        <span id="trackingLabelToggleText">Stops: ON</span>
                     </button>
 
-                    <!-- Tile Switcher (CartoDB Voyager as Modern Transit Default) -->
+                    <!-- Map Layer Switcher Pill Dropdown -->
                     <div class="dropdown">
-                        <button class="btn btn-sm btn-dark border border-secondary border-opacity-50 rounded-pill px-2 py-1 dropdown-toggle text-light" type="button" id="trackingMapThemeDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.74rem;">
-                            <i class="fa-solid fa-layer-group me-1 text-warning"></i> <span id="trackingTileLabel">OpenStreetMap (Transit HOT)</span>
+                        <button class="map-glass-pill dropdown-toggle shadow-lg" type="button" id="trackingMapThemeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-layer-group text-amber-400"></i>
+                            <span id="trackingTileLabel">Transit HOT</span>
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow-lg border-secondary" style="font-size: 0.8rem; min-width: 210px;">
-                            <li><a class="dropdown-item active d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="osm_hot"><i class="fa-solid fa-fire-flame-curved text-warning"></i> OpenStreetMap (Transit HOT)</a></li>
-                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="osm_standard"><i class="fa-solid fa-road text-success"></i> OpenStreetMap Standard</a></li>
-                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="esri_gray"><i class="fa-solid fa-sun text-info"></i> Esri Clean Light</a></li>
-                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="esri_street"><i class="fa-solid fa-city text-secondary"></i> Esri Streets</a></li>
-                            <li><a class="dropdown-item d-flex align-items-center gap-2" href="javascript:void(0)" data-tracking-tile="satellite"><i class="fa-solid fa-satellite text-danger"></i> Satellite Imagery</a></li>
+                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow-2xl border-secondary" style="background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(16px); font-size: 0.8rem; min-width: 220px;">
+                            <li><a class="dropdown-item active d-flex align-items-center gap-2 py-2" href="javascript:void(0)" data-tracking-tile="osm_hot"><i class="fa-solid fa-fire-flame-curved text-warning"></i> OpenStreetMap (Transit HOT)</a></li>
+                            <li><a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0)" data-tracking-tile="osm_standard"><i class="fa-solid fa-road text-success"></i> OpenStreetMap Standard</a></li>
+                            <li><a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0)" data-tracking-tile="esri_gray"><i class="fa-solid fa-sun text-info"></i> Esri Clean Light</a></li>
+                            <li><a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0)" data-tracking-tile="esri_street"><i class="fa-solid fa-city text-secondary"></i> Esri Streets</a></li>
+                            <li><a class="dropdown-item d-flex align-items-center gap-2 py-2" href="javascript:void(0)" data-tracking-tile="satellite"><i class="fa-solid fa-satellite text-danger"></i> Satellite Imagery</a></li>
                         </ul>
                     </div>
 
-                    <!-- Reset Camera / Fit Route -->
-                    <button type="button" class="btn btn-sm btn-outline-light rounded-pill px-2 py-1 fw-semibold" id="btnFitTrackingBounds" title="Fit Entire Route into View" style="font-size: 0.74rem;">
-                        <i class="fa-solid fa-expand"></i>
+                    <!-- Fit Entire Route Bounds Pill -->
+                    <button type="button" class="map-glass-pill shadow-lg" id="btnFitTrackingBounds" title="Fit Entire Route into View">
+                        <i class="fa-solid fa-expand text-slate-300"></i>
+                        <span class="d-none d-md-inline">Fit Route</span>
                     </button>
                 </div>
             </div>
 
             <!-- Leaflet Map Container for Split Screen -->
-            <div id="splitTrackMap" style="width: 100%; height: 100%; min-height: 600px; background: #0f172a;"></div>
+            <div id="splitTrackMap"></div>
 
             <!-- Floating Map Camera Recenter Button (User Controlled Camera Lock) -->
             <button type="button" class="btn-recenter-floating locked shadow-lg" id="btnRecenterTrackingMap" title="Lock camera to bus location">
-                <i class="fa-solid fa-crosshairs text-info" id="recenterIcon"></i>
+                <i class="fa-solid fa-crosshairs text-sky-400" id="recenterIcon"></i>
                 <span id="recenterText">Camera Locked</span>
             </button>
 
-            <!-- Floating Map Legend (Bottom-Left) -->
-            <div class="map-floating-legend shadow-sm" style="bottom: 16px; left: 16px;">
-                <div class="d-flex align-items-center gap-2 flex-wrap" style="font-size: 0.7rem;">
-                    <span class="legend-badge"><span class="legend-line" style="display:inline-block; width: 18px; height: 4px; background: #2563eb; border-radius: 2px;"></span> Source ➔ Dest</span>
-                    <span class="legend-badge"><span class="legend-line" style="display:inline-block; width: 18px; height: 0; border-top: 3px dashed #f59e0b;"></span> Bus ➔ Source</span>
-                    <span class="legend-badge"><span class="legend-line" style="background: #10b981; height: 3px;"></span> Upcoming</span>
-                    <span class="legend-badge"><span class="legend-circle" style="background: #3b82f6;"></span> Passenger</span>
-                    <span class="legend-badge"><span class="legend-circle" style="background: #f59e0b;"></span> Live Bus</span>
+            <!-- Floating Map Minimalist Legend Pill (Bottom-Left) -->
+            <div class="map-floating-legend-pill shadow-md">
+                <div class="d-flex align-items-center gap-2.5 flex-wrap" style="font-size: 0.72rem;">
+                    <span class="legend-badge"><span class="legend-line" style="display:inline-block; width: 16px; height: 3.5px; background: #2563eb; border-radius: 2px;"></span> Route</span>
+                    <span class="legend-badge"><span class="legend-circle" style="width:9px; height:9px; border-radius:50%; background:#10b981; display:inline-block;"></span> Point A</span>
+                    <span class="legend-badge"><span class="legend-circle" style="width:9px; height:9px; border-radius:50%; background:#0284c7; display:inline-block;"></span> Stops</span>
+                    <span class="legend-badge"><span class="legend-circle" style="width:9px; height:9px; border-radius:50%; background:#ef4444; display:inline-block;"></span> Point B</span>
+                    <span class="legend-badge" id="legendBusItem"><span class="legend-circle" style="width:9px; height:9px; border-radius:50%; background:#f59e0b; display:inline-block;"></span> Bus</span>
                 </div>
             </div>
         </div>
 
-        <!-- RIGHT PANEL (35% width): Live Narration & Dynamic Cards -->
+        <!-- RIGHT PANEL (35% width): Consolidated Modern Glassmorphic Card -->
         <div class="split-track-sidebar-panel">
-            <!-- 1. Bus Telemetry Top Card -->
-            <div class="tracking-side-card p-3">
-                <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom border-secondary border-opacity-25">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="bus-icon-circle shadow-sm">
-                            <i class="fa-solid fa-bus text-primary"></i>
-                        </div>
-                        <div>
-                            <h6 class="fw-bold m-0 text-white" id="cardBusTitle">Bus #--</h6>
-                            <div class="small text-secondary" id="cardDriverName">Driver: Active Operator</div>
-                        </div>
-                    </div>
-                    <span class="badge bg-success bg-opacity-20 text-success border border-success border-opacity-25 rounded-pill px-2 py-1 small" id="cardGpsSignal">
-                        <i class="fa-solid fa-satellite-dish me-1"></i> Live 4G GPS
-                    </span>
-                </div>
-                <!-- Telemetry Stats Grid -->
-                <div class="row g-2 text-center">
-                    <div class="col-4">
-                        <div class="stat-pill p-2">
-                            <span class="stat-label">SPEED</span>
-                            <span class="stat-value text-info" id="cardSpeed">0 <small style="font-size: 0.6rem;">km/h</small></span>
-                        </div>
-                    </div>
-                    <div class="col-4">
-                        <div class="stat-pill p-2">
-                            <span class="stat-label">ETA TO STOP</span>
-                            <span class="stat-value text-emerald" id="cardEta">-- <small style="font-size: 0.6rem;">min</small></span>
-                        </div>
-                    </div>
-                    <div class="col-4">
-                        <div class="stat-pill p-2">
-                            <span class="stat-label">NEXT STOP</span>
-                            <span class="stat-value text-warning text-truncate d-block" id="cardNextStop" style="font-size: 0.78rem;">--</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 2. Live Dynamic Announcer Card -->
-            <div class="tracking-side-card announcer-card p-3">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="announcer-pulse-icon">
-                            <i class="fa-solid fa-volume-high text-info"></i>
-                        </span>
-                        <div>
-                            <span class="fw-bold text-white small text-uppercase letter-spacing-wide">Live Audio Announcer</span>
-                            <div class="audio-wave-bars ms-2" id="voiceWaveBars">
-                                <span class="audio-wave-bar"></span>
-                                <span class="audio-wave-bar"></span>
-                                <span class="audio-wave-bar"></span>
-                                <span class="audio-wave-bar"></span>
-                                <span class="audio-wave-bar"></span>
+            <div class="unified-tracking-card shadow-2xl">
+                <!-- 1. Header Card: Bus Number, Route Name, Operator, Status Badge -->
+                <div class="unified-card-header p-3.5 border-b border-slate-700/60">
+                    <div class="d-flex align-items-center justify-content-between gap-2">
+                        <div class="d-flex align-items-center gap-2.5">
+                            <div class="bus-shield-icon" id="unifiedBusShield">
+                                <i class="fa-solid fa-bus text-sky-400"></i>
                             </div>
-                        </div>
-                    </div>
-                    <!-- Audio Controls -->
-                    <div class="d-flex align-items-center gap-1">
-                        <button type="button" class="btn btn-sm btn-dark border border-secondary border-opacity-50 rounded-pill px-2 py-1 text-light" id="btnToggleSpeechMute" title="Mute/Unmute Voice Announcements" style="font-size: 0.72rem;">
-                            <i class="fa-solid fa-volume-high text-info" id="muteIcon"></i> <span id="muteBtnLabel">Voice: ON</span>
-                        </button>
-                        <button type="button" class="btn btn-sm btn-dark border border-secondary border-opacity-50 rounded-pill px-2 py-1 text-info" id="btnTestAudioVoice" title="Test Web Speech Engine" style="font-size: 0.72rem;">
-                            <i class="fa-solid fa-play"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Speech Display Box with glowing highlight -->
-                <div class="announcement-speech-bubble p-3 my-2" id="speechBubble">
-                    <i class="fa-solid fa-quote-left text-info opacity-50 me-1"></i>
-                    <span class="speech-text fw-semibold" id="currentAnnouncementText">
-                        Tracking initiated for Bus #[Number]. Monitoring route to your stop.
-                    </span>
-                </div>
-
-                <!-- Driver Live GPS Status Panel -->
-                <div class="driver-live-status-box p-2 mt-2 rounded-3 border" id="driverLiveStatusBox" style="background: rgba(15, 23, 42, 0.7); border-color: rgba(148, 163, 184, 0.2) !important;">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="status-indicator-dot" id="driverGpsDot" style="width: 10px; height: 10px; border-radius: 50%; background: #64748b; display: inline-block;"></span>
                             <div>
-                                <span class="d-block fw-bold text-white" id="driverGpsStatusText" style="font-size: 0.76rem;">Checking Driver GPS...</span>
-                                <span class="d-block text-secondary" id="driverGpsSubtext" style="font-size: 0.68rem;">Connecting to vehicle telemetry</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <h5 class="fw-bold m-0 text-white tracking-wide" id="unifiedBusNumber">#KA-25-F-H85</h5>
+                                    <span class="badge operator-badge" id="unifiedOperatorBadge">NWKRTC</span>
+                                </div>
+                                <div class="text-slate-400 small text-truncate" id="unifiedRouteTitle" style="max-width: 260px;">
+                                    Route 101: CBT Hubballi ➔ Dharwad BRTS
+                                </div>
                             </div>
                         </div>
-                        <span class="badge rounded-pill px-2 py-1" id="driverGpsBadge" style="font-size: 0.68rem; background: rgba(100, 116, 139, 0.2); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.4);">
-                            STANDBY
-                        </span>
+                        <!-- Status Badge (Active vs Offline) -->
+                        <div id="unifiedStatusBadgeContainer">
+                            <span class="badge status-pill active-pill" id="unifiedStatusPill">
+                                <span class="live-dot-pulse"></span> LIVE GPS
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Offline Notice Callout (Displayed elegantly when bus is offline/inactive) -->
+                    <div class="offline-callout-notice d-none" id="unifiedOfflineCallout">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-clock-rotate-left text-amber-400 flex-shrink-0"></i>
+                            <div class="small text-amber-200">
+                                <strong class="d-block text-white">Scheduled Route View</strong>
+                                Bus is currently offline / awaiting departure from terminal.
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- 3. Interactive Activity Log -->
-            <div class="tracking-side-card p-3">
-                <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom border-secondary border-opacity-25">
-                    <h6 class="fw-bold m-0 text-white small text-uppercase letter-spacing-wide">
-                        <i class="fa-solid fa-clock-rotate-left text-info me-1"></i> Activity & Proximity Log
-                    </h6>
-                    <span class="badge bg-secondary bg-opacity-25 text-light small rounded-pill" id="activityCountBadge">0 events</span>
-                </div>
-                <div class="activity-log-feed" id="trackingActivityFeed">
-                    <!-- Real-time timestamped event items rendered here -->
-                </div>
-            </div>
+                <!-- 2. Quick Stats Bar: Clean Grid with Distance, Duration, Stops & Timeline Data -->
+                <div class="p-3 border-b border-slate-700/50">
+                    <div class="unified-stats-grid" id="unifiedStatsGrid">
+                        <!-- Stat Col 1 -->
+                        <div class="stat-col" id="statCol1">
+                            <span class="stat-lbl" id="statLbl1">SPEED</span>
+                            <span class="stat-val text-sky-400" id="statVal1">0 <small style="font-size: 0.65rem;">km/h</small></span>
+                        </div>
+                        <!-- Stat Col 2 -->
+                        <div class="stat-col" id="statCol2">
+                            <span class="stat-lbl" id="statLbl2">EST. DURATION</span>
+                            <span class="stat-val text-emerald-400" id="statVal2">~25 <small style="font-size: 0.65rem;">min</small></span>
+                        </div>
+                        <!-- Stat Col 3 -->
+                        <div class="stat-col" id="statCol3">
+                            <span class="stat-lbl" id="statLbl3">TOTAL STOPS</span>
+                            <span class="stat-val text-indigo-300" id="statVal3">-- <small style="font-size: 0.65rem;">stops</small></span>
+                        </div>
+                    </div>
 
-            <!-- 4. Progress Stepper -->
-            <div class="tracking-side-card p-3">
-                <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom border-secondary border-opacity-25">
-                    <h6 class="fw-bold m-0 text-white small text-uppercase letter-spacing-wide">
-                        <i class="fa-solid fa-route text-emerald me-1"></i> Route Progress Stepper
-                    </h6>
-                    <span class="badge bg-dark border border-secondary text-secondary small rounded-pill" id="stepperStopsRemaining">-- stops remaining</span>
+                    <!-- Secondary Micro-metrics Sub-bar -->
+                    <div class="d-flex align-items-center justify-content-between px-2 pt-2.5 text-slate-400 small" style="font-size: 0.74rem;">
+                        <span id="subStatDistance"><i class="fa-solid fa-route me-1 text-sky-400"></i> <strong class="text-white" id="subStatDistanceVal">--</strong> km total</span>
+                        <span id="subStatOperator"><i class="fa-solid fa-building-shield me-1 text-slate-400"></i> Hubballi Division</span>
+                        <span id="subStatFare" class="fw-bold text-emerald-400"><i class="fa-solid fa-indian-rupee-sign me-0.5"></i><span id="subStatFareVal">--</span></span>
+                    </div>
                 </div>
-                <div class="tracking-stepper-list" id="trackingStepperList">
-                    <!-- Vertical stops checkpoints rendered dynamically -->
+
+                <!-- 3. Vertical Route Stepper: Clean connecting line, modern dot indicators, clear typography -->
+                <div class="unified-stepper-container custom-scroll">
+                    <div class="d-flex align-items-center justify-content-between px-3 py-2 border-b border-slate-800/80">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">
+                            <i class="fa-solid fa-route me-1 text-sky-400"></i> Route Progress Stepper
+                        </span>
+                        <span class="text-xs text-slate-400" id="stepperRemainingBadge">-- stops remaining</span>
+                    </div>
+                    <div class="stepper-list-wrapper p-3" id="unifiedStepperList">
+                        <!-- Vertical stops checkpoints dynamically injected -->
+                    </div>
+                </div>
+
+                <!-- 4. Collapsible Secondary Drawer: Live Audio Announcer & Activity Log -->
+                <div class="unified-drawer-container" id="unifiedDrawer">
+                    <!-- Drawer Header Button (Accordion toggle) -->
+                    <button type="button" class="drawer-header-btn" id="btnToggleDrawer" aria-expanded="false" title="Toggle Audio Announcer and Activity Log">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="drawer-icon-bubble">
+                                <i class="fa-solid fa-volume-high text-sky-400" id="drawerHeaderIcon"></i>
+                            </div>
+                            <div class="text-start">
+                                <span class="d-block fw-bold text-white small">Live Audio Announcer & Event Feed</span>
+                                <span class="d-block text-slate-400" style="font-size: 0.68rem;" id="drawerStatusSubtext">Standby • Collapsible Drawer</span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-slate-800 text-slate-300 border border-slate-700 rounded-pill px-2 py-0.5" style="font-size: 0.68rem;" id="drawerEventsCountBadge">0 events</span>
+                            <i class="fa-solid fa-chevron-up transition-transform text-slate-400" id="drawerCaret" style="transition: transform 0.25s ease;"></i>
+                        </div>
+                    </button>
+
+                    <!-- Collapsible Drawer Body -->
+                    <div class="drawer-body-collapsible d-none" id="drawerBody">
+                        <div class="p-3 pt-0">
+                            <!-- Speech Synthesizer Bubble -->
+                            <div class="announcer-bubble-wrap p-2.5 rounded-xl mb-2.5 bg-slate-800/80 border border-slate-700/60" style="border-radius: 12px;">
+                                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                                    <div class="d-flex align-items-center gap-1.5">
+                                        <span class="audio-wave-bars" id="voiceWaveBars">
+                                            <span class="audio-wave-bar"></span>
+                                            <span class="audio-wave-bar"></span>
+                                            <span class="audio-wave-bar"></span>
+                                            <span class="audio-wave-bar"></span>
+                                            <span class="audio-wave-bar"></span>
+                                        </span>
+                                        <span class="text-xs text-slate-300 font-semibold" id="speechStatusLabel">Voice Synthesis</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-1">
+                                        <button type="button" class="btn btn-sm btn-dark border border-slate-700 rounded-pill px-2 py-0.5 text-xs text-slate-300" id="btnToggleSpeechMute" title="Mute/Unmute Voice">
+                                            <i class="fa-solid fa-volume-high text-sky-400 me-1" id="muteIcon"></i> <span id="muteBtnLabel">Voice: ON</span>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-dark border border-slate-700 rounded-pill px-2 py-0.5 text-xs text-sky-400" id="btnTestAudioVoice" title="Test Voice Engine">
+                                            <i class="fa-solid fa-play"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="speech-quote-text text-slate-200" id="currentAnnouncementText" style="font-size: 0.8rem; line-height: 1.4;">
+                                    Tracking initiated. Monitoring route progress.
+                                </div>
+                            </div>
+
+                            <!-- Activity Log Stream -->
+                            <div class="activity-log-feed custom-scroll" id="trackingActivityFeed">
+                                <!-- Timestamped activity events -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2643,10 +2772,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const leg2 = route.legs[1] || null;
             const finalDestination = leg2 ? leg2.alight_at : leg1.alight_at;
 
+            // Live status resolution for each leg and route
+            const isLeg1Live = Boolean(leg1 && (leg1.is_live === true || (cardLiveBus && (cardLiveBus.bus_no === leg1.bus_no || !leg2))));
+            const isLeg2Live = Boolean(leg2 && (leg2.is_live === true || (cardLiveBus && cardLiveBus.bus_no === leg2.bus_no)));
+            const isRouteLive = Boolean(cardLiveBus || route.has_live_bus === true || (route.live_bus_count && route.live_bus_count > 0) || isLeg1Live || isLeg2Live);
+
+            // Only display Track Bus button if the bus on leg 1 is actively LIVE
             let leg1TrackBtn = '';
-            if (leg1.bus_no) {
+            if (isLeg1Live && leg1.bus_no) {
                 leg1TrackBtn = `
-                    <button class="btn btn-sm btn-primary rounded-pill ms-2 px-3 py-1 fw-bold" style="font-size: 0.72rem;" onclick="event.stopPropagation(); handleTrackClick('${leg1.bus_no}', ${index}, 0, this)">
+                    <button class="btn btn-sm btn-primary rounded-pill ms-2 px-3 py-1 fw-bold" style="font-size: 0.72rem;" onclick="event.stopPropagation(); handleTrackClick('${leg1.bus_no}', ${index}, 0, this)" title="Track Bus ${leg1.bus_no} Live">
                         <i class="fa-solid fa-location-crosshairs me-1"></i> Track Bus ${leg1.bus_no}
                     </button>
                 `;
@@ -2700,9 +2835,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (leg2) {
                 let leg2TrackBtn = '';
-                if (leg2.bus_no) {
+                if (isLeg2Live && leg2.bus_no) {
                     leg2TrackBtn = `
-                        <button class="btn btn-sm btn-primary rounded-pill ms-2 px-3 py-1 fw-bold" style="font-size: 0.72rem;" onclick="event.stopPropagation(); handleTrackClick('${leg2.bus_no}', ${index}, 1, this)">
+                        <button class="btn btn-sm btn-primary rounded-pill ms-2 px-3 py-1 fw-bold" style="font-size: 0.72rem;" onclick="event.stopPropagation(); handleTrackClick('${leg2.bus_no}', ${index}, 1, this)" title="Track Bus ${leg2.bus_no} Live">
                             <i class="fa-solid fa-location-crosshairs me-1"></i> Track Bus ${leg2.bus_no}
                         </button>
                     `;
@@ -2767,7 +2902,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
 
-            const primaryBusNumber = leg1.bus_no || (cardLiveBus ? cardLiveBus.bus_no : '');
+            const liveBusNumberToTrack = (cardLiveBus && cardLiveBus.bus_no) || (isLeg1Live ? leg1.bus_no : (isLeg2Live ? leg2.bus_no : ''));
+            const primaryLegIndex = isLeg1Live ? 0 : (isLeg2Live ? 1 : 0);
+
+            let mainTrackBtnHtml = '';
+            if (isRouteLive && liveBusNumberToTrack) {
+                mainTrackBtnHtml = `
+                    <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1 fw-bold shadow-sm track-journey-btn" onclick="event.stopPropagation(); handleTrackClick('${liveBusNumberToTrack}', ${index}, ${primaryLegIndex}, this)" title="Start Real-Time Split-Screen Tracking">
+                        <i class="fa-solid fa-location-crosshairs me-1"></i> Track Bus
+                    </button>
+                `;
+            }
 
             card.innerHTML = `
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
@@ -2786,9 +2931,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <span class="badge bg-emerald-subtle text-success border border-success border-opacity-25 px-3 py-1 fs-6 fw-bold">
                             ₹${totalFare}
                         </span>
-                        <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1 fw-bold shadow-sm track-journey-btn" onclick="event.stopPropagation(); handleTrackClick('${primaryBusNumber}', ${index}, 0, this)" title="Start Real-Time Split-Screen Tracking">
-                            <i class="fa-solid fa-location-crosshairs me-1"></i> Track Bus
-                        </button>
+                        ${mainTrackBtnHtml}
                     </div>
                 </div>
                 ${liveBannerHtml}
@@ -3005,60 +3148,131 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateDriverLiveStatusUI(isLive, details = {}) {
         isDriverGpsLive = isLive;
-        const box = document.getElementById('driverLiveStatusBox');
-        const dot = document.getElementById('driverGpsDot');
-        const statusText = document.getElementById('driverGpsStatusText');
-        const subtext = document.getElementById('driverGpsSubtext');
-        const badge = document.getElementById('driverGpsBadge');
-        const cardSignal = document.getElementById('cardGpsSignal');
 
-        if (!box) return;
+        // 1. Unified Status Pill in Header
+        const statusPill = document.getElementById('unifiedStatusPill');
+        const offlineCallout = document.getElementById('unifiedOfflineCallout');
+        const busShield = document.getElementById('unifiedBusShield');
+
+        if (statusPill) {
+            if (isLive) {
+                statusPill.className = 'badge status-pill active-pill';
+                statusPill.innerHTML = '<span class="live-dot-pulse"></span> LIVE GPS';
+            } else {
+                statusPill.className = 'badge status-pill offline-pill';
+                statusPill.innerHTML = '<i class="fa-solid fa-clock text-amber-400 me-1"></i> OFFLINE / SCHEDULED';
+            }
+        }
+
+        if (offlineCallout) {
+            if (isLive) {
+                offlineCallout.classList.add('d-none');
+            } else {
+                offlineCallout.classList.remove('d-none');
+            }
+        }
+
+        if (busShield) {
+            if (isLive) {
+                busShield.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+                busShield.style.background = 'rgba(14, 165, 233, 0.15)';
+            } else {
+                busShield.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+                busShield.style.background = 'rgba(245, 158, 11, 0.12)';
+            }
+        }
+
+        // 2. Top Map Status Pill (Frosted Glass Pill)
+        const topPillDot = document.getElementById('topPillDot');
+        const topBusNoEl = document.getElementById('topTrackingBusNo');
+        const topRouteEl = document.getElementById('topTrackingRouteName');
 
         if (isLive) {
-            box.style.background = 'rgba(6, 78, 59, 0.4)';
-            box.style.borderColor = 'rgba(16, 185, 129, 0.4) !important';
-            if (dot) {
-                dot.style.background = '#10b981';
-                dot.className = 'status-indicator-dot pulse-active';
+            if (topPillDot) {
+                topPillDot.className = 'live-dot-pulse';
+                topPillDot.style.background = '#38bdf8';
             }
-            if (statusText) {
-                statusText.textContent = 'Driver GPS Active • Live Stream';
-                statusText.className = 'd-block fw-bold text-success';
+            if (topBusNoEl) topBusNoEl.textContent = `Bus #${currentTrackingBusNumber}`;
+            if (topRouteEl) topRouteEl.textContent = details.route_name || (currentTrackingRoute?.route_name || 'Hubballi - Dharwad Transit');
+        } else {
+            if (topPillDot) {
+                topPillDot.className = '';
+                topPillDot.style.cssText = 'width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; display: inline-block;';
             }
-            if (subtext) {
-                const secAgo = details.last_updated_seconds_ago !== undefined ? `${details.last_updated_seconds_ago}s ago` : 'Real-Time';
-                subtext.textContent = `Broadcasting live coordinates (${secAgo})`;
+            if (topBusNoEl) {
+                topBusNoEl.innerHTML = '<span class="text-amber-300">Scheduled Route View</span>';
             }
-            if (badge) {
-                badge.className = 'badge rounded-pill px-2 py-1 bg-success text-white border-0';
-                badge.innerHTML = '<span class="live-dot me-1"></span> LIVE GPS';
+            if (topRouteEl) {
+                topRouteEl.textContent = `Bus #${currentTrackingBusNumber} is currently offline / awaiting departure`;
             }
-            if (cardSignal) {
-                cardSignal.className = 'badge bg-success bg-opacity-20 text-success border border-success border-opacity-25 rounded-pill px-2 py-1 small';
-                cardSignal.innerHTML = '<i class="fa-solid fa-satellite-dish me-1"></i> Live 4G GPS';
+        }
+
+        // 3. Quick Stats Bar
+        const statLbl1 = document.getElementById('statLbl1');
+        const statVal1 = document.getElementById('statVal1');
+        const statLbl2 = document.getElementById('statLbl2');
+        const statVal2 = document.getElementById('statVal2');
+        const statLbl3 = document.getElementById('statLbl3');
+        const statVal3 = document.getElementById('statVal3');
+
+        if (isLive) {
+            if (statLbl1) statLbl1.textContent = 'CURRENT SPEED';
+            if (statVal1) {
+                const spd = Math.round(parseFloat(details.speed_kmh || details.speed || 0));
+                statVal1.innerHTML = `${spd} <small style="font-size: 0.65rem;">km/h</small>`;
+                statVal1.className = 'stat-val text-sky-400';
+            }
+            if (statLbl2) statLbl2.textContent = 'EST. DURATION';
+            if (statVal2) {
+                const eta = details.next_stop_data?.eta_mins || (currentTrackingLeg?.duration_mins ? `~${currentTrackingLeg.duration_mins}` : '~25');
+                statVal2.innerHTML = `${eta} <small style="font-size: 0.65rem;">min</small>`;
+                statVal2.className = 'stat-val text-emerald-400';
+            }
+            if (statLbl3) statLbl3.textContent = 'TOTAL STOPS';
+            if (statVal3) {
+                const stopCount = currentJourneyStops ? currentJourneyStops.length : '--';
+                statVal3.innerHTML = `${stopCount} <small style="font-size: 0.65rem;">stops</small>`;
+                statVal3.className = 'stat-val text-indigo-300';
             }
         } else {
-            box.style.background = 'rgba(30, 41, 59, 0.6)';
-            box.style.borderColor = 'rgba(148, 163, 184, 0.2) !important';
-            if (dot) {
-                dot.style.background = '#ef4444';
-                dot.className = 'status-indicator-dot';
+            // OFFLINE: Replace 0 km/h with scheduled timeline data
+            if (statLbl1) statLbl1.textContent = 'NEXT DEPARTURE';
+            if (statVal1) {
+                const dep = details.scheduled_departure || '14:45';
+                statVal1.innerHTML = `<i class="fa-solid fa-clock text-amber-400 me-1" style="font-size:0.75rem;"></i>${dep}`;
+                statVal1.className = 'stat-val text-amber-300';
             }
-            if (statusText) {
-                statusText.textContent = 'Bus is currently offline / Not live';
-                statusText.className = 'd-block fw-bold text-warning';
+            if (statLbl2) statLbl2.textContent = 'TOTAL ROUTE TIME';
+            if (statVal2) {
+                const routeTime = details.total_route_time_mins || currentTrackingRoute?.total_duration_mins || 25;
+                statVal2.innerHTML = `~${routeTime} <small style="font-size: 0.65rem;">min</small>`;
+                statVal2.className = 'stat-val text-emerald-400';
             }
-            if (subtext) {
-                subtext.textContent = details.trip_status ? `Status: ${details.trip_status.replace(/_/g, ' ')} (Waiting for driver)` : 'Driver GPS broadcast inactive';
+            if (statLbl3) statLbl3.textContent = 'OPERATING FREQ';
+            if (statVal3) {
+                const freq = details.frequency_text || 'Every 15 mins';
+                statVal3.innerHTML = freq;
+                statVal3.className = 'stat-val text-indigo-300';
             }
-            if (badge) {
-                badge.className = 'badge rounded-pill px-2 py-1 bg-secondary text-light border-0';
-                badge.textContent = 'OFFLINE';
-            }
-            if (cardSignal) {
-                cardSignal.className = 'badge bg-secondary bg-opacity-20 text-secondary border border-secondary border-opacity-25 rounded-pill px-2 py-1 small';
-                cardSignal.innerHTML = '<i class="fa-solid fa-circle-xmark me-1"></i> Standby / Offline';
-            }
+        }
+
+        // 4. Operator and micro-metrics sub-bar
+        const operatorBadge = document.getElementById('unifiedOperatorBadge');
+        if (operatorBadge) {
+            operatorBadge.textContent = details.operator || (currentTrackingLeg?.bus_type && currentTrackingLeg.bus_type.includes('BRTS') ? 'Chigari BRTS' : 'NWKRTC');
+        }
+        const subStatOperator = document.getElementById('subStatOperator');
+        if (subStatOperator) {
+            subStatOperator.innerHTML = `<i class="fa-solid fa-building-shield me-1 text-slate-400"></i> ${details.operator || 'NWKRTC'}`;
+        }
+
+        // 5. Drawer Status Subtext
+        const drawerSubtext = document.getElementById('drawerStatusSubtext');
+        if (drawerSubtext) {
+            drawerSubtext.textContent = isLive ? 'Live Telemetry • Audio Announcer Ready' : 'Bus Offline • Voice Standby';
+        }
+        if (!isLive) {
+            setWaveActive(false);
         }
     }
 
@@ -3083,10 +3297,10 @@ document.addEventListener('DOMContentLoaded', function() {
             zoomAnimation: true
         }).setView([15.3647, 75.1240], 14);
 
-        // High-Performance Modern Transit Tile Layer (OpenStreetMap HOT - zero key, zero watermark)
+        // High-Performance Modern Transit Tile Layer (OpenStreetMap HOT)
         setSplitMapTile('osm_hot');
 
-        // 1. Source to Destination Polyline: ONE TYPE (Solid Vibrant Blue #2563eb, weight 6)
+        // 1. Source to Destination Polyline: Solid Vibrant Blue #2563eb, weight 6
         splitSourceToDestPolyline = L.polyline([], {
             color: '#2563eb',
             weight: 6,
@@ -3095,7 +3309,7 @@ document.addEventListener('DOMContentLoaded', function() {
             lineJoin: 'round'
         }).addTo(splitMap);
 
-        // 2. Bus Location to Source Polyline: DIFFERENT TYPE (Dashed Amber #f59e0b, dashArray 8, 10, weight 4.5)
+        // 2. Bus Location to Source Polyline: Dashed Amber #f59e0b
         splitBusToSourcePolyline = L.polyline([], {
             color: '#f59e0b',
             weight: 4.5,
@@ -3205,7 +3419,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function logActivityEvent(text, badgeType = 'info', iconClass = 'fa-solid fa-circle-info') {
         const feed = document.getElementById('trackingActivityFeed');
-        const badge = document.getElementById('activityCountBadge');
+        const badge = document.getElementById('drawerEventsCountBadge');
         if (!feed) return;
 
         const now = new Date();
@@ -3216,28 +3430,19 @@ document.addEventListener('DOMContentLoaded', function() {
         item.innerHTML = `
             <span class="activity-time">${timeStr}</span>
             <span class="activity-badge-tag ${badgeType}"><i class="${iconClass} me-1"></i>${badgeType}</span>
-            <span class="flex-grow-1 text-light">${text}</span>
+            <span class="flex-grow-1 text-slate-200">${text}</span>
         `;
 
         feed.insertBefore(item, feed.firstChild);
 
         if (badge) {
-            badge.textContent = `${feed.children.length} events`;
+            badge.textContent = `${feed.children.length} event${feed.children.length === 1 ? '' : 's'}`;
         }
     }
 
     function updateSpeechBubble(text) {
         const el = document.getElementById('currentAnnouncementText');
-        const bubble = document.getElementById('speechBubble');
         if (el) el.textContent = text;
-        if (bubble) {
-            bubble.style.borderColor = '#38bdf8';
-            bubble.style.boxShadow = '0 0 20px rgba(56, 189, 248, 0.45)';
-            setTimeout(() => {
-                bubble.style.borderColor = 'rgba(56, 189, 248, 0.4)';
-                bubble.style.boxShadow = 'inset 0 2px 8px rgba(0, 0, 0, 0.4)';
-            }, 2500);
-        }
     }
 
     function setWaveActive(isActive) {
@@ -3274,18 +3479,31 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => setWaveActive(false), 3500);
     }
 
-    function createBusMarker(lat, lon, busNumber, heading = 0) {
+    // Custom SVG Marker Generators with Subtle Drop-Shadows
+    function createLiveBusMarker(lat, lon, busNumber, heading = 0) {
         const html = `
-            <div class="transit-pin-wrapper live-bus-pin-wrapper" id="splitBusPinWrapper">
-                <div class="radar-pulse-ring transfer-radar"></div>
-                <div class="bus-bearing-disc shadow-lg" id="splitBusDisc" style="transform: rotate(${heading}deg); transition: transform 0.5s ease; background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%); width: 42px; height: 42px; border-radius: 50%; border: 3px solid #ffffff; display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.6); position: relative;">
-                    <i class="fa-solid fa-bus" style="font-size: 1.1rem;"></i>
-                    <div style="position: absolute; top: -7px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid #38bdf8;"></div>
+            <div class="custom-transit-marker live-bus-marker" id="splitBusPinWrapper" style="position: relative; width: 46px; height: 46px; display: flex; align-items: center; justify-content: center;">
+                <div class="radar-pulse-ring" style="position: absolute; inset: -6px; border-radius: 50%; border: 2px solid #38bdf8; animation: radarPing 2s cubic-bezier(0, 0, 0.2, 1) infinite; opacity: 0.75; pointer-events: none;"></div>
+                <div class="bus-bearing-disc shadow-xl" id="splitBusDisc" style="transform: rotate(${heading}deg); transition: transform 0.4s ease; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative;">
+                    <svg width="42" height="42" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 12px rgba(2, 132, 199, 0.55));">
+                        <circle cx="21" cy="21" r="19" fill="url(#busGradLive)" stroke="#ffffff" stroke-width="2.5"/>
+                        <path d="M14 15C14 14.1 14.7 13.3 15.6 13.3H26.4C27.3 13.3 28 14.1 28 15V24C28 24.9 27.3 25.7 26.4 25.7H15.6C14.7 25.7 14 24.9 14 24V15Z" fill="#ffffff"/>
+                        <rect x="15.8" y="15.8" width="10.4" height="4" rx="1" fill="#0284c7"/>
+                        <circle cx="17.2" cy="23.2" r="1.3" fill="#0284c7"/>
+                        <circle cx="24.8" cy="23.2" r="1.3" fill="#0284c7"/>
+                        <polygon points="21,2 25,8 17,8" fill="#38bdf8"/>
+                        <defs>
+                            <linearGradient id="busGradLive" x1="2" y1="2" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#0284c7"/>
+                                <stop offset="1" stop-color="#1d4ed8"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
                 </div>
-                <div class="pin-floating-pill shadow" style="border: 2px solid #38bdf8; background: #0f172a; color: #ffffff;">
-                    <span class="pill-dot bg-info"></span>
-                    <span class="pill-name">Bus #${busNumber}</span>
-                    <span class="pill-action text-info">Live</span>
+                <div class="pin-floating-pill shadow-lg" style="position: absolute; left: 48px; top: 50%; transform: translateY(-50%); background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); border: 1.5px solid #38bdf8; border-radius: 9999px; padding: 3px 10px; white-space: nowrap; color: #ffffff; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(0,0,0,0.5);">
+                    <span class="live-dot-pulse" style="width: 7px; height: 7px; border-radius: 50%; background: #38bdf8; display: inline-block;"></span>
+                    <span style="font-weight: 700; font-size: 0.78rem;">#${busNumber}</span>
+                    <span style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; font-size: 0.65rem; padding: 1px 6px; border-radius: 6px; font-weight: 700;">LIVE</span>
                 </div>
             </div>
         `;
@@ -3293,10 +3511,46 @@ document.addEventListener('DOMContentLoaded', function() {
             icon: L.divIcon({
                 className: 'custom-transit-divicon smooth-bus-marker',
                 html: html,
-                iconSize: [200, 50],
-                iconAnchor: [21, 25]
+                iconSize: [180, 46],
+                iconAnchor: [21, 23]
             }),
             zIndexOffset: 3000
+        });
+    }
+
+    function createOfflineBusMarker(lat, lon, busNumber) {
+        const html = `
+            <div class="custom-transit-marker offline-bus-marker" id="splitBusPinWrapper" style="position: relative; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; opacity: 0.92;">
+                <div class="bus-bearing-disc shadow-md" style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative;">
+                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));">
+                        <circle cx="20" cy="20" r="18" fill="url(#busGradOffline)" stroke="#f59e0b" stroke-width="2"/>
+                        <path d="M13.5 14.5C13.5 13.7 14.2 13 15 13H25C25.8 13 26.5 13.7 26.5 14.5V23.5C26.5 24.3 25.8 25 25 25H15C14.2 25 13.5 24.3 13.5 23.5V14.5Z" fill="#e2e8f0"/>
+                        <rect x="15" y="15.5" width="10" height="3.5" rx="0.8" fill="#475569"/>
+                        <circle cx="16.5" cy="22" r="1.2" fill="#475569"/>
+                        <circle cx="23.5" cy="22" r="1.2" fill="#475569"/>
+                        <defs>
+                            <linearGradient id="busGradOffline" x1="2" y1="2" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#475569"/>
+                                <stop offset="1" stop-color="#1e293b"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div class="pin-floating-pill shadow" style="position: absolute; left: 46px; top: 50%; transform: translateY(-50%); background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); border: 1.5px solid #f59e0b; border-radius: 9999px; padding: 3px 9px; white-space: nowrap; color: #f1f5f9; display: flex; align-items: center; gap: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+                    <span style="width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
+                    <span style="font-weight: 700; font-size: 0.74rem;">#${busNumber}</span>
+                    <span style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-size: 0.65rem; padding: 1px 6px; border-radius: 6px; font-weight: 600;">Depot • Inactive</span>
+                </div>
+            </div>
+        `;
+        return L.marker([lat, lon], {
+            icon: L.divIcon({
+                className: 'custom-transit-divicon smooth-bus-marker',
+                html: html,
+                iconSize: [180, 44],
+                iconAnchor: [20, 22]
+            }),
+            zIndexOffset: 2900
         });
     }
 
@@ -3305,31 +3559,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (disc) {
             disc.style.transform = `rotate(${heading}deg)`;
         }
-    }
-
-    function createPassengerMarker(lat, lon, name = 'Pickup Stop') {
-        const html = `
-            <div class="transit-pin-wrapper start-pin-wrapper" id="splitPassengerPinWrapper">
-                <div class="radar-pulse-ring start-radar"></div>
-                <div class="pin-badge shadow-lg" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); width: 36px; height: 36px; border-radius: 50%; border: 3px solid #ffffff; display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.6);">
-                    <i class="fa-solid fa-person-walking-luggage" style="font-size: 1rem;"></i>
-                </div>
-                <div class="pin-floating-pill shadow" style="border: 2px solid #10b981; background: #0f172a; color: #ffffff;">
-                    <span class="pill-dot bg-success"></span>
-                    <span class="pill-name">You (Waiting)</span>
-                    <span class="pill-action text-success">Pickup</span>
-                </div>
-            </div>
-        `;
-        return L.marker([lat, lon], {
-            icon: L.divIcon({
-                className: 'custom-transit-divicon',
-                html: html,
-                iconSize: [200, 46],
-                iconAnchor: [18, 23]
-            }),
-            zIndexOffset: 2800
-        });
     }
 
     function renderSplitMapStops(stops) {
@@ -3342,70 +3571,87 @@ document.addEventListener('DOMContentLoaded', function() {
             let marker = null;
 
             if (isOrigin) {
+                // Integrated Boarding Stop: combines Passenger Point A and Boarding Station to eliminate overlap collisions
                 const startIcon = L.divIcon({
                     className: 'custom-transit-divicon',
                     html: `
-                        <div class="transit-pin-wrapper start-pin-wrapper">
-                            <div class="pin-badge start-badge shadow">
-                                <i class="fa-solid fa-person-walking-luggage"></i>
-                            </div>
-                            <div class="pin-floating-pill start-pill shadow">
-                                <span class="pill-dot bg-success"></span>
-                                <span class="pill-title text-success fw-bold">Point A:</span>
-                                <span class="pill-name">${coord.name || coord.stop_name}</span>
-                                <span class="pill-action">Board</span>
+                        <div class="custom-transit-marker integrated-boarding-marker" style="position: relative; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;">
+                            <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 12px rgba(16, 185, 129, 0.45));">
+                                <circle cx="22" cy="22" r="20" fill="url(#boardingGrad)" stroke="#ffffff" stroke-width="2.5"/>
+                                <path d="M22 10.5C23.1 10.5 24 11.4 24 12.5C24 13.6 23.1 14.5 22 14.5C20.9 14.5 20 13.6 20 12.5C20 11.4 20.9 10.5 22 10.5ZM17.5 17.5C17.5 16.7 18.1 16 19 16H25C25.8 16 26.5 16.7 26.5 17.5V23.5H24.5V30H19.5V23.5H17.5V17.5Z" fill="#ffffff"/>
+                                <defs>
+                                    <linearGradient id="boardingGrad" x1="2" y1="2" x2="42" y2="42" gradientUnits="userSpaceOnUse">
+                                        <stop stop-color="#10b981"/>
+                                        <stop offset="1" stop-color="#047857"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <div class="pin-floating-pill shadow-lg" style="position: absolute; left: 50px; top: 50%; transform: translateY(-50%); background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(8px); border: 1.5px solid #10b981; border-radius: 9999px; padding: 4px 12px; white-space: nowrap; color: #ffffff; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(0,0,0,0.5);">
+                                <span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+                                <span style="font-weight: 700; font-size: 0.75rem; color: #34d399;">Boarding:</span>
+                                <span style="font-size: 0.78rem; font-weight: 600;">${coord.name || coord.stop_name}</span>
+                                <span style="background: rgba(16, 185, 129, 0.2); color: #6ee7b7; font-size: 0.65rem; padding: 1px 6px; border-radius: 6px; font-weight: 600;">You • Pickup</span>
                             </div>
                         </div>
                     `,
-                    iconSize: [40, 40],
-                    iconAnchor: [20, 20]
+                    iconSize: [220, 44],
+                    iconAnchor: [22, 22]
                 });
-                marker = L.marker([coord.lat, coord.lon], { icon: startIcon, zIndexOffset: 1500 });
+                marker = L.marker([coord.lat, coord.lon], { icon: startIcon, zIndexOffset: 2500 });
             } else if (isDestination) {
+                // Destination Stop (Point B) with Checkered Flag Pin
                 const destIcon = L.divIcon({
                     className: 'custom-transit-divicon',
                     html: `
-                        <div class="transit-pin-wrapper dest-pin-wrapper">
-                            <div class="dest-pin-head shadow">
-                                <i class="fa-solid fa-flag-checkered"></i>
-                            </div>
-                            <div class="pin-floating-pill dest-pill shadow">
-                                <span class="pill-dot bg-danger"></span>
-                                <span class="pill-title text-danger fw-bold">Point B:</span>
-                                <span class="pill-name">${coord.name || coord.stop_name}</span>
-                                <span class="pill-action">Destination</span>
+                        <div class="custom-transit-marker dest-stop-marker" style="position: relative; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;">
+                            <svg width="42" height="42" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 12px rgba(239, 68, 68, 0.45));">
+                                <circle cx="21" cy="21" r="19" fill="url(#destGrad)" stroke="#ffffff" stroke-width="2.5"/>
+                                <path d="M15 11V31M15 12H27L24.5 17L27 22H15" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <defs>
+                                    <linearGradient id="destGrad" x1="2" y1="2" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+                                        <stop stop-color="#f43f5e"/>
+                                        <stop offset="1" stop-color="#be123c"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <div class="pin-floating-pill shadow-lg" style="position: absolute; left: 48px; top: 50%; transform: translateY(-50%); background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(8px); border: 1.5px solid #f43f5e; border-radius: 9999px; padding: 4px 12px; white-space: nowrap; color: #ffffff; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(0,0,0,0.5);">
+                                <span style="width: 7px; height: 7px; border-radius: 50%; background: #f43f5e; display: inline-block;"></span>
+                                <span style="font-weight: 700; font-size: 0.75rem; color: #fb7185;">Destination:</span>
+                                <span style="font-size: 0.78rem; font-weight: 600;">${coord.name || coord.stop_name}</span>
                             </div>
                         </div>
                     `,
-                    iconSize: [40, 48],
-                    iconAnchor: [20, 44]
+                    iconSize: [220, 42],
+                    iconAnchor: [21, 21]
                 });
-                marker = L.marker([coord.lat, coord.lon], { icon: destIcon, zIndexOffset: 1500 });
+                marker = L.marker([coord.lat, coord.lon], { icon: destIcon, zIndexOffset: 2400 });
             } else {
+                // Intermediate Stops: Clean numbered node with subtle drop shadow
                 const isEven = idx % 2 === 0;
                 const interIcon = L.divIcon({
                     className: 'custom-transit-divicon',
                     html: `
-                        <div class="transit-pin-wrapper inter-pin-wrapper ${isEven ? 'pill-side-right' : 'pill-side-left'}">
-                            <div class="inter-node-dot shadow-sm" title="Stop #${idx}: ${coord.name || coord.stop_name}">
-                                <span class="node-order-num">${idx}</span>
-                            </div>
-                            <div class="pin-floating-pill inter-pill shadow-sm" title="Stop #${idx}: ${coord.name || coord.stop_name}">
-                                <i class="fa-solid fa-bus-simple me-1 text-primary" style="font-size: 0.65rem;"></i>
-                                <span class="pill-name">${coord.name || coord.stop_name}</span>
+                        <div class="custom-transit-marker inter-stop-marker" style="position: relative; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">
+                            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));">
+                                <circle cx="14" cy="14" r="11" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+                                <circle cx="14" cy="14" r="4.5" fill="#38bdf8"/>
+                            </svg>
+                            <div class="pin-floating-pill inter-pill shadow-sm" style="position: absolute; ${isEven ? 'left: 32px;' : 'right: 32px;'} top: 50%; transform: translateY(-50%); background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(6px); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 9999px; padding: 2px 8px; white-space: nowrap; color: #f1f5f9; display: flex; align-items: center; gap: 5px; font-size: 0.72rem; box-shadow: 0 3px 10px rgba(0,0,0,0.4);">
+                                <span style="font-size: 0.65rem; color: #38bdf8; font-weight: 700;">#${idx}</span>
+                                <span>${coord.name || coord.stop_name}</span>
                             </div>
                         </div>
                     `,
-                    iconSize: [24, 24],
-                    iconAnchor: [12, 12]
+                    iconSize: [160, 28],
+                    iconAnchor: [14, 14]
                 });
-                marker = L.marker([coord.lat, coord.lon], { icon: interIcon, zIndexOffset: 500 + idx });
+                marker = L.marker([coord.lat, coord.lon], { icon: interIcon, zIndexOffset: 600 + idx });
             }
 
             marker.bindPopup(`
-                <div class="p-2">
+                <div class="p-2" style="font-family: inherit;">
                     <strong class="d-block text-dark">${coord.name || coord.stop_name}</strong>
-                    <span class="small text-muted">${isOrigin ? 'Pickup Stop' : (isDestination ? 'Destination Stop' : `Intermediate Stop #${idx}`)}</span>
+                    <span class="small text-muted">${isOrigin ? 'Boarding Stop (Point A)' : (isDestination ? 'Destination Stop (Point B)' : `Intermediate Stop #${idx}`)}</span>
                 </div>
             `);
 
@@ -3414,7 +3660,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function initProgressStepper(stops) {
-        const container = document.getElementById('trackingStepperList');
+        const container = document.getElementById('unifiedStepperList');
         if (!container || !stops) return;
         container.innerHTML = '';
 
@@ -3422,29 +3668,43 @@ document.addEventListener('DOMContentLoaded', function() {
             const isOrigin = idx === 0;
             const isDest = idx === stops.length - 1;
             const item = document.createElement('div');
-            item.className = `stepper-stop-item ${idx === 0 ? 'active' : ''}`;
+            item.className = `stepper-stop-item ${isOrigin ? 'start-stop active' : (isDest ? 'dest-stop' : '')}`;
             item.id = `stepperItem_${idx}`;
+            item.setAttribute('role', 'button');
+            item.setAttribute('tabindex', '0');
+            item.title = `Click to pan map to ${st.name || st.stop_name}`;
 
-            let labelBadge = '';
-            if (isOrigin) labelBadge = `<span class="badge bg-success small me-1">START</span>`;
-            else if (isDest) labelBadge = `<span class="badge bg-danger small me-1">END</span>`;
+            let dotContent = `${idx + 1}`;
+            if (isOrigin) dotContent = '<i class="fa-solid fa-person-walking-luggage" style="font-size:0.7rem;"></i>';
+            else if (isDest) dotContent = '<i class="fa-solid fa-flag-checkered" style="font-size:0.65rem;"></i>';
+
+            let distanceSubtext = isOrigin ? 'Pickup Point' : (isDest ? 'Final Terminal' : 'Intermediate Stop');
 
             item.innerHTML = `
-                <div class="stepper-stop-dot">${isDest ? '<i class="fa-solid fa-flag-checkered" style="font-size:0.6rem;"></i>' : (idx + 1)}</div>
-                <div class="d-flex align-items-center justify-content-between">
+                <div class="stepper-stop-dot">${dotContent}</div>
+                <div class="d-flex align-items-center justify-content-between flex-grow-1">
                     <div>
-                        ${labelBadge}
-                        <span class="stepper-stop-name small fw-semibold">${st.name || st.stop_name}</span>
+                        <div class="stepper-stop-name">${st.name || st.stop_name}</div>
+                        <div class="stepper-stop-sub" id="stepperSub_${idx}">${distanceSubtext}</div>
                     </div>
-                    <span class="badge bg-dark text-secondary border border-secondary border-opacity-25 small" id="stepperBadge_${idx}">
-                        ${isOrigin ? 'Pickup' : (isDest ? 'Destination' : 'En Route')}
+                    <span class="badge ${isOrigin ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : (isDest ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700/60')} rounded-pill px-2 py-0.5 text-xs" id="stepperBadge_${idx}">
+                        ${isOrigin ? 'Board' : (isDest ? 'Alight' : 'En Route')}
                     </span>
                 </div>
             `;
+
+            item.addEventListener('click', () => {
+                if (splitMap && isValidLatLng(st.lat, st.lon)) {
+                    isCameraLocked = false;
+                    updateRecenterBtnUI();
+                    splitMap.flyTo([st.lat, st.lon], 16, { animate: true, duration: 0.8 });
+                }
+            });
+
             container.appendChild(item);
         });
 
-        const remEl = document.getElementById('stepperStopsRemaining');
+        const remEl = document.getElementById('stepperRemainingBadge');
         if (remEl) remEl.textContent = `${stops.length - 1} stops to destination`;
     }
 
@@ -3454,26 +3714,32 @@ document.addEventListener('DOMContentLoaded', function() {
         const nextIdx = ev.nextStopIndex !== undefined ? ev.nextStopIndex : -1;
 
         document.querySelectorAll('.stepper-stop-item').forEach((item, idx) => {
+            const badge = document.getElementById(`stepperBadge_${idx}`);
+            const sub = document.getElementById(`stepperSub_${idx}`);
             if (idx < currentIdx || (currentIdx === -1 && idx === 0 && ev.isBoarded)) {
                 item.classList.add('passed');
                 item.classList.remove('active');
-                const badge = document.getElementById(`stepperBadge_${idx}`);
                 if (badge) {
-                    badge.className = 'badge bg-success bg-opacity-20 text-success border border-success border-opacity-25 small';
+                    badge.className = 'badge bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-pill px-2 py-0.5 text-xs';
                     badge.innerHTML = '<i class="fa-solid fa-check me-1"></i> Passed';
                 }
+                if (sub) sub.textContent = 'Departed';
             } else if (idx === currentIdx || idx === nextIdx) {
                 item.classList.add('active');
                 item.classList.remove('passed');
-                const badge = document.getElementById(`stepperBadge_${idx}`);
                 if (badge) {
-                    badge.className = 'badge bg-primary bg-opacity-25 text-info border border-info border-opacity-25 small';
+                    badge.className = 'badge bg-sky-500/20 text-sky-300 border border-sky-500/30 rounded-pill px-2 py-0.5 text-xs';
                     badge.innerHTML = '<i class="fa-solid fa-location-dot me-1"></i> Next';
                 }
             } else {
                 item.classList.remove('active', 'passed');
             }
         });
+
+        if (ev.stopsRemaining !== undefined) {
+            const remEl = document.getElementById('stepperRemainingBadge');
+            if (remEl) remEl.textContent = `${ev.stopsRemaining} stop(s) remaining`;
+        }
     }
 
     let splitTrackingSocket = null;
@@ -3522,48 +3788,65 @@ document.addEventListener('DOMContentLoaded', function() {
         stops.forEach((st, idx) => {
             const item = document.getElementById(`stepperItem_${idx}`);
             const badge = document.getElementById(`stepperBadge_${idx}`);
+            const sub = document.getElementById(`stepperSub_${idx}`);
             if (!item) return;
+
+            const isOrigin = idx === 0;
+            const isDest = idx === stops.length - 1;
 
             if (idx < lastKnownPassedIndex) {
                 // Passed
                 item.className = 'stepper-stop-item passed';
                 if (badge) {
-                    badge.className = 'badge bg-success bg-opacity-20 text-success border border-success border-opacity-25 small';
+                    badge.className = 'badge bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-pill px-2 py-0.5 text-xs';
                     badge.innerHTML = '<i class="fa-solid fa-check me-1"></i> Passed';
                 }
+                if (sub) sub.textContent = 'Departed';
             } else if (idx === atStopIdx) {
                 // At Stop (within 35m)
                 item.className = 'stepper-stop-item active';
                 if (badge) {
-                    badge.className = 'badge bg-success text-white border-0 small';
+                    badge.className = 'badge bg-emerald-500 text-white border-0 rounded-pill px-2 py-0.5 text-xs';
                     badge.innerHTML = '<i class="fa-solid fa-bus me-1"></i> At Stop';
                 }
+                if (sub) sub.textContent = 'Currently at platform';
             } else if (idx === nextStopIdx) {
                 // Next upcoming stop
                 item.className = 'stepper-stop-item active';
                 const distKm = (distances[idx].distMeters / 1000).toFixed(1);
                 const etaMins = Math.max(1, Math.round(distances[idx].distMeters / 450));
                 if (badge) {
-                    badge.className = 'badge bg-primary bg-opacity-25 text-info border border-info border-opacity-25 small';
-                    badge.innerHTML = `<i class="fa-solid fa-location-dot me-1"></i> Next (${distKm} km, ~${etaMins}m)`;
+                    badge.className = 'badge bg-sky-500/20 text-sky-300 border border-sky-500/30 rounded-pill px-2 py-0.5 text-xs';
+                    badge.innerHTML = `<i class="fa-solid fa-location-dot me-1"></i> Next (~${etaMins}m)`;
                 }
-                const cardNextEl = document.getElementById('cardNextStop');
-                if (cardNextEl) cardNextEl.textContent = st.name || st.stop_name;
-                const cardEtaEl = document.getElementById('cardEta');
-                if (cardEtaEl) cardEtaEl.innerHTML = `${etaMins} <small style="font-size: 0.6rem;">min</small>`;
+                if (sub) sub.textContent = `${distKm} km away • approx ${etaMins} mins`;
+
+                const statVal2 = document.getElementById('statVal2');
+                if (statVal2 && isDriverGpsLive) {
+                    statVal2.innerHTML = `~${etaMins} <small style="font-size: 0.65rem;">min</small>`;
+                }
             } else {
                 // Upcoming
-                item.className = 'stepper-stop-item';
+                item.className = `stepper-stop-item ${isOrigin ? 'start-stop' : (isDest ? 'dest-stop' : '')}`;
                 if (badge) {
-                    badge.className = 'badge bg-dark text-secondary border border-secondary border-opacity-25 small';
-                    badge.textContent = idx === stops.length - 1 ? 'Destination' : 'Upcoming';
+                    badge.className = 'badge bg-slate-800 text-slate-400 border border-slate-700/60 rounded-pill px-2 py-0.5 text-xs';
+                    badge.textContent = isDest ? 'Destination' : 'Upcoming';
+                }
+                if (sub) {
+                    const distFromPrev = distances[idx].distMeters;
+                    sub.textContent = isDest ? 'Final Terminal' : `Upcoming • ${(distFromPrev / 1000).toFixed(1)} km`;
                 }
             }
         });
 
         const stopsRemaining = Math.max(0, stops.length - 1 - lastKnownPassedIndex);
-        const remEl = document.getElementById('stepperStopsRemaining');
+        const remEl = document.getElementById('stepperRemainingBadge');
         if (remEl) remEl.textContent = `${stopsRemaining} stop(s) remaining`;
+
+        const statVal3 = document.getElementById('statVal3');
+        if (statVal3 && isDriverGpsLive) {
+            statVal3.innerHTML = `${stopsRemaining} <small style="font-size: 0.65rem;">stops</small>`;
+        }
     }
 
     function updateBusPositionOnMap(lat, lon, speed = 0, heading = 0, isLive = true) {
@@ -3580,20 +3863,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 1. Move or create bus marker with smooth tweening and bearing rotation
         if (!splitBusMarker) {
-            splitBusMarker = createBusMarker(validLat, validLon, currentTrackingBusNumber, validHeading);
+            splitBusMarker = isLive
+                ? createLiveBusMarker(validLat, validLon, currentTrackingBusNumber, validHeading)
+                : createOfflineBusMarker(validLat, validLon, currentTrackingBusNumber);
             splitBusMarker.addTo(splitMap);
         } else {
             if (isLive) {
                 // Smoothly animate marker between consecutive coordinates
                 animateMarkerTo(splitBusMarker, validLat, validLon, validHeading, 1200);
             } else {
-                // Offline: Keep stationary, do NOT interpolate arbitrarily across map
+                // Offline: Keep stationary at terminal, do NOT interpolate arbitrarily across map
                 splitBusMarker.setLatLng([validLat, validLon]);
             }
         }
 
         // 2. Dynamic Segment Trimming: Slice road geometry into traveled and remaining
-        if (currentRoadCoordinates && currentRoadCoordinates.length >= 2) {
+        if (isLive && currentRoadCoordinates && currentRoadCoordinates.length >= 2) {
             const sliced = TripLifecycleAnnouncer.slicePolyline(currentRoadCoordinates, validLat, validLon);
             if (splitTraveledPolyline && sliced.traveled.length > 0) {
                 splitTraveledPolyline.setLatLngs(sliced.traveled);
@@ -3601,28 +3886,35 @@ document.addEventListener('DOMContentLoaded', function() {
             if (splitRemainingPolyline && sliced.remaining.length > 0) {
                 splitRemainingPolyline.setLatLngs(sliced.remaining);
             }
+        } else {
+            // In offline state, full route is remaining
+            if (splitTraveledPolyline) splitTraveledPolyline.setLatLngs([]);
+            if (splitRemainingPolyline && currentRoadCoordinates) splitRemainingPolyline.setLatLngs(currentRoadCoordinates);
         }
 
-        // 2b. Bus Location to Source Polyline: DIFFERENT TYPE (Dashed Amber #f59e0b)
-        if (splitBusToSourcePolyline && splitCurrentSourceStop) {
+        // 2b. Bus Location to Source Polyline: Dashed Amber #f59e0b (Live only)
+        if (isLive && splitBusToSourcePolyline && splitCurrentSourceStop) {
             const cleanSource = sanitizeLatLng([splitCurrentSourceStop.lat, splitCurrentSourceStop.lon]);
             if (cleanSource) {
                 splitBusToSourcePolyline.setLatLngs([[validLat, validLon], cleanSource]);
             }
+        } else if (splitBusToSourcePolyline) {
+            splitBusToSourcePolyline.setLatLngs([]);
         }
 
         // 3. User-controlled camera lock:
-        // Do NOT reset user zoom. Only smoothly pan if isCameraLocked is true!
         if (isCameraLocked) {
             splitMap.panTo([validLat, validLon], { animate: true, duration: 1.2 });
         }
 
-        // 4. Update Bus Telemetry Card
-        const speedEl = document.getElementById('cardSpeed');
-        if (speedEl) speedEl.innerHTML = `${Math.round(validSpeed)} <small style="font-size: 0.6rem;">km/h</small>`;
+        // 4. Update Quick Stats if live
+        if (isLive) {
+            const statVal1 = document.getElementById('statVal1');
+            if (statVal1) statVal1.innerHTML = `${Math.round(validSpeed)} <small style="font-size: 0.65rem;">km/h</small>`;
+        }
 
         // 5. Update Stepper Proximity
-        if (currentJourneyStops && currentJourneyStops.length > 0) {
+        if (currentJourneyStops && currentJourneyStops.length > 0 && isLive) {
             updateStepperByProximity(validLat, validLon, currentJourneyStops);
         }
 
@@ -3731,81 +4023,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     );
 
                     if (data.next_stop_data && data.next_stop_data.eta_mins !== undefined) {
-                        const etaEl = document.getElementById('cardEta');
-                        if (etaEl) etaEl.innerHTML = `${data.next_stop_data.eta_mins} <small style="font-size: 0.6rem;">min</small>`;
+                        const statVal2 = document.getElementById('statVal2');
+                        if (statVal2 && isLive) {
+                            statVal2.innerHTML = `${data.next_stop_data.eta_mins} <small style="font-size: 0.65rem;">min</small>`;
+                        }
                     }
                 }
             } catch (err) {
                 console.debug('Polling telemetry update:', err);
             }
-        }, 2000); // Strict 2000ms polling interval
-    }
-
-    function showBusOfflineModal(busNo, data = {}, routeIndex = 0, legIndex = 0) {
-        const modalEl = document.getElementById('busOfflineModal');
-        const toastEl = document.getElementById('busOfflineToast');
-
-        const busNameEl = document.getElementById('offlineModalBusName');
-        if (busNameEl) busNameEl.textContent = `Bus #${busNo || '--'}`;
-
-        const tripStatusEl = document.getElementById('offlineModalTripStatus');
-        if (tripStatusEl) {
-            tripStatusEl.textContent = data.trip_status ? data.trip_status.replace(/_/g, ' ') : 'NOT STARTED';
-        }
-
-        const lastPingEl = document.getElementById('offlineModalLastPing');
-        if (lastPingEl) {
-            if (data.last_updated_seconds_ago !== null && data.last_updated_seconds_ago !== undefined) {
-                lastPingEl.innerHTML = `<span class="text-warning">${data.last_updated_seconds_ago}s ago</span>`;
-            } else {
-                lastPingEl.innerHTML = `<span class="text-danger"><i class="fa-solid fa-circle-xmark me-1"></i> No Broadcast (<10s)</span>`;
-            }
-        }
-
-        const routeNameEl = document.getElementById('offlineModalRouteName');
-        if (routeNameEl) {
-            let rName = data.route_name;
-            if (!rName && currentFetchedRoutes && currentFetchedRoutes[routeIndex]) {
-                const r = currentFetchedRoutes[routeIndex];
-                const leg = (r.legs && r.legs[legIndex]) ? r.legs[legIndex] : (r.legs ? r.legs[0] : null);
-                rName = leg ? leg.route_name : r.route_name;
-            }
-            routeNameEl.textContent = rName || 'City Transit Route';
-        }
-
-        // Setup retry button in modal
-        const retryBtn = document.getElementById('btnRetryLiveCheck');
-        if (retryBtn) {
-            retryBtn.onclick = () => {
-                const modalInstance = bootstrap.Modal.getInstance(modalEl);
-                if (modalInstance) modalInstance.hide();
-                handleTrackClick(busNo, routeIndex, legIndex);
-            };
-        }
-
-        // Setup preview scheduled route in modal
-        const previewBtn = document.getElementById('btnPreviewOfflineRouteDemo');
-        if (previewBtn) {
-            previewBtn.onclick = () => {
-                const modalInstance = bootstrap.Modal.getInstance(modalEl);
-                if (modalInstance) modalInstance.hide();
-                if (currentFetchedRoutes && currentFetchedRoutes[routeIndex]) {
-                    openSplitScreenTracking(currentFetchedRoutes[routeIndex], legIndex, null);
-                }
-            };
-        }
-
-        // Show Bootstrap Modal
-        if (modalEl && window.bootstrap) {
-            const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
-            modalInstance.show();
-        }
-
-        // Also show Toast for non-blocking visual feedback
-        if (toastEl && window.bootstrap) {
-            const toastInstance = bootstrap.Toast.getOrCreateInstance(toastEl, { delay: 6000 });
-            toastInstance.show();
-        }
+        }, 2000);
     }
 
     async function handleTrackClick(busNo, routeIndex = 0, legIndex = 0, btnEl = null) {
@@ -3833,7 +4060,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 btnEl.innerHTML = origHtml;
             }
 
-            // Transition smoothly to the split-screen interactive tracking view
+            const isLive = data && (data.is_live === true || data.isLive === true);
+            if (!isLive) {
+                showBusOfflineNotice(busNo, data, routeIndex, legIndex);
+                return;
+            }
+
+            // Transition to the unified interactive real-time tracking view
             let routeToTrack = currentFetchedRoutes && currentFetchedRoutes[routeIndex] ? currentFetchedRoutes[routeIndex] : null;
             if (!routeToTrack) {
                 routeToTrack = {
@@ -3854,13 +4087,70 @@ document.addEventListener('DOMContentLoaded', function() {
                 btnEl.disabled = false;
                 btnEl.innerHTML = origHtml;
             }
-            let routeToTrack = currentFetchedRoutes && currentFetchedRoutes[routeIndex] ? currentFetchedRoutes[routeIndex] : null;
-            if (routeToTrack) {
-                openSplitScreenTracking(routeToTrack, legIndex, null);
-            }
+            showBusOfflineNotice(busNo, null, routeIndex, legIndex);
         }
     }
     window.handleTrackClick = handleTrackClick;
+
+    let lastOfflineTrackingTarget = { busNo: null, routeIndex: 0, legIndex: 0, data: null };
+
+    function showBusOfflineNotice(busNo, data, routeIndex = 0, legIndex = 0) {
+        lastOfflineTrackingTarget = { busNo, routeIndex, legIndex, data };
+        const modalEl = document.getElementById('busOfflineModal');
+        if (modalEl && typeof bootstrap !== 'undefined') {
+            const nameEl = document.getElementById('offlineModalBusName');
+            if (nameEl) nameEl.textContent = `Bus #${busNo}`;
+
+            const tripStatusEl = document.getElementById('offlineModalTripStatus');
+            if (tripStatusEl) tripStatusEl.textContent = (data && data.trip_status) || 'OFFLINE';
+
+            const routeNameEl = document.getElementById('offlineModalRouteName');
+            if (routeNameEl) routeNameEl.textContent = (data && data.route_name) || (currentFetchedRoutes?.[routeIndex]?.route_name) || 'City Route';
+
+            const pingEl = document.getElementById('offlineModalLastPing');
+            if (pingEl) {
+                if (data && data.last_updated_seconds_ago !== null && data.last_updated_seconds_ago !== undefined) {
+                    pingEl.innerHTML = `<i class="fa-solid fa-clock me-1"></i> Last seen ${data.last_updated_seconds_ago}s ago`;
+                } else {
+                    pingEl.innerHTML = '<i class="fa-solid fa-signal me-1"></i> No Broadcast (<10s)';
+                }
+            }
+
+            const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            modal.show();
+        } else {
+            const toastEl = document.getElementById('busOfflineToast');
+            if (toastEl && typeof bootstrap !== 'undefined') {
+                const toast = bootstrap.Toast.getInstance(toastEl) || new bootstrap.Toast(toastEl);
+                toast.show();
+            } else {
+                alert(`Bus #${busNo} is currently offline. Real-time GPS tracking is only available when the bus is actively broadcasting.`);
+            }
+        }
+    }
+
+    document.getElementById('btnRetryLiveCheck')?.addEventListener('click', function() {
+        const modalEl = document.getElementById('busOfflineModal');
+        if (modalEl && typeof bootstrap !== 'undefined') {
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        }
+        if (lastOfflineTrackingTarget.busNo) {
+            handleTrackClick(lastOfflineTrackingTarget.busNo, lastOfflineTrackingTarget.routeIndex, lastOfflineTrackingTarget.legIndex);
+        }
+    });
+
+    document.getElementById('btnPreviewOfflineRouteDemo')?.addEventListener('click', function() {
+        const modalEl = document.getElementById('busOfflineModal');
+        if (modalEl && typeof bootstrap !== 'undefined') {
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        }
+        const routeToTrack = currentFetchedRoutes && currentFetchedRoutes[lastOfflineTrackingTarget.routeIndex];
+        if (routeToTrack) {
+            openSplitScreenTracking(routeToTrack, lastOfflineTrackingTarget.legIndex, null);
+        }
+    });
 
     function openSplitScreenTracking(route, legIndex = 0, initialLiveData = null) {
         if (!route) return;
@@ -3888,6 +4178,7 @@ document.addEventListener('DOMContentLoaded', function() {
         currentTrackingBusNumber = (initialLiveData && initialLiveData.bus_no) || (cardLiveBus ? cardLiveBus.bus_no : (currentTrackingLeg.bus_no || '24'));
         const driverName = (initialLiveData && initialLiveData.driver_name) || (cardLiveBus ? (cardLiveBus.driver_name || 'Shri Manjunath K.') : (currentTrackingLeg.driver_name || 'NWKRTC Driver'));
         const routeName = (initialLiveData && initialLiveData.route_name) || currentTrackingLeg.route_name || route.route_name || 'Hubballi - Dharwad Transit';
+        const operatorName = (initialLiveData && initialLiveData.operator) || (currentTrackingLeg.bus_type && currentTrackingLeg.bus_type.includes('BRTS') ? 'Chigari BRTS' : 'NWKRTC');
 
         // 1. Transition Views: Hide Search View, Show Split-Screen Dashboard
         document.getElementById('routeFinderSearchView')?.classList.add('d-none');
@@ -3897,15 +4188,27 @@ document.addEventListener('DOMContentLoaded', function() {
             window.scrollTo({ top: 120, behavior: 'smooth' });
         }
 
-        // 2. Update Header & Card Telemetry
-        const topBusNoEl = document.getElementById('topTrackingBusNo');
-        if (topBusNoEl) topBusNoEl.textContent = `Bus #${currentTrackingBusNumber}`;
-        const topRouteEl = document.getElementById('topTrackingRouteName');
-        if (topRouteEl) topRouteEl.textContent = routeName;
-        const cardTitleEl = document.getElementById('cardBusTitle');
-        if (cardTitleEl) cardTitleEl.textContent = `Bus #${currentTrackingBusNumber} (${currentTrackingLeg.bus_type || 'Ordinary'})`;
-        const driverEl = document.getElementById('cardDriverName');
-        if (driverEl) driverEl.textContent = `Driver: ${driverName}`;
+        // 2. Populate Unified Header Card
+        const unifiedBusNoEl = document.getElementById('unifiedBusNumber');
+        if (unifiedBusNoEl) unifiedBusNoEl.textContent = `#${currentTrackingBusNumber}`;
+
+        const unifiedRouteEl = document.getElementById('unifiedRouteTitle');
+        if (unifiedRouteEl) unifiedRouteEl.textContent = routeName;
+
+        const unifiedOperatorBadge = document.getElementById('unifiedOperatorBadge');
+        if (unifiedOperatorBadge) unifiedOperatorBadge.textContent = operatorName;
+
+        // Sub-bar metrics
+        const distEl = document.getElementById('subStatDistanceVal');
+        if (distEl) {
+            const dist = route.total_distance_km || route.total_distance || currentTrackingLeg.distance_km || '18.4';
+            distEl.textContent = dist;
+        }
+        const fareEl = document.getElementById('subStatFareVal');
+        if (fareEl) {
+            const fare = route.total_fare || currentTrackingLeg.fare || '30';
+            fareEl.textContent = fare;
+        }
 
         // 3. Collect ordered stops for journey
         const journeyStops = [];
@@ -3962,18 +4265,18 @@ document.addEventListener('DOMContentLoaded', function() {
             isMuted: false
         });
 
-        // Initial announcement
+        // Initial announcement & graceful UI status setup
         const isLive = initialLiveData && (initialLiveData.is_live === true || initialLiveData.isLive === true);
         updateDriverLiveStatusUI(isLive, initialLiveData || {});
 
         const initMsg = isLive
             ? `Real-time GPS connected for Bus #${currentTrackingBusNumber}. Live tracking route to your stop.`
-            : `Bus #${currentTrackingBusNumber} is currently offline. Showing scheduled route itinerary.`;
+            : `Bus #${currentTrackingBusNumber} is currently offline. Scheduled Route View displayed.`;
         updateSpeechBubble(initMsg);
         logActivityEvent(initMsg, isLive ? 'info' : 'warning', isLive ? 'fa-solid fa-satellite-dish' : 'fa-solid fa-clock');
         if (isLive) splitAnnouncer.speak(initMsg);
 
-        // 6. Render Stop Markers & Stepper
+        // 6. Render Stop Markers & Unified Stepper (Integrated Point A stop marker eliminates collision)
         renderSplitMapStops(journeyStops);
         initProgressStepper(journeyStops);
 
@@ -3988,7 +4291,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 ? roadCoords.map(sanitizeLatLng).filter(Boolean)
                 : journeyStops.map(s => [s.lat, s.lon]);
 
-            // 1. Source to Destination Polyline: ONE TYPE (Solid Vibrant Blue #2563eb)
+            // Source to Destination Polyline: Solid Vibrant Blue #2563eb
             if (splitSourceToDestPolyline && currentRoadCoordinates.length > 0) {
                 splitSourceToDestPolyline.setLatLngs(currentRoadCoordinates);
             }
@@ -3999,7 +4302,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 splitTraveledPolyline.setLatLngs([]);
             }
 
-            // Fit initial view to route bounds without erratic zoom snapping
+            // Fit initial view to route bounds
             if (splitMap && currentRoadCoordinates.length > 0) {
                 const bounds = L.latLngBounds(currentRoadCoordinates);
                 if (bounds.isValid()) {
@@ -4007,18 +4310,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // Create Passenger Marker at Point A (Boarding Stop)
-            const pStart = journeyStops[0];
-            splitPassengerMarker = createPassengerMarker(pStart.lat, pStart.lon, pStart.name);
-            splitPassengerMarker.addTo(splitMap);
-
             // Initial bus location (strictly prefer verified live GPS telemetry)
             let initialBusLat = null;
             let initialBusLon = null;
             let initialBusSpeed = 0;
             let initialBusHeading = 0;
 
-            if (initialLiveData) {
+            if (isLive && initialLiveData) {
                 const cLat = initialLiveData.current_lat !== undefined && initialLiveData.current_lat !== null ? initialLiveData.current_lat : initialLiveData.latitude;
                 const cLon = initialLiveData.current_lon !== undefined && initialLiveData.current_lon !== null ? initialLiveData.current_lon : initialLiveData.longitude;
                 const cleanInitial = sanitizeLatLng([cLat, cLon]);
@@ -4030,7 +4328,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // Fallback to origin stop if bus has no live location
+            // If offline, anchor the dimmed bus marker at the depot / starting terminal (Stop 0)
             if (!isValidLatLng(initialBusLat, initialBusLon) && journeyStops.length > 0) {
                 initialBusLat = journeyStops[0].lat;
                 initialBusLon = journeyStops[0].lon;
@@ -4038,8 +4336,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (isValidLatLng(initialBusLat, initialBusLon)) {
                 updateBusPositionOnMap(initialBusLat, initialBusLon, initialBusSpeed, initialBusHeading, isLive);
-                // 2. Bus Location to Source Polyline: DIFFERENT TYPE (Dashed Amber #f59e0b)
-                if (splitBusToSourcePolyline && splitCurrentSourceStop) {
+                if (isLive && splitBusToSourcePolyline && splitCurrentSourceStop) {
                     const cleanSource = sanitizeLatLng([splitCurrentSourceStop.lat, splitCurrentSourceStop.lon]);
                     if (cleanSource) {
                         splitBusToSourcePolyline.setLatLngs([[initialBusLat, initialBusLon], cleanSource]);
@@ -4076,21 +4373,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }, 1100);
             }
-            const busBadge = document.getElementById('topTrackingBusNo');
+            const busBadge = document.getElementById('unifiedBusNumber');
             if (busBadge) {
-                busBadge.innerHTML = `Bus #${currentTrackingBusNumber} <span class="badge bg-success ms-1 small">ONBOARD</span>`;
+                busBadge.innerHTML = `#${currentTrackingBusNumber} <span class="badge bg-success ms-1 small">ONBOARD</span>`;
             }
             logActivityEvent(`You are now aboard Bus #${currentTrackingBusNumber}. Enjoy your trip!`, 'boarded', 'fa-solid fa-person-walking-luggage');
         });
 
         splitAnnouncer.on('stopProgress', ev => {
             updateProgressStepper(ev);
-            if (ev.nextStop) {
-                const nextEl = document.getElementById('cardNextStop');
-                if (nextEl) nextEl.textContent = ev.nextStop;
-            }
             if (ev.stopsRemaining !== undefined) {
-                const remEl = document.getElementById('stepperStopsRemaining');
+                const remEl = document.getElementById('stepperRemainingBadge');
                 if (remEl) remEl.textContent = `${ev.stopsRemaining} stop(s) remaining`;
             }
         });
@@ -4164,6 +4457,27 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('btnToggleTrackingStopLabels')?.addEventListener('click', toggleTrackingStopLabels);
     document.getElementById('btnToggleSpeechMute')?.addEventListener('click', toggleTrackingMute);
     document.getElementById('btnTestAudioVoice')?.addEventListener('click', testAudioVoice);
+
+    // Collapsible Secondary Drawer Toggle (Live Audio Announcer & Activity Log)
+    const btnToggleDrawer = document.getElementById('btnToggleDrawer');
+    const drawerBody = document.getElementById('drawerBody');
+    const drawerCaret = document.getElementById('drawerCaret');
+
+    if (btnToggleDrawer && drawerBody) {
+        btnToggleDrawer.addEventListener('click', function(e) {
+            e.preventDefault();
+            const isCollapsed = drawerBody.classList.contains('d-none');
+            if (isCollapsed) {
+                drawerBody.classList.remove('d-none');
+                btnToggleDrawer.setAttribute('aria-expanded', 'true');
+                if (drawerCaret) drawerCaret.style.transform = 'rotate(180deg)';
+            } else {
+                drawerBody.classList.add('d-none');
+                btnToggleDrawer.setAttribute('aria-expanded', 'false');
+                if (drawerCaret) drawerCaret.style.transform = 'rotate(0deg)';
+            }
+        });
+    }
 
     document.getElementById('btnFitTrackingBounds')?.addEventListener('click', function() {
         if (splitMap && currentRoadCoordinates && currentRoadCoordinates.length > 0) {

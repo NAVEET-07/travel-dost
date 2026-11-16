@@ -151,8 +151,11 @@ def format_bus_telemetry(b, ref_stop, stops_list=None):
         "bus_number": b.bus_number,
         "bus_name": b.bus_name,
         "bus_type": b.get_bus_type_display(),
+        "operator": "NWKRTC" if b.bus_type != 'BRTS' else "Chigari BRTS",
+        "is_active": b.is_active,
         "tracking_status": b.tracking_status,
-        "is_live": b.tracking_status == 'LIVE',
+        "trip_status": getattr(b, 'trip_status', 'NOT_STARTED'),
+        "is_live": b.tracking_status == 'LIVE' and b.is_active and getattr(b, 'trip_status', 'ACTIVE') not in ['COMPLETED', 'CANCELLED'],
         "distance_to_source_km": dist_km,
         "distance_to_source_text": dist_text,
         "current_location_desc": loc_desc,
@@ -259,11 +262,11 @@ def find_best_routes(source_param, destination_param):
             for b in r_buses:
                 b_info = format_bus_telemetry(b, source_stop, stops_list)
                 buses_data.append(b_info)
-                if b.tracking_status == 'LIVE' and not primary_live_bus:
+                if b_info.get('is_live') and not primary_live_bus:
                     primary_live_bus = b_info
 
-            buses_data.sort(key=lambda b: 0 if b.get('tracking_status') == 'LIVE' else 1)
-            live_bus_count = sum(1 for b in buses_data if b.get('tracking_status') == 'LIVE')
+            buses_data.sort(key=lambda b: 0 if b.get('is_live') else 1)
+            live_bus_count = sum(1 for b in buses_data if b.get('is_live'))
 
             cbt_rank = 0 if (is_cbt_stop(source_stop) or is_cbt_stop(destination_stop)) else (1 if any(is_cbt_stop(st) for st in stops_list) else 2)
             score = (0 * 100) + (cbt_rank * 10) + (stop_count * 2) + distance_km
@@ -476,10 +479,10 @@ def find_best_routes(source_param, destination_param):
 
                 buses_src = [format_bus_telemetry(b, source_stop, leg1_stops) for b in buses_by_route.get(r_src.id, [])]
                 buses_dst = [format_bus_telemetry(b, hub_stop, leg2_stops) for b in buses_by_route.get(r_dst.id, [])]
-                buses_src.sort(key=lambda b: 0 if b.get('tracking_status') == 'LIVE' else 1)
-                buses_dst.sort(key=lambda b: 0 if b.get('tracking_status') == 'LIVE' else 1)
+                buses_src.sort(key=lambda b: 0 if b.get('is_live') else 1)
+                buses_dst.sort(key=lambda b: 0 if b.get('is_live') else 1)
 
-                primary_hub_live = next((b for b in buses_src + buses_dst if b.get('tracking_status') == 'LIVE'), None)
+                primary_hub_live = next((b for b in buses_src + buses_dst if b.get('is_live')), None)
 
                 leg1_fare = round(15.00, 2)
                 leg2_fare = round(15.00 + (dist * 2.0), 2)
@@ -498,7 +501,7 @@ def find_best_routes(source_param, destination_param):
                     "estimated_duration_mins": max(12, int(dist * 4.0)),
                     "estimated_fare": total_fare,
                     "stop_count": 3,
-                    "live_bus_count": len([b for b in buses_src + buses_dst if b["tracking_status"] == "LIVE"]),
+                    "live_bus_count": len([b for b in buses_src + buses_dst if b.get("is_live")]),
                     "total_buses_count": len(buses_src) + len(buses_dst),
                     "primary_live_bus": primary_hub_live,
                     "road_geometry": journey_coords,

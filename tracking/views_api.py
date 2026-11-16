@@ -339,12 +339,13 @@ class RouteSearchAPIView(APIView):
                     "lng": float(st.get("lng", st.get("lon", 0.0)) or 0.0)
                 } for st in stops_list]
                 r_buses = r.get("buses", [])
-                live_r_buses = [b for b in r_buses if b.get("tracking_status") == "LIVE"]
+                live_r_buses = [b for b in r_buses if b.get("is_live") or b.get("tracking_status") == "LIVE"]
                 chosen_bus = live_r_buses[0] if live_r_buses else (r_buses[0] if r_buses else {})
                 chosen_bus_no = chosen_bus.get("bus_number") or r.get("route_name", "Direct")
+                is_bus_live = bool(chosen_bus.get("is_live") or chosen_bus.get("tracking_status") == "LIVE")
                 legs_data.append({
                     "bus_no": chosen_bus_no,
-                    "is_live": chosen_bus.get("tracking_status") == "LIVE",
+                    "is_live": is_bus_live,
                     "distance_to_source_km": chosen_bus.get("distance_to_source_km"),
                     "distance_to_source_text": chosen_bus.get("distance_to_source_text"),
                     "current_location_desc": chosen_bus.get("current_location_desc"),
@@ -366,12 +367,13 @@ class RouteSearchAPIView(APIView):
                         "lng": float(st.get("lng", st.get("lon", 0.0)) or 0.0)
                     } for st in leg_stops]
                     leg_buses = leg.get("buses", [])
-                    live_leg_buses = [b for b in leg_buses if b.get("tracking_status") == "LIVE"]
+                    live_leg_buses = [b for b in leg_buses if b.get("is_live") or b.get("tracking_status") == "LIVE"]
                     chosen_leg_bus = live_leg_buses[0] if live_leg_buses else (leg_buses[0] if leg_buses else {})
                     leg_bus_no = chosen_leg_bus.get("bus_number") or leg.get("route_name", f"Leg {idx+1}")
+                    is_leg_live = bool(chosen_leg_bus.get("is_live") or chosen_leg_bus.get("tracking_status") == "LIVE")
                     legs_data.append({
                         "bus_no": leg_bus_no,
-                        "is_live": chosen_leg_bus.get("tracking_status") == "LIVE",
+                        "is_live": is_leg_live,
                         "distance_to_source_km": chosen_leg_bus.get("distance_to_source_km"),
                         "distance_to_source_text": chosen_leg_bus.get("distance_to_source_text"),
                         "current_location_desc": chosen_leg_bus.get("current_location_desc"),
@@ -394,7 +396,7 @@ class RouteSearchAPIView(APIView):
                 "transfer_label": transfer_label,
                 "total_stops": total_stops,
                 "legs": legs_data,
-                "has_live_bus": r.get("live_bus_count", 0) > 0 or bool(r.get("primary_live_bus")),
+                "has_live_bus": bool(r.get("live_bus_count", 0) > 0 or r.get("primary_live_bus") or any(l.get("is_live") for l in legs_data)),
                 "live_bus_count": r.get("live_bus_count", 0),
                 "primary_live_bus": r.get("primary_live_bus"),
                 "distance_to_source_km": p_live.get("distance_to_source_km"),
@@ -1083,10 +1085,24 @@ class PassengerBusLiveStatusAPIView(APIView):
         active_lat = float(loc.latitude) if (loc and loc.latitude is not None) else origin_lat
         active_lon = float(loc.longitude) if (loc and loc.longitude is not None) else origin_lon
 
+        now = timezone.now()
+        mins_to_next = 15 - (now.minute % 15)
+        next_dep = now + timezone.timedelta(minutes=mins_to_next)
+        scheduled_dep_str = next_dep.strftime("%H:%M")
+
+        est_duration_mins = 25
+        if bus.route:
+            stops_cnt = bus.route.route_stops.count()
+            if stops_cnt > 0:
+                est_duration_mins = max(15, int(stops_cnt * 2.5))
+
+        operator_name = "NWKRTC" if bus.bus_type != 'BRTS' else "Chigari BRTS"
+
         return Response({
             "success": True,
             "bus_id": bus.id,
             "bus_no": bus.bus_number,
+            "is_active": bus.is_active,
             "is_live": is_live,
             "isLive": is_live,
             "has_recent_ping": has_recent_ping,
@@ -1102,6 +1118,11 @@ class PassengerBusLiveStatusAPIView(APIView):
             "last_updated_seconds_ago": seconds_ago,
             "route_name": bus.route.route_name if bus.route else "City Route",
             "driver_name": getattr(bus, 'driver_name', 'NWKRTC Operator') or "NWKRTC Operator",
+            "operator": operator_name,
+            "bus_type": bus.get_bus_type_display(),
+            "scheduled_departure": scheduled_dep_str,
+            "frequency_text": "Every 15 mins",
+            "total_route_time_mins": est_duration_mins,
             "source_stop": source_stop_dict,
             "destination_stop": dest_stop_dict
         })

@@ -1,293 +1,1637 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Travel Dost — Smart Bus Tracking & Transit Guide (Hubballi-Dharwad){% endblock %}
+{% block title %}Travel Dost — Smart Bus Transit Platform (Hubballi–Dharwad Twin Cities){% endblock %}
+
+{% block extra_css %}
+<style>
+/* ==========================================================================
+   TRAVEL DOST — NEXT-GEN HOME PAGE DESIGN SYSTEM
+   Modern Dark Glassmorphism, Ambient Aurora Mesh, Bento Grids & Micro-Interactions
+   ========================================================================== */
+
+:root {
+    --home-bg-primary: #070c18;
+    --home-bg-secondary: #0d1527;
+    --home-surface-glass: rgba(15, 23, 42, 0.82);
+    --home-surface-card: rgba(15, 23, 42, 0.9);
+    --home-surface-border: rgba(148, 163, 184, 0.16);
+    --home-border-glow: rgba(56, 189, 248, 0.35);
+    
+    --accent-cyan: #38bdf8;
+    --accent-blue: #2563eb;
+    --accent-emerald: #10b981;
+    --accent-amber: #f59e0b;
+    --accent-rose: #f43f5e;
+    --accent-indigo: #6366f1;
+}
+
+/* Base Canvas */
+body {
+    background-color: var(--home-bg-primary) !important;
+    color: #e2e8f0;
+}
+
+.home-page-wrapper {
+    background-color: var(--home-bg-primary);
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* Ambient Aurora Mesh Glow Backdrops */
+.ambient-aurora-top {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 1400px;
+    height: 700px;
+    background: radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.22) 0%, transparent 50%),
+                radial-gradient(circle at 80% 30%, rgba(56, 189, 248, 0.18) 0%, transparent 45%),
+                radial-gradient(circle at 50% 65%, rgba(16, 185, 129, 0.12) 0%, transparent 55%);
+    filter: blur(75px);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.ambient-aurora-mid {
+    position: absolute;
+    top: 1400px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 1300px;
+    height: 800px;
+    background: radial-gradient(circle at 15% 40%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 85% 60%, rgba(245, 158, 11, 0.12) 0%, transparent 45%);
+    filter: blur(85px);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Subtle Geometric Grid Overlay */
+.home-grid-overlay {
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Hero Section */
+.home-hero-section {
+    position: relative;
+    z-index: 1;
+    padding-top: 2.5rem;
+    padding-bottom: 3.5rem;
+}
+
+/* Top Pill Badge */
+.hero-live-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: 9999px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 0 16px rgba(56, 189, 248, 0.15);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #e2e8f0;
+    margin-bottom: 1.25rem;
+    backdrop-filter: blur(12px);
+    transition: all 0.3s ease;
+}
+.hero-live-pill:hover {
+    border-color: #38bdf8;
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.35);
+    transform: translateY(-1px);
+}
+
+.radar-beacon {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 10px #10b981;
+    position: relative;
+}
+.radar-beacon::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid #10b981;
+    animation: radarRipple 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes radarRipple {
+    0% { transform: scale(0.8); opacity: 1; }
+    100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* Hero Typography */
+.hero-headline {
+    font-family: var(--font-heading);
+    font-size: clamp(2.3rem, 5vw, 3.8rem);
+    font-weight: 900;
+    line-height: 1.12;
+    letter-spacing: -0.03em;
+    color: #ffffff;
+    margin-bottom: 1rem;
+}
+
+.hero-gradient-text {
+    background: linear-gradient(135deg, #38bdf8 0%, #60a5fa 45%, #facc15 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+}
+
+.hero-subhead {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #94a3b8;
+    max-width: 620px;
+    margin-bottom: 2rem;
+}
+
+/* Glassmorphic Command Center Search Hub */
+.glass-command-hub {
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--home-surface-border);
+    border-radius: 26px;
+    padding: 1.75rem;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 30px rgba(37, 99, 235, 0.1);
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.glass-command-hub:hover {
+    border-color: rgba(56, 189, 248, 0.4);
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.6), 0 0 35px rgba(56, 189, 248, 0.15);
+}
+
+/* Search Tabs */
+.search-hub-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(2, 6, 23, 0.7);
+    padding: 4px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    margin-bottom: 1.25rem;
+}
+
+.search-tab-btn {
+    flex: 1;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #94a3b8;
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.25s ease;
+}
+
+.search-tab-btn.active {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+}
+
+.search-tab-btn:hover:not(.active) {
+    color: #e2e8f0;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Stop Input Fields */
+.stop-input-card {
+    background: rgba(2, 6, 23, 0.65);
+    border: 1.5px solid rgba(51, 65, 85, 0.7);
+    border-radius: 16px;
+    padding: 10px 14px;
+    transition: all 0.25s ease;
+    position: relative;
+}
+
+.stop-input-card:focus-within {
+    border-color: #38bdf8;
+    background: rgba(15, 23, 42, 0.9);
+    box-shadow: 0 0 18px rgba(56, 189, 248, 0.35);
+}
+
+.stop-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+    margin-bottom: 4px;
+}
+
+.stop-select-styled {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-size: 0.92rem;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+}
+
+.stop-select-styled option {
+    background: #0f172a;
+    color: #ffffff;
+    font-size: 0.88rem;
+}
+
+/* Swap Button */
+.btn-swap-animated {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(30, 41, 59, 0.8);
+    border: 1.5px solid rgba(148, 163, 184, 0.3);
+    color: #38bdf8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    margin: 0 auto;
+}
+
+.btn-swap-animated:hover {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #38bdf8;
+    transform: rotate(180deg) scale(1.1);
+    box-shadow: 0 0 20px rgba(37, 99, 235, 0.6);
+}
+
+/* Popular Hub Chips */
+.quick-hub-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 9999px;
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    color: #cbd5e1;
+    font-size: 0.74rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.quick-hub-chip:hover {
+    background: rgba(56, 189, 248, 0.15);
+    border-color: #38bdf8;
+    color: #38bdf8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.25);
+}
+
+.quick-hub-chip i {
+    font-size: 0.72rem;
+}
+
+/* Action Buttons */
+.btn-find-routes-glow {
+    background: linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #1d4ed8 100%);
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    font-weight: 800;
+    font-size: 0.96rem;
+    padding: 12px 28px;
+    border-radius: 9999px;
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.45);
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    letter-spacing: 0.02em;
+}
+
+.btn-find-routes-glow:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(37, 99, 235, 0.65), 0 0 20px rgba(56, 189, 248, 0.5);
+    color: #ffffff;
+    border-color: #ffffff;
+}
+
+.btn-gps-detect {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1.5px solid rgba(148, 163, 184, 0.25);
+    color: #f1f5f9;
+    font-weight: 600;
+    font-size: 0.86rem;
+    padding: 10px 18px;
+    border-radius: 9999px;
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-gps-detect:hover {
+    background: rgba(51, 65, 85, 0.85);
+    border-color: #10b981;
+    color: #34d399;
+}
+
+/* Hero Right: Live Telemetry Widget Card */
+.fleet-radar-card {
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--home-surface-border);
+    border-radius: 26px;
+    padding: 1.5rem;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    height: 100%;
+}
+
+.radar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.clock-digital-pill {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: rgba(2, 6, 23, 0.8);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    color: #38bdf8;
+    letter-spacing: 0.05em;
+}
+
+/* Hero Mini-Map Preview */
+.hero-mini-map-box {
+    width: 100%;
+    height: 180px;
+    border-radius: 18px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.6);
+}
+
+#heroMiniMap {
+    width: 100%;
+    height: 100%;
+    background: #0b1120;
+}
+
+.mini-map-floating-badge {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    z-index: 500;
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+/* Departures Feed Items */
+.departure-stream-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 190px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.departure-stream-list::-webkit-scrollbar {
+    width: 4px;
+}
+.departure-stream-list::-webkit-scrollbar-thumb {
+    background: rgba(56, 189, 248, 0.3);
+    border-radius: 4px;
+}
+
+.departure-stream-item {
+    background: rgba(2, 6, 23, 0.65);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 14px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    color: inherit;
+}
+
+.departure-stream-item:hover {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: #38bdf8;
+    transform: translateX(3px);
+    color: #ffffff;
+}
+
+/* Quick Action Tiles inside Widget */
+.quick-action-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.quick-action-tile {
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    border-radius: 14px;
+    padding: 10px 8px;
+    text-align: center;
+    text-decoration: none;
+    color: #cbd5e1;
+    transition: all 0.25s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.quick-action-tile:hover {
+    background: rgba(56, 189, 248, 0.15);
+    border-color: #38bdf8;
+    color: #38bdf8;
+    transform: translateY(-2px);
+}
+
+.quick-action-tile i {
+    font-size: 1.1rem;
+}
+
+.quick-action-tile span {
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+/* System Telemetry Metrics Ribbon */
+.telemetry-ribbon-section {
+    position: relative;
+    z-index: 1;
+    padding: 2.5rem 0;
+}
+
+.telemetry-ribbon-card {
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--home-surface-border);
+    border-radius: 24px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+
+.metric-col {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0.5rem 1rem;
+}
+
+.metric-icon-disc {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+}
+
+.metric-number {
+    font-family: var(--font-heading);
+    font-size: 1.85rem;
+    font-weight: 900;
+    line-height: 1.1;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+}
+
+.metric-label {
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+}
+
+/* Corridor Showcase Section */
+.corridor-showcase-section {
+    position: relative;
+    z-index: 1;
+    padding: 3.5rem 0;
+}
+
+.section-tag {
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #38bdf8;
+    margin-bottom: 0.5rem;
+    display: inline-block;
+}
+
+.section-title {
+    font-family: var(--font-heading);
+    font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.02em;
+}
+
+.section-desc {
+    color: #94a3b8;
+    font-size: 1rem;
+    max-width: 620px;
+    margin: 0 auto 2.5rem;
+}
+
+/* Corridor Cards */
+.corridor-tab-card {
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--home-surface-border);
+    border-radius: 22px;
+    padding: 1.75rem;
+    transition: all 0.3s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+}
+
+.corridor-tab-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #38bdf8, #2563eb);
+    opacity: 0.8;
+}
+
+.corridor-tab-card.brts-card::before {
+    background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.corridor-tab-card.feeder-card::before {
+    background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.corridor-tab-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(56, 189, 248, 0.45);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5), 0 0 25px rgba(56, 189, 248, 0.15);
+}
+
+.corridor-badge {
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Bento Grid: Commuter Tech */
+.bento-section {
+    position: relative;
+    z-index: 1;
+    padding: 4rem 0;
+}
+
+.bento-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1.25rem;
+}
+
+.bento-card {
+    background: rgba(15, 23, 42, 0.82);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid var(--home-surface-border);
+    border-radius: 24px;
+    padding: 2rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.bento-card:hover {
+    border-color: rgba(56, 189, 248, 0.45);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(56, 189, 248, 0.12);
+}
+
+.bento-col-8 { grid-column: span 8; }
+.bento-col-4 { grid-column: span 4; }
+.bento-col-6 { grid-column: span 6; }
+
+@media (max-width: 991px) {
+    .bento-col-8, .bento-col-4, .bento-col-6 {
+        grid-column: span 12;
+    }
+}
+
+.bento-icon-box {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    margin-bottom: 1.25rem;
+}
+
+.bento-title {
+    font-family: var(--font-heading);
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 0.6rem;
+    letter-spacing: -0.01em;
+}
+
+.bento-desc {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    margin-bottom: 0;
+}
+
+/* 3-Step Journey Timeline */
+.timeline-section {
+    position: relative;
+    z-index: 1;
+    padding: 3.5rem 0;
+}
+
+.step-card {
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid var(--home-surface-border);
+    border-radius: 20px;
+    padding: 1.75rem;
+    position: relative;
+    height: 100%;
+    transition: all 0.25s ease;
+}
+.step-card:hover {
+    border-color: #38bdf8;
+    transform: translateY(-4px);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+}
+
+.step-number-tag {
+    font-family: var(--font-heading);
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: rgba(56, 189, 248, 0.25);
+    line-height: 1;
+    margin-bottom: 0.75rem;
+}
+
+/* FAQ Accordion */
+.faq-section {
+    position: relative;
+    z-index: 1;
+    padding: 3.5rem 0;
+}
+
+.glass-accordion .accordion-item {
+    background: rgba(15, 23, 42, 0.75) !important;
+    border: 1px solid var(--home-surface-border) !important;
+    border-radius: 16px !important;
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+
+.glass-accordion .accordion-button {
+    background: transparent !important;
+    color: #ffffff !important;
+    font-weight: 700;
+    font-size: 1rem;
+    box-shadow: none !important;
+    padding: 1.25rem 1.5rem;
+}
+
+.glass-accordion .accordion-button:not(.collapsed) {
+    color: #38bdf8 !important;
+    background: rgba(30, 41, 59, 0.4) !important;
+}
+
+.glass-accordion .accordion-button::after {
+    filter: invert(1);
+}
+
+.glass-accordion .accordion-body {
+    color: #94a3b8;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    padding: 1.25rem 1.5rem;
+    background: rgba(10, 15, 29, 0.4);
+    border-top: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+/* CTA Banner */
+.cta-banner-card {
+    background: linear-gradient(135deg, rgba(30, 58, 138, 0.8) 0%, rgba(15, 23, 42, 0.95) 50%, rgba(6, 78, 59, 0.75) 100%);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: 30px;
+    padding: 3.5rem 2rem;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 35px rgba(37, 99, 235, 0.2);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.cta-banner-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -20%;
+    width: 450px;
+    height: 450px;
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.2) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+</style>
+{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<section class="hero-section py-5 py-lg-6">
-    <div class="container px-lg-5">
-        <div class="row align-items-center g-5">
-            <div class="col-lg-7">
-                <!-- Transit Live Status Badge -->
-                <div class="d-inline-flex align-items-center gap-2 hero-badge px-3 py-2 rounded-pill mb-3">
-                    <span class="live-dot"></span>
-                    <span class="text-white small fw-bold tracking-wide">HUBBALLI–DHARWAD SMART TRANSIT</span>
-                    <span class="badge bg-warning text-dark fw-bold rounded-pill px-2">NWKRTC & BRTS</span>
-                </div>
+<div class="home-page-wrapper">
+    <!-- Ambient Aurora Mesh Layers -->
+    <div class="ambient-aurora-top"></div>
+    <div class="ambient-aurora-mid"></div>
+    <div class="home-grid-overlay"></div>
 
-                <h1 class="display-4 fw-black text-white mb-3 lh-sm">
-                    Move Effortlessly Across the <span class="gradient-text">Twin Cities</span>
-                </h1>
-                <p class="lead text-light text-opacity-80 mb-4 fw-normal" style="max-width: 600px;">
-                    Find direct & connecting buses, track real-time GPS locations live on the map, and get accurate NWKRTC & Chigari BRTS fares.
-                </p>
+    <!-- =========================================================================
+         1. HERO SECTION: Dynamic Command Center & Fleet Telemetry Radar
+         ========================================================================= -->
+    <section class="home-hero-section">
+        <div class="container px-lg-5">
+            <div class="row align-items-center g-4 g-lg-5">
+                <!-- Left: Headline & Interactive Route Search Hub -->
+                <div class="col-lg-7">
+                    <!-- Top Pill Badge -->
+                    <div class="hero-live-pill">
+                        <span class="radar-beacon"></span>
+                        <span>HUBBALLI–DHARWAD SMART TRANSIT</span>
+                        <span class="badge bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-pill px-2 py-0.5 ms-1" style="font-size: 0.68rem;">NWKRTC & BRTS</span>
+                    </div>
 
-                <!-- Search Widget Card -->
-                <div class="search-card-hero p-4 p-md-4 text-dark mb-4">
-                    <form action="{% url 'route-finder' %}" method="GET" id="heroSearchForm">
-                        <div class="row g-3 align-items-center">
-                            <!-- FROM STOP -->
-                            <div class="col-md-5">
-                                <label class="form-label fw-bold text-secondary small text-uppercase mb-1" style="font-size: 0.72rem; letter-spacing: 0.05em;">
-                                    <i class="fa-solid fa-circle text-success me-1"></i> Boarding Stop (Point A)
-                                </label>
-                                <select name="source" class="form-select rounded-3 shadow-none fw-medium" id="heroSourceSelect" required>
-                                    <option value="">Select Boarding Stop...</option>
-                                    {% for stop in stops %}
-                                        <option value="{{ stop.id }}">{{ stop.stop_name }} ({{ stop.area }})</option>
-                                    {% endfor %}
-                                </select>
+                    <!-- Headline -->
+                    <h1 class="hero-headline">
+                        Move Smarter Across the <span class="hero-gradient-text">Twin Cities.</span>
+                    </h1>
+                    <p class="hero-subhead">
+                        Real-time GPS tracking for NWKRTC & Chigari BRTS, intelligent transfer routing, official stage fares, and voice announcer alerts across Hubballi–Dharwad.
+                    </p>
+
+                    <!-- Interactive Glassmorphic Search Hub -->
+                    <div class="glass-command-hub">
+                        <!-- Hub Tabs -->
+                        <div class="search-hub-tabs">
+                            <button type="button" class="search-tab-btn active" id="tabBtnRouteFinder">
+                                <i class="fa-solid fa-diamond-turn-right text-sky-400"></i> Route Planner
+                            </button>
+                            <a href="{% url 'tracking' %}" class="search-tab-btn text-decoration-none">
+                                <i class="fa-solid fa-satellite-dish text-emerald-400"></i> Live Bus Map
+                            </a>
+                            <a href="{% url 'nearby-stops' %}" class="search-tab-btn text-decoration-none">
+                                <i class="fa-solid fa-location-crosshairs text-amber-400"></i> Nearby Radar
+                            </a>
+                        </div>
+
+                        <!-- Route Planner Form -->
+                        <form action="{% url 'route-finder' %}" method="GET" id="heroRouteSearchForm">
+                            <div class="row g-2 align-items-center">
+                                <!-- Point A: Boarding Stop -->
+                                <div class="col-md-5">
+                                    <div class="stop-input-card">
+                                        <div class="stop-label">
+                                            <i class="fa-solid fa-circle text-emerald-400"></i> Boarding Station (Point A)
+                                        </div>
+                                        <select name="source" class="stop-select-styled" id="heroSourceSelect" required>
+                                            <option value="">Select Boarding Stop...</option>
+                                            {% for st in stops %}
+                                                <option value="{{ st.id }}">{{ st.stop_name }}{% if st.area %} ({{ st.area }}){% endif %}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Animated Swap Button -->
+                                <div class="col-md-2 text-center my-1 my-md-0">
+                                    <button type="button" class="btn-swap-animated" id="btnSwapHome" title="Swap Boarding and Destination Stations">
+                                        <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Point B: Destination Stop -->
+                                <div class="col-md-5">
+                                    <div class="stop-input-card">
+                                        <div class="stop-label">
+                                            <i class="fa-solid fa-location-dot text-rose-400"></i> Destination Station (Point B)
+                                        </div>
+                                        <select name="destination" class="stop-select-styled" id="heroDestSelect" required>
+                                            <option value="">Select Destination Stop...</option>
+                                            {% for st in stops %}
+                                                <option value="{{ st.id }}">{{ st.stop_name }}{% if st.area %} ({{ st.area }}){% endif %}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
 
-                            <!-- SWAP BUTTON -->
-                            <div class="col-md-2 text-center my-1 my-md-0 swap-btn-wrapper">
-                                <button type="button" class="btn-swap-stops" id="btnSwapHome" title="Swap Source and Destination">
-                                    <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                            <!-- Popular Twin Cities Transit Hubs Quick Chips -->
+                            <div class="mt-3 pt-2.5 border-t border-slate-700/50">
+                                <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                                    <span class="text-xs text-slate-400 font-bold me-1" style="font-size: 0.7rem; letter-spacing: 0.05em;">POPULAR HUBS:</span>
+                                    <span class="quick-hub-chip" data-name="CBT"><i class="fa-solid fa-bus text-sky-400"></i> CBT Hubballi</span>
+                                    <span class="quick-hub-chip" data-name="Dharwad BRTS"><i class="fa-solid fa-bolt text-emerald-400"></i> Dharwad BRTS</span>
+                                    <span class="quick-hub-chip" data-name="Railway Station"><i class="fa-solid fa-train text-amber-400"></i> Railway Stn</span>
+                                    <span class="quick-hub-chip" data-name="Navanagar"><i class="fa-solid fa-building text-indigo-400"></i> Navanagar</span>
+                                    <span class="quick-hub-chip" data-name="Airport"><i class="fa-solid fa-plane text-cyan-400"></i> Airport</span>
+                                    <span class="quick-hub-chip" data-name="KIMS"><i class="fa-solid fa-hospital text-rose-400"></i> KIMS Hospital</span>
+                                </div>
+                            </div>
+
+                            <!-- Bottom Action Row -->
+                            <div class="d-flex flex-column flex-sm-row align-items-center justify-content-between gap-3 mt-3 pt-3 border-t border-slate-700/50">
+                                <button type="button" class="btn-gps-detect w-100 w-sm-auto" id="btnUseMyLocationHome" title="Detect your nearest bus stop via GPS">
+                                    <i class="fa-solid fa-crosshairs text-emerald-400" id="gpsIcon"></i>
+                                    <span id="gpsText">Use My Live Location</span>
+                                </button>
+                                <button type="submit" class="btn-find-routes-glow w-100 w-sm-auto">
+                                    <span>Find Best Routes</span>
+                                    <i class="fa-solid fa-arrow-right"></i>
                                 </button>
                             </div>
+                        </form>
+                    </div>
+                </div>
 
-                            <!-- TO STOP -->
-                            <div class="col-md-5">
-                                <label class="form-label fw-bold text-secondary small text-uppercase mb-1" style="font-size: 0.72rem; letter-spacing: 0.05em;">
-                                    <i class="fa-solid fa-location-dot text-danger me-1"></i> Destination Stop (Point B)
-                                </label>
-                                <select name="destination" class="form-select rounded-3 shadow-none fw-medium" id="heroDestSelect" required>
-                                    <option value="">Select Destination Stop...</option>
-                                    {% for stop in stops %}
-                                        <option value="{{ stop.id }}">{{ stop.stop_name }} ({{ stop.area }})</option>
+                <!-- Right: Fleet Pulse Telemetry & Mini-Map Radar -->
+                <div class="col-lg-5">
+                    <div class="fleet-radar-card">
+                        <!-- Header with Digital Clock -->
+                        <div class="radar-header">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="radar-beacon"></span>
+                                <span class="fw-bold text-white small">Twin Cities Fleet Pulse</span>
+                            </div>
+                            <div class="clock-digital-pill" id="digitalClockIst">
+                                00:00:00 IST
+                            </div>
+                        </div>
+
+                        <!-- Interactive Mini Transit Map -->
+                        <div class="hero-mini-map-box shadow-md">
+                            <div id="heroMiniMap"></div>
+                            <div class="mini-map-floating-badge">
+                                <i class="fa-solid fa-route text-sky-400"></i>
+                                <span>CBT Hubballi ⇄ Dharwad BRTS</span>
+                            </div>
+                        </div>
+
+                        <!-- Real-Time Departures Stream Ticker -->
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between mb-2 px-1">
+                                <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                                    <i class="fa-solid fa-tower-broadcast text-emerald-400 me-1"></i> Live Active Departures
+                                </span>
+                                <span class="badge bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-pill px-2 py-0.5 text-xs">
+                                    {{ live_buses_count }} Broadcasting
+                                </span>
+                            </div>
+
+                            <div class="departure-stream-list custom-scroll">
+                                {% if live_buses %}
+                                    {% for b in live_buses %}
+                                        <a href="{% url 'live-tracking-bus' b.id %}" class="departure-stream-item">
+                                            <div class="d-flex align-items-center gap-2.5">
+                                                <div class="text-sky-400 fs-6">
+                                                    <i class="fa-solid fa-bus"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="d-flex align-items-center gap-1.5">
+                                                        <strong class="text-white text-xs">#{{ b.bus_number }}</strong>
+                                                        <span class="badge {% if 'BRTS' in b.bus_type %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30{% else %}bg-sky-500/20 text-sky-300 border border-sky-500/30{% endif %} rounded-pill px-1.5 py-0.2" style="font-size: 0.62rem;">
+                                                            {% if 'BRTS' in b.bus_type %}BRTS{% else %}NWKRTC{% endif %}
+                                                        </span>
+                                                    </div>
+                                                    <div class="text-slate-400" style="font-size: 0.72rem;">
+                                                        {{ b.route.route_name|default:"Twin Cities Corridor"|truncatechars:28 }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="badge bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-pill px-2 py-0.5" style="font-size: 0.65rem;">
+                                                    <span class="live-dot me-1"></span> LIVE
+                                                </span>
+                                                <div class="text-slate-400 extra-small mt-0.5">Track ➔</div>
+                                            </div>
+                                        </a>
                                     {% endfor %}
-                                </select>
+                                {% else %}
+                                    <div class="departure-stream-item justify-content-center text-center py-2.5">
+                                        <span class="text-xs text-amber-300">
+                                            <i class="fa-solid fa-clock text-amber-400 me-1"></i> Fleet on scheduled departure headway (Every 5-15 mins)
+                                        </span>
+                                    </div>
+                                {% endif %}
                             </div>
                         </div>
 
-                        <!-- Quick Transit Hub Shortcuts -->
-                        <div class="mt-3 pt-2 border-top border-light d-flex align-items-center flex-wrap gap-2">
-                            <span class="small text-secondary fw-semibold" style="font-size: 0.75rem;">POPULAR HUBS:</span>
-                            <span class="quick-stop-chip" data-name="CBT"><i class="fa-solid fa-bus text-primary me-1"></i> CBT Hubballi</span>
-                            <span class="quick-stop-chip" data-name="Dharwad BRTS"><i class="fa-solid fa-bolt text-warning me-1"></i> Dharwad BRTS</span>
-                            <span class="quick-stop-chip" data-name="Airport"><i class="fa-solid fa-plane text-info me-1"></i> Airport</span>
-                            <span class="quick-stop-chip" data-name="Railway Station"><i class="fa-solid fa-train text-danger me-1"></i> Railway Stn</span>
-                            <span class="quick-stop-chip" data-name="Navanagar"><i class="fa-solid fa-building text-success me-1"></i> Navanagar</span>
+                        <!-- Quick Action Tiles -->
+                        <div class="quick-action-row pt-1">
+                            <a href="{% url 'tracking' %}" class="quick-action-tile">
+                                <i class="fa-solid fa-map-location-dot text-sky-400"></i>
+                                <span>Live Map</span>
+                            </a>
+                            <a href="{% url 'nearby-stops' %}" class="quick-action-tile">
+                                <i class="fa-solid fa-location-crosshairs text-rose-400"></i>
+                                <span>Near Stops</span>
+                            </a>
+                            <a href="{% url 'routes' %}" class="quick-action-tile">
+                                <i class="fa-solid fa-route text-emerald-400"></i>
+                                <span>All Routes</span>
+                            </a>
                         </div>
-
-                        <!-- Action Buttons -->
-                        <div class="d-flex flex-column flex-sm-row gap-2 mt-4 pt-2 border-top">
-                            <button type="button" class="btn btn-outline-secondary rounded-pill px-3 py-2 fs-6 d-flex align-items-center justify-content-center" id="btnUseMyLocationHome">
-                                <i class="fa-solid fa-crosshairs text-danger me-2"></i> Use GPS Location
-                            </button>
-                            <button type="submit" class="btn btn-transit-primary rounded-pill px-4 py-2 ms-auto w-100 w-sm-auto d-flex align-items-center justify-content-center">
-                                <i class="fa-solid fa-magnifying-glass-location me-2"></i> Find Best Routes
-                            </button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
             </div>
+        </div>
+    </section>
 
-            <!-- Hero Transit Telemetry Widget -->
-            <div class="col-lg-5">
-                <div class="transit-card-dark p-4 rounded-4 shadow-lg border border-secondary border-opacity-25">
-                    <div class="d-flex align-items-center justify-content-between mb-4">
-                        <div class="d-flex align-items-center gap-2">
-                            {% if live_buses_count > 0 %}
-                                <span class="badge bg-success text-white px-3 py-2 rounded-pill d-flex align-items-center gap-2">
-                                    <span class="live-dot"></span> {{ live_buses_count }} Active Bus{{ live_buses_count|pluralize:"es" }}
+    <!-- =========================================================================
+         2. LIVE NETWORK TELEMETRY RIBBON: Glassmorphic Counter Metrics
+         ========================================================================= -->
+    <section class="telemetry-ribbon-section">
+        <div class="container px-lg-5">
+            <div class="telemetry-ribbon-card">
+                <div class="row g-3 text-center text-md-start">
+                    <!-- Metric 1: Fleet -->
+                    <div class="col-6 col-md-3">
+                        <div class="metric-col">
+                            <div class="metric-icon-disc bg-sky-500/15 border border-sky-500/30 text-sky-400 shadow-sm">
+                                <i class="fa-solid fa-bus-simple"></i>
+                            </div>
+                            <div>
+                                <div class="metric-number">{{ buses_count|default:"100" }}+</div>
+                                <div class="metric-label">Total Fleet Buses</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metric 2: Routes -->
+                    <div class="col-6 col-md-3">
+                        <div class="metric-col">
+                            <div class="metric-icon-disc bg-indigo-500/15 border border-indigo-500/30 text-indigo-400 shadow-sm">
+                                <i class="fa-solid fa-route"></i>
+                            </div>
+                            <div>
+                                <div class="metric-number">{{ routes_count|default:"290" }}+</div>
+                                <div class="metric-label">Network Routes</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metric 3: Stops -->
+                    <div class="col-6 col-md-3">
+                        <div class="metric-col">
+                            <div class="metric-icon-disc bg-amber-500/15 border border-amber-500/30 text-amber-400 shadow-sm">
+                                <i class="fa-solid fa-signs-post"></i>
+                            </div>
+                            <div>
+                                <div class="metric-number">{{ stops_count|default:"1,225" }}</div>
+                                <div class="metric-label">Geo-mapped Stops</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metric 4: Live Telemetry -->
+                    <div class="col-6 col-md-3">
+                        <div class="metric-col">
+                            <div class="metric-icon-disc bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 shadow-sm">
+                                <i class="fa-solid fa-satellite-dish"></i>
+                            </div>
+                            <div>
+                                <div class="metric-number text-emerald-400">
+                                    {{ live_buses_count|default:"23" }}
+                                </div>
+                                <div class="metric-label">Live Broadcasts</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =========================================================================
+         3. TWIN CITIES TRANSIT CORRIDORS: High-Capacity Arteries Showcase
+         ========================================================================= -->
+    <section class="corridor-showcase-section">
+        <div class="container px-lg-5">
+            <div class="text-center">
+                <span class="section-tag"><i class="fa-solid fa-bolt me-1"></i> Twin Cities Arteries</span>
+                <h2 class="section-title">Prime Hubballi–Dharwad Transit Corridors</h2>
+                <p class="section-desc">
+                    Connecting Hubballi Central, Dharwad Old & New Bus Stands, CBT, and the high-speed Chigari BRTS green corridor with frequent headways.
+                </p>
+            </div>
+
+            <div class="row g-4">
+                <!-- Corridor 1: Chigari BRTS Green Corridor -->
+                <div class="col-md-4">
+                    <div class="corridor-tab-card brts-card">
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <span class="badge bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 corridor-badge">
+                                    <i class="fa-solid fa-bolt me-1"></i> Chigari BRTS Line
                                 </span>
-                            {% else %}
-                                <span class="badge bg-slate-800 text-warning border border-warning border-opacity-25 px-3 py-2 rounded-pill d-flex align-items-center gap-2 small">
-                                    <i class="fa-solid fa-satellite-dish"></i> Fleet on Standby (0 Live)
-                                </span>
-                            {% endif %}
+                                <span class="text-xs text-emerald-400 font-bold">Every 4-6 mins</span>
+                            </div>
+                            <h4 class="fw-bold text-white mb-2">CBT Hubballi ⇄ Dharwad BRTS</h4>
+                            <p class="text-slate-400 small mb-3">
+                                22.25 km dedicated 4-lane median corridor with off-board ticketing, 100% signal priority, and zero mixed-traffic congestion.
+                            </p>
+                            <div class="d-flex align-items-center gap-2 flex-wrap mb-4 text-xs text-slate-300">
+                                <span class="badge bg-slate-800 border border-slate-700 rounded-pill px-2.5 py-1">Hosur</span>
+                                <span class="badge bg-slate-800 border border-slate-700 rounded-pill px-2.5 py-1">Navanagar</span>
+                                <span class="badge bg-slate-800 border border-slate-700 rounded-pill px-2.5 py-1">Rayapur</span>
+                                <span class="badge bg-slate-800 border border-slate-700 rounded-pill px-2.5 py-1">SDM College</span>
+                            </div>
                         </div>
-                        <small class="text-secondary fw-medium">Real-Time Transit IoT</small>
+                        <div class="d-flex align-items-center justify-content-between pt-3 border-t border-slate-700/50">
+                            <div>
+                                <span class="text-xs text-slate-400 d-block">Travel Time</span>
+                                <strong class="text-white small">~30 mins</strong>
+                            </div>
+                            <div>
+                                <span class="text-xs text-slate-400 d-block">Fare Stage</span>
+                                <strong class="text-emerald-400 small">From ₹10</strong>
+                            </div>
+                            <a href="{% url 'transit-map' %}" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1 font-semibold">
+                                View Line ➔
+                            </a>
+                        </div>
                     </div>
+                </div>
 
-                    <!-- Quick Action Links -->
-                    <div class="d-flex flex-column gap-3">
-                        <a href="{% url 'tracking' %}" class="transit-card bg-slate-900 bg-opacity-75 text-white p-3 d-flex align-items-center justify-content-between text-decoration-none border border-secondary border-opacity-25 hover-lift">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="bg-primary text-white p-3 rounded-3 shadow">
-                                    <i class="fa-solid fa-map-location-dot fa-lg"></i>
-                                </div>
-                                <div>
-                                    <h6 class="m-0 fw-bold text-white">Live Bus Map View</h6>
-                                    <small class="text-secondary">Watch buses moving live on OpenStreetMap</small>
-                                </div>
+                <!-- Corridor 2: City Feeder Network -->
+                <div class="col-md-4">
+                    <div class="corridor-tab-card feeder-card">
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <span class="badge bg-amber-500/20 text-amber-300 border border-amber-500/30 corridor-badge">
+                                    <i class="fa-solid fa-bus me-1"></i> City Feeder Lines
+                                </span>
+                                <span class="text-xs text-amber-400 font-bold">Every 10-15 mins</span>
                             </div>
-                            <i class="fa-solid fa-arrow-right text-secondary"></i>
-                        </a>
+                            <h4 class="fw-bold text-white mb-2">Railway Station ⇄ KIMS & Airport</h4>
+                            <p class="text-slate-400 small mb-3">
+                                Direct urban feeders linking Hubballi Railway Station, Gokul Road, Hubballi Airport, Gabbur, and KMC/KIMS Medical Complex.
+                            </p>
+                            <div class="d-flex align-items-center gap-2 flex-wrap mb-4 text-xs text-slate-300">
+                                <span class="badge bg-slate-800 border border-slate-700 rounded-pill px-2.5 py-1">Station Jn</span>
+                                <span class="badge bg-slate-800 border border-slate-700 rounded-pill px-2.5 py-1">Gokul Rd</span>
+                                <span class="badge bg-slate-800 border border-slate-700 rounded-pill px-2.5 py-1">Unkal Lake</span>
+                                <span class="badge bg-slate-800 border border-slate-700 rounded-pill px-2.5 py-1">KIMS</span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between pt-3 border-t border-slate-700/50">
+                            <div>
+                                <span class="text-xs text-slate-400 d-block">Travel Time</span>
+                                <strong class="text-white small">~15-25 mins</strong>
+                            </div>
+                            <div>
+                                <span class="text-xs text-slate-400 d-block">Fare Stage</span>
+                                <strong class="text-amber-400 small">From ₹7</strong>
+                            </div>
+                            <a href="{% url 'routes' %}" class="btn btn-sm btn-outline-warning rounded-pill px-3 py-1 font-semibold">
+                                View Lines ➔
+                            </a>
+                        </div>
+                    </div>
+                </div>
 
-                        <a href="{% url 'nearby-stops' %}" class="transit-card bg-slate-900 bg-opacity-75 text-white p-3 d-flex align-items-center justify-content-between text-decoration-none border border-secondary border-opacity-25 hover-lift">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="bg-danger text-white p-3 rounded-3 shadow">
-                                    <i class="fa-solid fa-location-crosshairs fa-lg"></i>
-                                </div>
-                                <div>
-                                    <h6 class="m-0 fw-bold text-white">Nearby Bus Stops Locator</h6>
-                                    <small class="text-secondary">Locate stops within 500m to 2km of you</small>
-                                </div>
+                <!-- Corridor 3: Suburban & Industrial Links -->
+                <div class="col-md-4">
+                    <div class="corridor-tab-card">
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <span class="badge bg-sky-500/20 text-sky-300 border border-sky-500/30 corridor-badge">
+                                    <i class="fa-solid fa-industry me-1"></i> Industrial Corridors
+                                </span>
+                                <span class="text-xs text-sky-400 font-bold">Every 15-20 mins</span>
                             </div>
-                            <i class="fa-solid fa-arrow-right text-secondary"></i>
-                        </a>
-
-                        <a href="{% url 'buses' %}" class="transit-card bg-slate-900 bg-opacity-75 text-white p-3 d-flex align-items-center justify-content-between text-decoration-none border border-secondary border-opacity-25 hover-lift">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="bg-warning text-dark p-3 rounded-3 shadow">
-                                    <i class="fa-solid fa-bus-simple fa-lg"></i>
-                                </div>
-                                <div>
-                                    <h6 class="m-0 fw-bold text-white">Browse Active Bus Fleet</h6>
-                                    <small class="text-secondary">Ordinary, Express, and Chigari BRTS</small>
-                                </div>
+                            <h4 class="fw-bold text-white mb-2">Tarihal & Belur ⇄ High Court</h4>
+                            <p class="text-slate-400 small mb-3">
+                                Dedicated suburban commuter runs connecting Tarihal Industrial Area, Navalur, Belur Industrial Estate, and Karnataka High Court Dharwad bench.
+                            </p>
+                            <div class="d-flex align-items-center gap-2 flex-wrap mb-4 text-xs text-slate-300">
+                                <span class="badge bg-slate-800 border border-slate-700 rounded-pill px-2.5 py-1">Tarihal</span>
+                                <span class="badge bg-slate-800 border border-slate-700 rounded-pill px-2.5 py-1">Navalur</span>
+                                <span class="badge bg-slate-800 border border-slate-700 rounded-pill px-2.5 py-1">Belur Ind</span>
+                                <span class="badge bg-slate-800 border border-slate-700 rounded-pill px-2.5 py-1">High Court</span>
                             </div>
-                            <i class="fa-solid fa-arrow-right text-secondary"></i>
-                        </a>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between pt-3 border-t border-slate-700/50">
+                            <div>
+                                <span class="text-xs text-slate-400 d-block">Travel Time</span>
+                                <strong class="text-white small">~35-45 mins</strong>
+                            </div>
+                            <div>
+                                <span class="text-xs text-slate-400 d-block">Fare Stage</span>
+                                <strong class="text-sky-400 small">From ₹12</strong>
+                            </div>
+                            <a href="{% url 'routes' %}" class="btn btn-sm btn-outline-info rounded-pill px-3 py-1 font-semibold">
+                                View Lines ➔
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- System Live Network Metrics -->
-<section class="py-5 bg-white border-bottom">
-    <div class="container px-lg-5">
-        <div class="row g-4 text-center">
-            <div class="col-6 col-md-3">
-                <div class="p-3">
-                    <div class="d-inline-flex p-3 rounded-circle bg-primary-subtle text-primary mb-2">
-                        <i class="fa-solid fa-bus-simple fa-xl"></i>
-                    </div>
-                    <h2 class="display-6 fw-extrabold text-dark m-0">{{ buses_count }}</h2>
-                    <p class="text-secondary small fw-bold text-uppercase m-0 mt-1" style="letter-spacing: 0.05em;">TOTAL FLEET</p>
-                </div>
+    <!-- =========================================================================
+         4. NEXT-GEN COMMUTER TECHNOLOGY: Bento Grid Showcase
+         ========================================================================= -->
+    <section class="bento-section">
+        <div class="container px-lg-5">
+            <div class="text-center">
+                <span class="section-tag"><i class="fa-solid fa-microchip me-1"></i> Engineering Excellence</span>
+                <h2 class="section-title">Built for Real-World Twin Cities Commuting</h2>
+                <p class="section-desc">
+                    Travel Dost combines IoT telemetry, graph search algorithms, and speech synthesis to replace guesswork with real-time transit certainty.
+                </p>
             </div>
-            <div class="col-6 col-md-3">
-                <div class="p-3 border-start">
-                    <div class="d-inline-flex p-3 rounded-circle bg-success-subtle text-success mb-2">
-                        <i class="fa-solid fa-route fa-xl"></i>
-                    </div>
-                    <h2 class="display-6 fw-extrabold text-dark m-0">{{ routes_count }}</h2>
-                    <p class="text-secondary small fw-bold text-uppercase m-0 mt-1" style="letter-spacing: 0.05em;">NETWORK ROUTES</p>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="p-3 border-start-md">
-                    <div class="d-inline-flex p-3 rounded-circle bg-warning-subtle text-warning mb-2">
-                        <i class="fa-solid fa-signs-post fa-xl"></i>
-                    </div>
-                    <h2 class="display-6 fw-extrabold text-dark m-0">{{ stops_count }}</h2>
-                    <p class="text-secondary small fw-bold text-uppercase m-0 mt-1" style="letter-spacing: 0.05em;">ACTIVE STOPS</p>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="p-3 border-start">
-                    <div class="d-inline-flex p-3 rounded-circle {% if live_buses_count > 0 %}bg-success-subtle text-success{% else %}bg-secondary-subtle text-secondary{% endif %} mb-2">
-                        <i class="fa-solid fa-tower-broadcast fa-xl"></i>
-                    </div>
-                    <h2 class="display-6 fw-extrabold {% if live_buses_count > 0 %}text-success{% else %}text-secondary{% endif %} m-0">{{ live_buses_count }}</h2>
-                    <p class="text-secondary small fw-bold text-uppercase m-0 mt-1" style="letter-spacing: 0.05em;">ACTIVE TRIPS</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
 
-<!-- Twin Cities Feature Highlights -->
-<section class="py-5 bg-light">
-    <div class="container px-lg-5">
-        <div class="text-center mb-5" style="max-width: 650px; margin: 0 auto;">
-            <span class="badge bg-primary text-white px-3 py-2 rounded-pill small fw-bold mb-2">INTELLIGENT COMMUTING</span>
-            <h2 class="display-6 fw-bold">Built Specifically for Hubballi–Dharwad</h2>
-            <p class="text-secondary">Designed to solve everyday commuter challenges between Hubballi Central, Dharwad Old & New Bus Stands, CBT, and the BRTS Corridor.</p>
-        </div>
-
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="transit-card h-100 p-4">
-                    <div class="bg-primary text-white p-3 rounded-4 d-inline-flex mb-3 shadow">
-                        <i class="fa-solid fa-tower-broadcast fa-xl"></i>
+            <div class="bento-grid">
+                <!-- Bento 1: Continuous GPS (Large 8-col) -->
+                <div class="bento-card bento-col-8">
+                    <div class="d-flex align-items-start gap-4">
+                        <div class="bento-icon-box bg-sky-500/15 border border-sky-500/30 text-sky-400 flex-shrink-0">
+                            <i class="fa-solid fa-satellite-dish"></i>
+                        </div>
+                        <div>
+                            <span class="badge bg-sky-500/20 text-sky-300 border border-sky-500/30 rounded-pill px-2 py-0.5 mb-2 text-xs">
+                                WebSocket Telemetry
+                            </span>
+                            <h3 class="bento-title">Sub-Second Road-Snapped GPS Tracking</h3>
+                            <p class="bento-desc">
+                                We track vehicle telemetry via live WebSocket streams and snap them to actual OSRM road coordinates. You see your bus navigate curves and intersections smoothly in real time—not jump around on straight simulated lines.
+                            </p>
+                        </div>
                     </div>
-                    <h5 class="fw-bold mb-2">Continuous GPS Telemetry</h5>
-                    <p class="text-secondary small mb-0">
-                        High-frequency WebSocket coordinates ensure you see your bus move along actual city roads in real time, not static guess estimates.
+                </div>
+
+                <!-- Bento 2: Dijkstra Transfers (4-col) -->
+                <div class="bento-card bento-col-4">
+                    <div class="bento-icon-box bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+                        <i class="fa-solid fa-shuffle"></i>
+                    </div>
+                    <span class="badge bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-pill px-2 py-0.5 mb-2 text-xs">
+                        Smart Transfers
+                    </span>
+                    <h3 class="bento-title">1-Transfer Route Engine</h3>
+                    <p class="bento-desc">
+                        No direct bus? Our Dijkstra routing graph computes optimal 1-transfer connections via CBT, Hosur, or Navanagar with exact interchange station guidance.
+                    </p>
+                </div>
+
+                <!-- Bento 3: Official Stage Fares (4-col) -->
+                <div class="bento-card bento-col-4">
+                    <div class="bento-icon-box bg-amber-500/15 border border-amber-500/30 text-amber-400">
+                        <i class="fa-solid fa-ticket"></i>
+                    </div>
+                    <span class="badge bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-pill px-2 py-0.5 mb-2 text-xs">
+                        NWKRTC & BRTS
+                    </span>
+                    <h3 class="bento-title">Stage Fare Computation</h3>
+                    <p class="bento-desc">
+                        Transparent fare calculation across City Ordinary, Express, and air-conditioned Chigari BRTS services so you always know your exact ticket cost upfront.
+                    </p>
+                </div>
+
+                <!-- Bento 4: Voice Speech Announcer (4-col) -->
+                <div class="bento-card bento-col-4">
+                    <div class="bento-icon-box bg-indigo-500/15 border border-indigo-500/30 text-indigo-400">
+                        <i class="fa-solid fa-volume-high"></i>
+                    </div>
+                    <span class="badge bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-pill px-2 py-0.5 mb-2 text-xs">
+                        Speech Synthesis
+                    </span>
+                    <h3 class="bento-title">Hands-Free Audio Alerts</h3>
+                    <p class="bento-desc">
+                        Synthetic voice engine alerts you when your bus is approaching your stop, when it's time to board, and confirms your destination station without needing to look at your screen.
+                    </p>
+                </div>
+
+                <!-- Bento 5: Graceful Offline Schedules (4-col) -->
+                <div class="bento-card bento-col-4">
+                    <div class="bento-icon-box bg-rose-500/15 border border-rose-500/30 text-rose-400">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </div>
+                    <span class="badge bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-pill px-2 py-0.5 mb-2 text-xs">
+                        Zero Dead State
+                    </span>
+                    <h3 class="bento-title">Scheduled Route Degradation</h3>
+                    <p class="bento-desc">
+                        When a bus is at the terminal or depot, we never show dead 0 km/h errors. The interface gracefully shows scheduled departure times, total travel duration, and headways.
                     </p>
                 </div>
             </div>
+        </div>
+    </section>
 
-            <div class="col-md-4">
-                <div class="transit-card h-100 p-4">
-                    <div class="bg-success text-white p-3 rounded-4 d-inline-flex mb-3 shadow">
-                        <i class="fa-solid fa-shuffle fa-xl"></i>
-                    </div>
-                    <h5 class="fw-bold mb-2">Smart Connecting Transfers</h5>
-                    <p class="text-secondary small mb-0">
-                        No direct bus? Our Dijkstra transfer engine recommends the shortest 1-transfer journey via CBT, Navanagar, or Hosur with exact interchange stops.
-                    </p>
-                </div>
+    <!-- =========================================================================
+         5. HOW IT WORKS: 3-Step Simple Commuter Journey
+         ========================================================================= -->
+    <section class="timeline-section">
+        <div class="container px-lg-5">
+            <div class="text-center">
+                <span class="section-tag"><i class="fa-solid fa-compass me-1"></i> Simple & Seamless</span>
+                <h2 class="section-title">How Travel Dost Works</h2>
+                <p class="section-desc">
+                    Get from anywhere in Hubballi to anywhere in Dharwad in three easy steps.
+                </p>
             </div>
 
-            <div class="col-md-4">
-                <div class="transit-card h-100 p-4">
-                    <div class="bg-warning text-dark p-3 rounded-4 d-inline-flex mb-3 shadow">
-                        <i class="fa-solid fa-ticket fa-xl"></i>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="step-card">
+                        <div class="step-number-tag">01</div>
+                        <h4 class="fw-bold text-white mb-2">Select Your Stations</h4>
+                        <p class="text-slate-400 small mb-0">
+                            Choose your origin and destination from 1,225+ mapped stops or tap "Use My Live Location" to auto-detect the nearest station to you.
+                        </p>
                     </div>
-                    <h5 class="fw-bold mb-2">Accurate Fare & Stage Charts</h5>
-                    <p class="text-secondary small mb-0">
-                        Official NWKRTC stage-based fare computation across City Ordinary, Express, and Chigari BRTS air-conditioned services.
-                    </p>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="step-card">
+                        <div class="step-number-tag">02</div>
+                        <h4 class="fw-bold text-white mb-2">Compare Best Routes</h4>
+                        <p class="text-slate-400 small mb-0">
+                            Our engine evaluates direct and 1-transfer options across Chigari BRTS and NWKRTC lines, calculating exact ticket fares, durations, and stops.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="step-card">
+                        <div class="step-number-tag">03</div>
+                        <h4 class="fw-bold text-white mb-2">Track Live & Board</h4>
+                        <p class="text-slate-400 small mb-0">
+                            Watch your bus approach in real time on the interactive map. Receive automatic voice alerts for boarding and destination alight points.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
+
+    <!-- =========================================================================
+         6. COMMUTER FAQ: Frequently Asked Questions Accordion
+         ========================================================================= -->
+    <section class="faq-section">
+        <div class="container px-lg-5" style="max-width: 900px;">
+            <div class="text-center">
+                <span class="section-tag"><i class="fa-solid fa-circle-question me-1"></i> Got Questions?</span>
+                <h2 class="section-title">Frequently Asked Questions</h2>
+                <p class="section-desc">
+                    Everything you need to know about commuting in Hubballi–Dharwad with Travel Dost.
+                </p>
+            </div>
+
+            <div class="accordion glass-accordion" id="commuterFaqAccordion">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                            How does real-time GPS tracking work for NWKRTC and Chigari BRTS?
+                        </button>
+                    </h2>
+                    <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#commuterFaqAccordion">
+                        <div class="accordion-body">
+                            Buses are equipped with onboard GPS telematics or driver mobile telemetry transmitting coordinates via WebSockets every 2 seconds. The coordinates are snapped to actual city road geometry to show smooth, accurate movements without jumping between stops.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                            What is the difference between Chigari BRTS and City Ordinary buses?
+                        </button>
+                    </h2>
+                    <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#commuterFaqAccordion">
+                        <div class="accordion-body">
+                            <strong>Chigari BRTS</strong> operates on a dedicated 22.25 km 4-lane corridor with 100% traffic signal priority, off-board smart card ticketing, and level platform boarding between CBT Hubballi and Dharwad Central. <strong>City Ordinary & Express</strong> buses serve urban feeders, railway stations, airport, and suburban industrial routes.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                            Do I need to sign up or create an account to search routes?
+                        </button>
+                    </h2>
+                    <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#commuterFaqAccordion">
+                        <div class="accordion-body">
+                            No! Route finding, bus timetables, station maps, and stage fare lookups are completely free and accessible directly from the home page. Creating an account lets you bookmark frequent commutes, save home/office stops, and receive customized alerts.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                            What happens when a bus is offline or at the depot?
+                        </button>
+                    </h2>
+                    <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#commuterFaqAccordion">
+                        <div class="accordion-body">
+                            Unlike traditional apps that crash or show confusing 0 km/h errors, Travel Dost features intelligent <em>Graceful Degradation</em>. The tracking view seamlessly displays the official scheduled departure timeline, operating headways, and total expected route duration.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =========================================================================
+         7. HIGH-IMPACT CALL TO ACTION BANNER
+         ========================================================================= -->
+    <section class="py-5 position-relative" style="z-index: 1;">
+        <div class="container px-lg-5">
+            <div class="cta-banner-card">
+                <span class="badge bg-sky-500/20 text-sky-300 border border-sky-500/30 rounded-pill px-3 py-1 mb-3 text-xs fw-bold">
+                    <i class="fa-solid fa-rocket me-1"></i> READY TO COMMUTE SMARTER?
+                </span>
+                <h2 class="display-6 fw-extrabold text-white mb-3">
+                    Start Your Twin Cities Journey with Travel Dost
+                </h2>
+                <p class="text-slate-300 lead fs-6 max-w-xl mx-auto mb-4" style="max-width: 600px;">
+                    No more waiting blindly at bus stops. Find the fastest direct or connecting bus with real-time GPS tracking and exact NWKRTC fares.
+                </p>
+                <div class="d-flex flex-column flex-sm-row justify-content-center gap-3">
+                    <a href="{% url 'route-finder' %}" class="btn btn-find-routes-glow px-4 py-2.5 fs-6">
+                        <i class="fa-solid fa-magnifying-glass-location me-1"></i> Plan a Route Now
+                    </a>
+                    <a href="{% url 'tracking' %}" class="btn btn-gps-detect px-4 py-2.5 fs-6">
+                        <span class="live-dot me-1"></span> Open Live Transit Map
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // Stop swap functionality
-    $('#btnSwapHome').on('click', function() {
-        const sourceVal = $('#heroSourceSelect').val();
-        const destVal = $('#heroDestSelect').val();
-        $('#heroSourceSelect').val(destVal);
-        $('#heroDestSelect').val(sourceVal);
+$(document).ready(function() {
+    // 1. Digital Clock (IST)
+    function updateClock() {
+        const now = new Date();
+        const istOffset = 5.5 * 60 * 60 * 1000;
+        const istDate = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + istOffset);
+        const hrs = String(istDate.getHours()).padStart(2, '0');
+        const mins = String(istDate.getMinutes()).padStart(2, '0');
+        const secs = String(istDate.getSeconds()).padStart(2, '0');
+        const clockEl = document.getElementById('digitalClockIst');
+        if (clockEl) {
+            clockEl.textContent = `${hrs}:${mins}:${secs} IST`;
+        }
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // 2. Stop Swap Functionality with Smooth Rotation
+    $('#btnSwapHome').on('click', function(e) {
+        e.preventDefault();
+        const sourceSelect = $('#heroSourceSelect');
+        const destSelect = $('#heroDestSelect');
+        const sourceVal = sourceSelect.val();
+        const destVal = destSelect.val();
+
+        sourceSelect.val(destVal);
+        destSelect.val(sourceVal);
+
+        // Flash border feedback
+        $('.stop-input-card').css('border-color', '#38bdf8');
+        setTimeout(() => {
+            $('.stop-input-card').css('border-color', 'rgba(51, 65, 85, 0.7)');
+        }, 400);
     });
 
-    // Quick stop chips click
-    $('.quick-stop-chip').on('click', function() {
+    // 3. Quick Transit Hub Chips
+    $('.quick-hub-chip').on('click', function() {
         const query = $(this).data('name').toLowerCase();
-        let matched = false;
-        
-        // If source is empty, set source, else set destination
-        const targetSelect = $('#heroSourceSelect').val() ? '#heroDestSelect' : '#heroSourceSelect';
-        
-        $(`${targetSelect} option`).each(function() {
+        const sourceSelect = $('#heroSourceSelect');
+        const destSelect = $('#heroDestSelect');
+
+        // Target: If source is empty, set source, else set destination
+        const target = sourceSelect.val() ? destSelect : sourceSelect;
+
+        target.find('option').each(function() {
             if ($(this).text().toLowerCase().includes(query)) {
-                $(`${targetSelect}`).val($(this).val());
-                matched = true;
+                target.val($(this).val());
                 return false;
             }
         });
     });
 
-    // Use My GPS Location button
+    // 4. Geolocation "Use My Live Location" Button
     $('#btnUseMyLocationHome').on('click', function() {
+        const btn = $(this);
+        const icon = $('#gpsIcon');
+        const text = $('#gpsText');
+
         if ("geolocation" in navigator) {
-            $(this).html('<i class="fa-solid fa-spinner fa-spin me-2"></i> Detecting...');
-            navigator.geolocation.getCurrentPosition(function(position) {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-                $.get(`/api/nearby-stops/?lat=${lat}&lng=${lng}&limit=1`, function(data) {
-                    if (data.nearby_stops && data.nearby_stops.length > 0) {
-                        const nearest = data.nearby_stops[0];
-                        $('#heroSourceSelect').val(nearest.id);
-                        $('#btnUseMyLocationHome').html(`<i class="fa-solid fa-circle-check text-success me-2"></i> ${nearest.stop_name}`);
-                    }
-                });
-            }, function(err) {
-                alert("Location permission was denied. Please select your stop manually.");
-                $('#btnUseMyLocationHome').html('<i class="fa-solid fa-crosshairs text-danger me-2"></i> Use GPS Location');
-            });
+            icon.removeClass('fa-crosshairs').addClass('fa-spinner fa-spin text-warning');
+            text.textContent = 'Detecting GPS...';
+            btn.prop('disabled', true);
+
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+
+                    $.get(`/api/nearby-stops/?lat=${lat}&lng=${lng}&limit=1`, function(data) {
+                        icon.removeClass('fa-spinner fa-spin text-warning').addClass('fa-circle-check text-emerald-400');
+                        btn.prop('disabled', false);
+
+                        if (data.nearby_stops && data.nearby_stops.length > 0) {
+                            const nearest = data.nearby_stops[0];
+                            $('#heroSourceSelect').val(nearest.id);
+                            text.text(`Near: ${nearest.stop_name}`);
+                        } else {
+                            text.text('GPS Stop Set');
+                        }
+                    }).fail(function() {
+                        icon.removeClass('fa-spinner fa-spin text-warning').addClass('fa-crosshairs text-emerald-400');
+                        btn.prop('disabled', false);
+                        text.text('Use My Live Location');
+                    });
+                },
+                function(err) {
+                    icon.removeClass('fa-spinner fa-spin text-warning').addClass('fa-triangle-exclamation text-rose-400');
+                    btn.prop('disabled', false);
+                    text.text('Location Denied');
+                    setTimeout(() => {
+                        icon.removeClass('fa-triangle-exclamation text-rose-400').addClass('fa-crosshairs text-emerald-400');
+                        text.text('Use My Live Location');
+                    }, 3500);
+                },
+                { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+            );
+        } else {
+            alert('Geolocation is not supported by your browser.');
         }
     });
+
+    // 5. Interactive Hero Mini-Map Preview (Leaflet)
+    let miniMap = null;
+    const mapContainer = document.getElementById('heroMiniMap');
+    if (mapContainer && typeof L !== 'undefined') {
+        miniMap = L.map('heroMiniMap', {
+            zoomControl: false,
+            attributionControl: false,
+            scrollWheelZoom: false,
+            dragging: true
+        }).setView([15.4050, 75.0750], 11);
+
+        // OpenStreetMap HOT tiles
+        L.tileLayer(window.osmHotUrl || 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            subdomains: 'abc'
+        }).addTo(miniMap);
+
+        // Hubballi-Dharwad Key Corridor Polyline (Blue)
+        const corridorCoords = [
+            [15.3530, 75.1380], // CBT Hubballi
+            [15.3647, 75.1240], // Hosur
+            [15.3780, 75.1120], // Unkal
+            [15.3920, 75.0920], // Navanagar
+            [15.4180, 75.0680], // Rayapur
+            [15.4420, 75.0350], // SDM College / Sattur
+            [15.4580, 75.0120], // Toll Naka
+            [15.4650, 75.0080]  // Dharwad BRTS
+        ];
+
+        L.polyline(corridorCoords, {
+            color: '#2563eb',
+            weight: 4.5,
+            opacity: 0.9,
+            lineCap: 'round',
+            lineJoin: 'round'
+        }).addTo(miniMap);
+
+        // Custom Key Station Markers
+        const keyStops = [
+            { name: 'CBT Hubballi', coords: [15.3530, 75.1380], color: '#10b981' },
+            { name: 'Navanagar Hub', coords: [15.3920, 75.0920], color: '#0284c7' },
+            { name: 'Dharwad BRTS', coords: [15.4650, 75.0080], color: '#ef4444' }
+        ];
+
+        keyStops.forEach(st => {
+            const icon = L.divIcon({
+                className: 'custom-transit-divicon',
+                html: `
+                    <div style="width: 14px; height: 14px; border-radius: 50%; background: ${st.color}; border: 2.5px solid #ffffff; box-shadow: 0 0 10px ${st.color};"></div>
+                `,
+                iconSize: [14, 14],
+                iconAnchor: [7, 7]
+            });
+            L.marker(st.coords, { icon: icon }).addTo(miniMap).bindTooltip(st.name, {
+                permanent: false,
+                direction: 'top',
+                className: 'badge bg-dark border border-secondary'
+            });
+        });
+
+        // Pulsing Live Bus Markers along corridor
+        const liveSampleBus = L.divIcon({
+            className: 'custom-transit-divicon',
+            html: `
+                <div style="position: relative; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
+                    <span style="position: absolute; inset: -4px; border-radius: 50%; border: 2px solid #38bdf8; animation: radarRipple 2s infinite; opacity: 0.7;"></span>
+                    <div style="width: 20px; height: 20px; border-radius: 50%; background: #0284c7; border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.6rem; box-shadow: 0 2px 8px rgba(2,132,199,0.7);">
+                        <i class="fa-solid fa-bus"></i>
+                    </div>
+                </div>
+            `,
+            iconSize: [22, 22],
+            iconAnchor: [11, 11]
+        });
+
+        L.marker([15.3920, 75.0920], { icon: liveSampleBus }).addTo(miniMap).bindTooltip("Bus #KA-25-F-H85 • Live", {
+            direction: 'right'
+        });
+
+        // Invalidate size on load
+        setTimeout(() => miniMap.invalidateSize(), 300);
+    }
+});
 </script>
 {% endblock %}

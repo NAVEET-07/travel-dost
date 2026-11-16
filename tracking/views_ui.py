@@ -12,29 +12,42 @@ from tracking.services.distance import haversine_distance
 
 def home_view(request):
     if request.user.is_authenticated:
-        if request.user.is_admin():
+        if request.user.is_admin() and not request.GET.get('preview'):
             return redirect('admin-dashboard')
-        elif request.user.is_driver():
+        elif request.user.is_driver() and not request.GET.get('preview'):
             return redirect('driver-portal')
-        return redirect('user-dashboard')
+        # Authenticated passengers can view the home page with full access to the portal!
 
     # Public landing page with live metrics
     stops = BusStop.objects.filter(is_active=True).order_by('stop_name')
     routes_count = Route.objects.filter(is_active=True).count()
     stops_count = BusStop.objects.filter(is_active=True).count()
     buses_count = Bus.objects.filter(is_active=True).count()
+    
+    # Active live buses for the departures feed
+    live_buses = Bus.objects.filter(
+        is_active=True,
+        tracking_status='LIVE'
+    ).select_related('route', 'driver')[:6]
+
     live_buses_count = Bus.objects.filter(
         is_active=True,
-        tracking_status='LIVE',
-        trip_status__in=['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT']
+        tracking_status='LIVE'
     ).count()
+
+    # Top corridor routes
+    corridor_routes = Route.objects.filter(is_active=True).annotate(
+        stops_cnt=Count('route_stops')
+    ).order_by('-stops_cnt')[:6]
 
     context = {
         'stops': stops,
         'routes_count': routes_count,
         'stops_count': stops_count,
         'buses_count': buses_count,
+        'live_buses': live_buses,
         'live_buses_count': live_buses_count,
+        'corridor_routes': corridor_routes,
     }
     return render(request, 'index.html', context)
 

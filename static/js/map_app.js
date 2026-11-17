@@ -449,12 +449,13 @@ function updateBusMarkerOnMap(busData) {
     if (!cleanPt) return;
     const [lat, lng] = cleanPt;
 
-    const status = busData.status || busData.tracking_status || 'LIVE';
+    const status = busData.status || busData.tracking_status || 'OFFLINE';
     const tripStatus = (busData.trip_status || '').toUpperCase();
     const busNum = busData.bus_number || '';
 
-    // Check explicit live GPS broadcast status
-    const isLive = busData.is_live === true || (status === 'LIVE' && (!tripStatus || ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT'].includes(tripStatus)) && busData.is_live !== false);
+    // Check explicit live GPS broadcast status: Default Offline; only Live if trip is actively started/in-progress
+    const isTripActive = ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT', 'STARTED'].includes(tripStatus);
+    const isLive = (busData.is_live === true || (status === 'LIVE' && isTripActive)) && busData.is_live !== false && isTripActive;
     const speedStr = busData.speed !== undefined && busData.speed !== null ? Number(busData.speed).toFixed(1) : (isLive ? '30.0' : '0.0');
 
     const popupContent = `

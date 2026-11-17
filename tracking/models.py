@@ -113,6 +113,35 @@ class Bus(models.Model):
     def __str__(self):
         return f"Bus {self.bus_number} ({self.get_bus_type_display()})"
 
+    @property
+    def is_online(self):
+        """
+        Default State: A bus evaluates as Offline by default.
+        Online / Live Trigger: A bus evaluates as Online / Live if and only if
+        the driver has actively started a trip (trip_status in ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT', 'STARTED']).
+        When the trip ends or no trip is started, the bus status evaluates as Offline.
+        """
+        return bool(
+            self.is_active and
+            self.trip_status in ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT', 'STARTED'] and
+            self.tracking_status == 'LIVE'
+        )
+
+    @property
+    def is_live(self):
+        return self.is_online
+
+    def save(self, *args, **kwargs):
+        # Default State: Offline unless driver has actively started a trip
+        if self.trip_status not in ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT', 'STARTED']:
+            self.tracking_status = 'OFFLINE'
+            update_fields = kwargs.get('update_fields')
+            if update_fields is not None:
+                update_fields = set(update_fields)
+                update_fields.add('tracking_status')
+                kwargs['update_fields'] = list(update_fields)
+        super().save(*args, **kwargs)
+
     def get_current_location(self):
         return self.locations.order_by('-timestamp').first()
 

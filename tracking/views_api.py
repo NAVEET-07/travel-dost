@@ -107,7 +107,7 @@ class BusViewSet(viewsets.ModelViewSet):
         status_param = self.request.query_params.get('status')
         live_only = self.request.query_params.get('live_only')
         if status_param == 'LIVE' or live_only in ['true', '1', 'True']:
-            qs = qs.filter(tracking_status='LIVE', trip_status__in=['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT'])
+            qs = qs.filter(tracking_status='LIVE', trip_status__in=['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT', 'STARTED'])
         return qs
 
     def get_permissions(self):
@@ -339,10 +339,10 @@ class RouteSearchAPIView(APIView):
                     "lng": float(st.get("lng", st.get("lon", 0.0)) or 0.0)
                 } for st in stops_list]
                 r_buses = r.get("buses", [])
-                live_r_buses = [b for b in r_buses if b.get("is_live") or b.get("tracking_status") == "LIVE"]
+                live_r_buses = [b for b in r_buses if b.get("is_live")]
                 chosen_bus = live_r_buses[0] if live_r_buses else (r_buses[0] if r_buses else {})
                 chosen_bus_no = chosen_bus.get("bus_number") or r.get("route_name", "Direct")
-                is_bus_live = bool(chosen_bus.get("is_live") or chosen_bus.get("tracking_status") == "LIVE")
+                is_bus_live = bool(chosen_bus.get("is_live"))
                 legs_data.append({
                     "bus_no": chosen_bus_no,
                     "is_live": is_bus_live,
@@ -367,10 +367,10 @@ class RouteSearchAPIView(APIView):
                         "lng": float(st.get("lng", st.get("lon", 0.0)) or 0.0)
                     } for st in leg_stops]
                     leg_buses = leg.get("buses", [])
-                    live_leg_buses = [b for b in leg_buses if b.get("is_live") or b.get("tracking_status") == "LIVE"]
+                    live_leg_buses = [b for b in leg_buses if b.get("is_live")]
                     chosen_leg_bus = live_leg_buses[0] if live_leg_buses else (leg_buses[0] if leg_buses else {})
                     leg_bus_no = chosen_leg_bus.get("bus_number") or leg.get("route_name", f"Leg {idx+1}")
-                    is_leg_live = bool(chosen_leg_bus.get("is_live") or chosen_leg_bus.get("tracking_status") == "LIVE")
+                    is_leg_live = bool(chosen_leg_bus.get("is_live"))
                     legs_data.append({
                         "bus_no": leg_bus_no,
                         "is_live": is_leg_live,
@@ -486,11 +486,14 @@ class BusLocationAPIView(APIView):
         if lat is None or lng is None:
             return Response({"error": "'latitude' and 'longitude' fields are required."}, status=400)
 
-        bus.tracking_status = status_val
-        if status_val == 'LIVE':
-            bus.trip_status = 'IN_TRANSIT'
-        elif status_val == 'OFFLINE':
+        is_trip_active = bus.trip_status in ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT', 'STARTED']
+        if status_val == 'OFFLINE':
+            bus.tracking_status = 'OFFLINE'
             bus.trip_status = 'COMPLETED'
+        elif is_trip_active:
+            bus.tracking_status = 'LIVE'
+        else:
+            bus.tracking_status = 'OFFLINE'
         bus.last_updated = timezone.now()
         bus.save(update_fields=['tracking_status', 'trip_status', 'last_updated'])
 
@@ -518,7 +521,8 @@ class BusLocationAPIView(APIView):
                     'longitude': float(lng),
                     'speed': float(speed),
                     'heading': float(heading),
-                    'status': status_val,
+                    'status': bus.tracking_status,
+                    'trip_status': bus.trip_status,
                     'timestamp': location.timestamp.isoformat()
                 }
                 async_to_sync(channel_layer.group_send)(f'bus_{bus.id}', payload)
@@ -539,7 +543,7 @@ class BusTrackingStatusAPIView(APIView):
             seconds_ago = int((timezone.now() - loc.timestamp).total_seconds()) if loc and loc.timestamp else None
 
             # Strictly gate is_live on active driver GPS broadcast (or fresh trip start, ping < 90s)
-            is_live = (bus.tracking_status == 'LIVE') and (bus.trip_status in ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT']) and (seconds_ago is None or seconds_ago <= 90)
+            is_live = (bus.tracking_status == 'LIVE') and (bus.trip_status in ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT', 'STARTED']) and (seconds_ago is None or seconds_ago <= 90)
 
             route_stops_data = []
             current_stop_data = None
@@ -909,8 +913,11 @@ class DriverTripUpdateLocationAPIView(APIView):
         if not bus:
             return Response({"status": "error", "error": f"Bus '{bus_no}' not found."}, status=404)
 
-        bus.tracking_status = 'LIVE'
-        bus.trip_status = 'ACTIVE'
+        is_trip_active = bus.trip_status in ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT', 'STARTED']
+        if is_trip_active:
+            bus.tracking_status = 'LIVE'
+        else:
+            bus.tracking_status = 'OFFLINE'
         bus.last_updated = timezone.now()
         bus.save(update_fields=['tracking_status', 'trip_status', 'last_updated'])
 
@@ -948,8 +955,8 @@ class DriverTripUpdateLocationAPIView(APIView):
                     'longitude': float(lon),
                     'speed': float(speed or 0.0),
                     'heading': float(heading or 0.0),
-                    'status': 'LIVE',
-                    'trip_status': 'ACTIVE',
+                    'status': bus.tracking_status,
+                    'trip_status': bus.trip_status,
                     'timestamp': loc.timestamp.isoformat()
                 }
                 async_to_sync(channel_layer.group_send)(f'bus_{bus.id}', payload)
@@ -1056,7 +1063,7 @@ class PassengerBusLiveStatusAPIView(APIView):
 
         # STRICT: Only live if trip is actively ACTIVE, IN_PROGRESS, or IN_TRANSIT, bus is LIVE, and telemetry exists
         has_recent_ping = (seconds_ago is not None and seconds_ago <= 10)
-        is_live = (bus.trip_status in ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT']) and (bus.tracking_status == 'LIVE') and (loc is not None) and (seconds_ago is not None and seconds_ago <= 60)
+        is_live = (bus.trip_status in ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT', 'STARTED']) and (bus.tracking_status == 'LIVE') and (loc is not None) and (seconds_ago is not None and seconds_ago <= 60)
         status_str = "ACTIVE" if is_live else "OFFLINE"
 
         # Scheduled/default coordinates if no active GPS ping

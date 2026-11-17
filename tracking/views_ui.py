@@ -24,15 +24,17 @@ def home_view(request):
     stops_count = BusStop.objects.filter(is_active=True).count()
     buses_count = Bus.objects.filter(is_active=True).count()
     
-    # Active live buses for the departures feed
+    # Active live buses for the departures feed (Online only if trip is actively running)
     live_buses = Bus.objects.filter(
         is_active=True,
-        tracking_status='LIVE'
+        tracking_status='LIVE',
+        trip_status__in=['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT', 'STARTED']
     ).select_related('route', 'driver')[:6]
 
     live_buses_count = Bus.objects.filter(
         is_active=True,
-        tracking_status='LIVE'
+        tracking_status='LIVE',
+        trip_status__in=['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT', 'STARTED']
     ).count()
 
     # Top corridor routes
@@ -74,10 +76,10 @@ def live_tracking_view(request, bus_id=None):
         route__isnull=False
     ).select_related('route', 'driver').order_by('bus_number')
 
-    # Active streaming buses
+    # Active streaming buses (strictly when trip is started and active)
     live_buses = all_buses.filter(
         tracking_status='LIVE',
-        trip_status__in=['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT']
+        trip_status__in=['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT', 'STARTED']
     )
 
     selected_bus = None
@@ -279,7 +281,7 @@ def driver_portal_view(request):
 def admin_dashboard_view(request):
     total_buses = Bus.objects.count()
     active_buses = Bus.objects.filter(is_active=True).count()
-    live_buses = Bus.objects.filter(tracking_status='LIVE').count()
+    live_buses = Bus.objects.filter(is_active=True, tracking_status='LIVE', trip_status__in=['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT', 'STARTED']).count()
     total_routes = Route.objects.count()
     total_stops = BusStop.objects.count()
     total_users = User.objects.count()
@@ -376,7 +378,7 @@ def user_dashboard_view(request):
     active_live_buses = Bus.objects.filter(
         is_active=True,
         tracking_status='LIVE',
-        trip_status__in=['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT']
+        trip_status__in=['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT', 'STARTED']
     ).select_related('route', 'driver')
 
     # Fleet sample for directory display

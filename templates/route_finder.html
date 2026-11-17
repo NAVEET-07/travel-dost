@@ -2773,9 +2773,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const finalDestination = leg2 ? leg2.alight_at : leg1.alight_at;
 
             // Live status resolution for each leg and route
-            const isLeg1Live = Boolean(leg1 && (leg1.is_live === true || (cardLiveBus && (cardLiveBus.bus_no === leg1.bus_no || !leg2))));
+            const isLeg1Live = Boolean(leg1 && (leg1.is_live === true || (cardLiveBus && cardLiveBus.bus_no === leg1.bus_no)));
             const isLeg2Live = Boolean(leg2 && (leg2.is_live === true || (cardLiveBus && cardLiveBus.bus_no === leg2.bus_no)));
-            const isRouteLive = Boolean(cardLiveBus || route.has_live_bus === true || (route.live_bus_count && route.live_bus_count > 0) || isLeg1Live || isLeg2Live);
+            const isRouteLive = Boolean(cardLiveBus || (route.has_live_bus === true && (route.live_bus_count > 0)) || isLeg1Live || isLeg2Live);
 
             // Only display Track Bus button if the bus on leg 1 is actively LIVE
             let leg1TrackBtn = '';

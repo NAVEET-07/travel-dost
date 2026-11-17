@@ -30,7 +30,7 @@
             <div class="transit-card p-4 mb-4">
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <h5 class="fw-bold m-0 text-dark"><i class="fa-solid fa-microchip text-primary me-2"></i>Telemetry & Diagnostics</h5>
-                    {% if bus.tracking_status == 'LIVE' %}
+                    {% if bus.is_live %}
                         <span class="badge-transit badge-direct"><span class="live-dot me-1"></span> LIVE</span>
                     {% else %}
                         <span class="badge bg-light text-secondary border small">OFFLINE</span>

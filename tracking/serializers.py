@@ -61,6 +61,8 @@ class BusSerializer(serializers.ModelSerializer):
     )
     current_location = serializers.SerializerMethodField()
     bus_type_display = serializers.CharField(source='get_bus_type_display', read_only=True)
+    is_online = serializers.BooleanField(read_only=True)
+    is_live = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Bus
@@ -68,6 +70,7 @@ class BusSerializer(serializers.ModelSerializer):
             'id', 'bus_number', 'bus_name', 'bus_type', 'bus_type_display',
             'route', 'route_id', 'driver', 'driver_id', 'driver_username',
             'is_active', 'tracking_enabled', 'tracking_status', 'trip_status',
+            'is_online', 'is_live',
             'last_updated', 'current_location'
         ]
 

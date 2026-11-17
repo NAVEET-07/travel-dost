@@ -155,7 +155,7 @@ def format_bus_telemetry(b, ref_stop, stops_list=None):
         "is_active": b.is_active,
         "tracking_status": b.tracking_status,
         "trip_status": getattr(b, 'trip_status', 'NOT_STARTED'),
-        "is_live": b.tracking_status == 'LIVE' and b.is_active and getattr(b, 'trip_status', 'ACTIVE') not in ['COMPLETED', 'CANCELLED'],
+        "is_live": bool(b.is_active and getattr(b, 'trip_status', None) in ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT', 'STARTED'] and getattr(b, 'tracking_status', None) == 'LIVE'),
         "distance_to_source_km": dist_km,
         "distance_to_source_text": dist_text,
         "current_location_desc": loc_desc,
@@ -378,19 +378,19 @@ def find_best_routes(source_param, destination_param):
                     for b in buses_by_route.get(r_src_id, []):
                         b_info = format_bus_telemetry(b, source_stop, leg1_stops)
                         buses_leg1.append(b_info)
-                        if b.tracking_status == 'LIVE' and not primary_conn_live:
+                        if b_info.get('is_live') and not primary_conn_live:
                             primary_conn_live = b_info
 
                     buses_leg2 = []
                     for b in buses_by_route.get(r_dst_id, []):
                         b_info = format_bus_telemetry(b, transfer_stop, leg2_stops)
                         buses_leg2.append(b_info)
-                        if b.tracking_status == 'LIVE' and not primary_conn_live:
+                        if b_info.get('is_live') and not primary_conn_live:
                             primary_conn_live = b_info
 
-                    buses_leg1.sort(key=lambda b: 0 if b.get('tracking_status') == 'LIVE' else 1)
-                    buses_leg2.sort(key=lambda b: 0 if b.get('tracking_status') == 'LIVE' else 1)
-                    conn_live_count = sum(1 for b in buses_leg1 + buses_leg2 if b.get('tracking_status') == 'LIVE')
+                    buses_leg1.sort(key=lambda b: 0 if b.get('is_live') else 1)
+                    buses_leg2.sort(key=lambda b: 0 if b.get('is_live') else 1)
+                    conn_live_count = sum(1 for b in buses_leg1 + buses_leg2 if b.get('is_live'))
 
                     cbt_rank = 0 if (is_cbt_stop(source_stop) or is_cbt_stop(destination_stop)) else (1 if (is_cbt_stop(transfer_stop) or any(is_cbt_stop(st) for st in leg1_stops + leg2_stops)) else 2)
                     score = (1 * 100) + (cbt_rank * 10) + (total_stops * 2) + total_dist

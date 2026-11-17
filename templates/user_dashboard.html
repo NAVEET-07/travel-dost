@@ -398,14 +398,14 @@
                                     <td><span class="badge bg-light text-secondary border">{{ b.get_bus_type_display }}</span></td>
                                     <td><span class="text-secondary">{{ b.route.route_name|default:"Unassigned" }}</span></td>
                                     <td>
-                                        {% if b.tracking_status == 'LIVE' and b.trip_status == 'IN_TRANSIT' %}
+                                        {% if b.is_live %}
                                             <span class="badge bg-success"><span class="live-dot me-1"></span> LIVE</span>
                                         {% else %}
                                             <span class="badge bg-light text-secondary border">SCHEDULED</span>
                                         {% endif %}
                                     </td>
                                     <td>
-                                        {% if b.tracking_status == 'LIVE' and b.trip_status == 'IN_TRANSIT' %}
+                                        {% if b.is_live %}
                                             <a href="{% url 'live-tracking-bus' b.id %}" class="btn btn-sm btn-success rounded-pill px-3 py-1 extra-small">
                                                 <i class="fa-solid fa-location-arrow me-1"></i> Track Live
                                             </a>

@@ -140,8 +140,8 @@ class BusTrackingConsumer(AsyncWebsocketConsumer):
             'longitude': event.get('longitude'),
             'speed': event.get('speed', 0.0),
             'heading': event.get('heading', 0.0),
-            'status': event.get('status', 'LIVE'),
-            'trip_status': event.get('trip_status', 'ACTIVE'),
+            'status': event.get('status', 'OFFLINE'),
+            'trip_status': event.get('trip_status', 'NOT_STARTED'),
             'timestamp': event.get('timestamp')
         }))
 
@@ -150,11 +150,14 @@ class BusTrackingConsumer(AsyncWebsocketConsumer):
         from tracking.models import Bus, BusLocation
         try:
             bus = Bus.objects.get(id=bus_id)
-            bus.tracking_status = status
-            if status == 'LIVE':
-                bus.trip_status = 'ACTIVE'
-            elif status == 'OFFLINE':
+            is_trip_active = bus.trip_status in ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT', 'STARTED']
+            if status == 'OFFLINE':
+                bus.tracking_status = 'OFFLINE'
                 bus.trip_status = 'COMPLETED'
+            elif is_trip_active:
+                bus.tracking_status = 'LIVE'
+            else:
+                bus.tracking_status = 'OFFLINE'
             bus.last_updated = timezone.now()
             bus.save(update_fields=['tracking_status', 'trip_status', 'last_updated'])
 
@@ -210,7 +213,7 @@ class BusTrackingConsumer(AsyncWebsocketConsumer):
         try:
             bus = Bus.objects.get(id=bus_id)
             # STRICT: Ghost bus elimination - only report active live trip if driver actively started it
-            is_active_trip = (bus.tracking_status == 'LIVE') and (bus.trip_status in ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT'])
+            is_active_trip = (bus.tracking_status == 'LIVE') and (bus.trip_status in ['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT', 'STARTED'])
             loc = bus.get_current_location() if is_active_trip else None
 
             return {
@@ -237,7 +240,7 @@ class BusTrackingConsumer(AsyncWebsocketConsumer):
         buses = Bus.objects.filter(
             is_active=True,
             tracking_status='LIVE',
-            trip_status__in=['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT']
+            trip_status__in=['ACTIVE', 'IN_PROGRESS', 'IN_TRANSIT', 'STARTED']
         ).select_related('route')
 
         buses_list = []

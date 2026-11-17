@@ -206,7 +206,7 @@
                             <select class="form-select form-select-sm rounded-pill bg-slate-900 text-white border-secondary border-opacity-50 px-3 py-2 shadow-sm" id="busSelect" style="min-width: 280px;">
                                 {% for b in buses %}
                                     <option value="{{ b.id }}" {% if selected_bus and selected_bus.id == b.id %}selected{% endif %}>
-                                        {% if b.tracking_status == 'LIVE' %}🟢 [LIVE GPS] {% else %}⚪ [Scheduled] {% endif %}Bus {{ b.bus_number }} — {{ b.route.route_name|default:b.bus_name }}
+                                        {% if b.is_live %}🟢 [LIVE GPS] {% else %}⚪ [Scheduled] {% endif %}Bus {{ b.bus_number }} — {{ b.route.route_name|default:b.bus_name }}
                                     </option>
                                 {% endfor %}
                             </select>

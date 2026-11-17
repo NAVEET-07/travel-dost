@@ -128,7 +128,7 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        {% if b.tracking_status == 'LIVE' %}
+                                        {% if b.is_live %}
                                             <span class="badge bg-success"><i class="fa-solid fa-circle me-1 animate-pulse"></i> LIVE</span>
                                         {% else %}
                                             <span class="badge bg-secondary">OFFLINE</span>
